@@ -1,0 +1,37 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#4A90E2" stroke="#2E5C8A" stroke-width="2"/>
+  
+  <!-- Container boxes representing different containers -->
+  <!-- Top container -->
+  <rect x="32" y="28" width="24" height="20" rx="3" fill="#ffffff" opacity="0.9"/>
+  <rect x="34" y="30" width="20" height="4" fill="#4A90E2"/>
+  
+  <!-- Middle left container -->
+  <rect x="20" y="54" width="24" height="20" rx="3" fill="#ffffff" opacity="0.9"/>
+  <rect x="22" y="56" width="20" height="4" fill="#4A90E2"/>
+  
+  <!-- Middle right container -->
+  <rect x="52" y="54" width="24" height="20" rx="3" fill="#ffffff" opacity="0.9"/>
+  <rect x="54" y="56" width="20" height="4" fill="#4A90E2"/>
+  
+  <!-- Bottom left container -->
+  <rect x="84" y="28" width="24" height="20" rx="3" fill="#ffffff" opacity="0.9"/>
+  <rect x="86" y="30" width="20" height="4" fill="#4A90E2"/>
+  
+  <!-- Bottom right container -->
+  <rect x="84" y="80" width="24" height="20" rx="3" fill="#ffffff" opacity="0.9"/>
+  <rect x="86" y="82" width="20" height="4" fill="#4A90E2"/>
+  
+  <!-- Center container - slightly larger to show it's active -->
+  <rect x="45" y="80" width="28" height="24" rx="3" fill="#ffffff" opacity="1.0"/>
+  <rect x="47" y="82" width="24" height="5" fill="#4A90E2"/>
+  
+  <!-- Connection lines between containers -->
+  <path d="M44 38 L32 60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+  <path d="M56 48 L52 54" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+  <path d="M84 48 L76 54" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+  <path d="M32 74 L45 80" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+  <path d="M76 74 L73 80" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+  <path d="M96 48 L96 80" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+</svg>

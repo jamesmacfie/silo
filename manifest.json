@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json.schemastore.org/chrome-manifest.json",
+  "manifest_version": 2,
+  "version": "2.0.0",
+  "name": "Silo",
+  "description": "Automatically open websites in Firefox containers based on configurable rules",
+  "icons": {
+    "16": "images/extension_16.png",
+    "32": "images/extension_32.png",
+    "48": "images/extension_48.png",
+    "128": "images/extension_128.png"
+  },
+  "author": "Silo Team",
+  "background": {
+    "scripts": [
+      "src/background/index.ts"
+    ],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_title": "Silo",
+    "default_icon": {
+      "16": "images/extension_16.png",
+      "32": "images/extension_32.png",
+      "48": "images/extension_48.png",
+      "128": "images/extension_128.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/options/index.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "cookies",
+    "webRequest",
+    "webRequestBlocking",
+    "contextualIdentities",
+    "notifications",
+    "bookmarks",
+    "<all_urls>"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "silo@extensions.firefox.org",
+      "strict_min_version": "91.0"
+    }
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'none'"
+}

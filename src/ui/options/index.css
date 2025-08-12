@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light mode styles (default) */
+body { @apply bg-gray-50 text-gray-900; }
+.app { @apply grid grid-cols-[260px_1fr] min-h-screen; }
+.sidebar { @apply sticky top-0 h-screen bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 p-5; }
+.brand { @apply flex items-center gap-2 mb-4; }
+.brand .logo { @apply w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg; }
+.nav { @apply flex flex-col gap-1.5; }
+.nav button { @apply w-full text-left px-3 py-2 rounded-lg bg-transparent text-gray-700 border border-transparent hover:bg-gray-100 hover:border-gray-200; }
+.nav button.active { @apply bg-white border-gray-200 shadow-sm; }
+.content { @apply p-6; }
+.page { @apply max-w-[1100px] mx-auto; }
+.header { @apply flex justify-between items-center mb-6; }
+.title { @apply text-2xl font-semibold m-0; }
+.toolbar { @apply flex gap-3 items-center mb-4; }
+.input { @apply bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-lg; }
+.btn { @apply bg-blue-500 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-600 transition-colors; }
+.btn.ghost { @apply bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50; }
+.btn.danger { @apply bg-rose-500 text-white hover:bg-rose-600; }
+.btn.sm { @apply px-3 py-1.5 text-xs; }
+.cards-grid { @apply grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]; }
+.card { @apply bg-white border border-gray-200 rounded-xl p-3 shadow-sm; }
+.cardHead { @apply flex gap-2 items-center mb-2; }
+.swatch { @apply inline-block w-3.5 h-3.5 rounded-full mr-2 align-middle border border-gray-300; }
+.name { @apply font-semibold; }
+.small { @apply text-gray-600 text-xs; }
+.row { @apply flex justify-between items-center; }
+.actions { @apply flex gap-2; }
+.status { @apply mt-2 text-gray-600 text-xs; }
+.modalRoot { @apply fixed inset-0 hidden; }
+.modalRoot.open { @apply block; }
+.backdrop { @apply absolute inset-0 bg-gray-900/50 backdrop-blur-sm; }
+.modal { @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] bg-white border border-gray-200 rounded-2xl shadow-xl; }
+.modalHeader { @apply flex justify-between items-center px-4 py-3 border-b border-gray-200; }
+.modalBody { @apply p-4; display: grid; gap: 0.75rem; }
+.formRow { display: grid; gap: 0.375rem; }
+.label { @apply text-gray-700 text-xs font-medium; }
+.palette { @apply flex flex-wrap gap-2; }
+.chip { @apply px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50; }
+.chip.selected { @apply outline outline-2 outline-blue-400 border-blue-400 bg-blue-50; }
+.icons { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
+.iconBox { @apply border border-gray-200 bg-white rounded-lg h-[42px] flex items-center justify-center cursor-pointer hover:bg-gray-50; }
+.iconBox.selected { @apply outline outline-2 outline-blue-400 border-blue-400 bg-blue-50; }
+.table { @apply w-full border-collapse; }
+.table thead th { @apply sticky top-0 bg-white border-b border-gray-200 text-left px-2.5 py-2 text-xs text-gray-600; }
+.table tbody td { @apply px-2.5 py-2 border-b border-gray-200 align-top text-sm; }
+.badge { @apply inline-block px-2.5 py-1 rounded-full border border-gray-200 bg-gray-100 text-sm text-gray-700; }
+.badge.info { @apply border-blue-200 bg-blue-100 text-blue-700; }
+.badge.warn { @apply border-amber-200 bg-amber-100 text-amber-700; }
+.badge.ok { @apply border-emerald-200 bg-emerald-100 text-emerald-700; }
+.rules-list { @apply flex flex-col gap-3 mt-4; }
+.modalFooter { @apply flex justify-end gap-2 px-4 py-3 border-t border-gray-200; }
+
+/* Dark mode styles */
+:root.dark body { @apply bg-slate-950 text-slate-100; }
+:root.dark .sidebar { @apply bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800; }
+:root.dark .nav button { @apply text-white hover:bg-slate-900 hover:border-slate-800; }
+:root.dark .nav button.active { @apply bg-slate-900/70 border-slate-800 shadow-inner; }
+:root.dark .input { @apply bg-slate-900 border-slate-800 text-white; }
+:root.dark .btn { @apply bg-blue-500 text-white; }
+:root.dark .btn.ghost { @apply bg-transparent border-slate-800 text-white hover:bg-slate-900; }
+:root.dark .btn.danger { @apply bg-rose-500 text-white; }
+:root.dark .card { @apply bg-gradient-to-b from-slate-900 to-slate-950 border-slate-800; }
+:root.dark .swatch { @apply border-white/10; }
+:root.dark .small { @apply text-slate-400; }
+:root.dark .status { @apply text-slate-400; }
+:root.dark .backdrop { @apply bg-slate-950/60; }
+:root.dark .modal { @apply bg-slate-900 border-slate-800; }
+:root.dark .modalHeader { @apply border-slate-800; }
+:root.dark .label { @apply text-slate-300; }
+:root.dark .chip { @apply border-slate-800 bg-slate-900 text-white hover:bg-slate-800; }
+:root.dark .chip.selected { @apply border-blue-400 bg-slate-800; }
+:root.dark .iconBox { @apply border-slate-800 bg-slate-900 hover:bg-slate-800; }
+:root.dark .iconBox.selected { @apply border-blue-400 bg-slate-800; }
+:root.dark .table thead th { @apply bg-slate-900 border-slate-800 text-slate-400; }
+:root.dark .table tbody td { @apply border-slate-800; }
+:root.dark .badge { @apply border-slate-800 bg-slate-900 text-white; }
+:root.dark .badge.info { @apply border-blue-900 bg-slate-900; }
+:root.dark .badge.warn { @apply border-amber-900 bg-amber-900/20; }
+:root.dark .badge.ok { @apply border-emerald-900 bg-emerald-900/20; }
+:root.dark .modalFooter { @apply border-slate-800; }
+
+
+
+
+

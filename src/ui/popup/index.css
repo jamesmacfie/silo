@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light mode styles (default) */
+.popup {
+  @apply w-[380px] p-3 font-sans;
+}
+.header {
+  @apply flex items-center justify-between mb-2;
+}
+.header-actions {
+  @apply flex items-center gap-2;
+}
+.brand {
+  @apply flex items-center gap-2;
+}
+.logo {
+  @apply w-[18px] h-[18px] rounded-md bg-gradient-to-br from-blue-400 to-purple-500;
+}
+.title {
+  @apply m-0 text-[13px] tracking-wide text-gray-900;
+}
+.ghost {
+  @apply bg-transparent text-gray-700 border border-gray-300 rounded-md px-2 py-1 text-xs hover:bg-gray-100;
+}
+.context {
+  @apply text-xs text-gray-600 bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-2 mb-2;
+}
+.select {
+  @apply w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-2.5 py-2;
+}
+.row {
+  @apply flex gap-2;
+}
+.btn {
+  @apply bg-blue-500 text-white border-0 px-2.5 py-2 rounded-lg font-semibold text-xs hover:bg-blue-600;
+}
+.small { @apply font-medium text-gray-700; }
+.status { @apply mt-2 text-xs text-gray-600; }
+.footerLink { @apply mt-2 flex justify-end; }
+.link { @apply text-blue-500 text-xs no-underline hover:text-blue-600; }
+
+/* Dark mode styles */
+:root.dark .title {
+  @apply text-slate-100;
+}
+:root.dark .ghost {
+  @apply text-white border-slate-700 hover:bg-slate-900;
+}
+:root.dark .context {
+  @apply text-slate-400 bg-slate-900/60 border-slate-800;
+}
+:root.dark .select {
+  @apply bg-slate-900/80 text-white border-slate-800;
+}
+:root.dark .btn {
+  @apply bg-blue-500 text-white hover:bg-blue-600;
+}
+:root.dark .small { @apply text-slate-300; }
+:root.dark .status { @apply text-slate-400; }
+:root.dark .link { @apply text-blue-400 hover:text-blue-300; }
+
+/* Theme selector styles */
+.theme-select {
+  @apply px-2 py-1 text-xs rounded-md border bg-white text-gray-900 border-gray-300;
+}
+:root.dark .theme-select {
+  @apply bg-slate-800 text-white border-slate-700;
+}
+
+/* CSS Variables for theming */
+:root {
+  --popup-bg: radial-gradient(900px 600px at 70% -10%, #f8f9fa 0%, #ffffff 45%), #ffffff;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --surface: #f8f9fa;
+  --border: #dee2e6;
+  --primary: #4a90e2;
+}
+
+:root.dark {
+  --popup-bg: radial-gradient(900px 600px at 70% -10%, #13213a 0%, #0b0d12 45%), #0b0d12;
+  --text-primary: #e6eaf2;
+  --text-secondary: #94a3b8;
+  --surface: #1e293b;
+  --border: #334155;
+  --primary: #5ba0f2;
+}
+
+/* Apply theme */
+body {
+  background: var(--popup-bg);
+  color: var(--text-primary);
+}
+
+

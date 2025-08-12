@@ -169,19 +169,21 @@ export function PopupApp(_props: Props): JSX.Element {
       }
       const title = tab.title || new URL(tab.url as string).hostname;
       const urlObj = new URL(tab.url as string);
-      if (tab.cookieStoreId && tab.cookieStoreId !== 'firefox-default') {
-        urlObj.searchParams.delete('silo');
-        urlObj.searchParams.delete('containerize');
-        urlObj.searchParams.append('silo', tab.cookieStoreId);
+      // Clean existing silo parameters
+      urlObj.searchParams.delete('silo');
+      // Add silo parameter based on selected container (not current tab container)
+      if (selectedCookieStoreId && selectedCookieStoreId !== 'firefox-default') {
+        urlObj.searchParams.append('silo', selectedCookieStoreId);
       }
       await browser.bookmarks.create({ title, url: urlObj.toString() });
-      setStatus('Bookmarked for this container');
+      const containerName = containers.find(c => c.cookieStoreId === selectedCookieStoreId)?.name || 'No Container';
+      setStatus(`Bookmarked for ${containerName}`);
       return;
     } catch (_e) {
       setStatus('Failed to create bookmark');
       return;
     }
-  }, []);
+  }, [selectedCookieStoreId, containers]);
 
   const onManageContainers = React.useCallback(async () => {
     // Use getURL to get the proper extension URL for the options page

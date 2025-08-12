@@ -105,7 +105,7 @@ export class BookmarkIntegration {
     try {
       const parsed = new URL(url);
       const params = parsed.searchParams;
-      const paramValue = params.get('silo') || params.get('containerize');
+      const paramValue = params.get('silo');
 
       if (!paramValue) {
         return { cleanUrl: url };
@@ -113,7 +113,6 @@ export class BookmarkIntegration {
 
       // Remove the parameter from URL
       params.delete('silo');
-      params.delete('containerize');
       parsed.search = params.toString();
       const cleanUrl = parsed.toString();
       return { cleanUrl, containerHint: paramValue };

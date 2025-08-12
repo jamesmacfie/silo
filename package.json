@@ -19,8 +19,6 @@
     "build:options": "node build-scripts/build-options.js",
     "build:options:css": "mkdir -p temp && tailwindcss -c tailwind.config.ts -i ./src/ui/options/index.css -o ./temp/options.iife.css --minify",
     "build:firefox": "node build-scripts/build-all.js --firefox",
-    "build:icons": "node scripts/generate-icons.cjs",
-    "build:all": "npm run build:icons && npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

@@ -10,6 +10,11 @@ This whole thing has been built with Claude Code. I've hardly checked the code a
 
 Silo automatically opens websites in specific Firefox containers based on configurable rules, providing enhanced privacy, security, and organization for your browsing experience.
 
+<p align="center">
+  <img src="./images/extension_128.png" alt="Silo Extension Icon" width="96" height="96" />
+</p>
+
+
 ## 🚀 Features
 
 ### 🎯 Advanced Rule System

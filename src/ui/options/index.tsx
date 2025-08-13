@@ -8,6 +8,7 @@ import { CSVImportExport } from '@/ui/shared/components/CSVImportExport';
 import { ThemeSwitcher } from '@/ui/shared/components/ThemeSwitcher';
 import { RuleItem } from '@/ui/shared/components/RuleItem';
 import { BookmarkManager } from '@/ui/shared/components/BookmarkManager';
+import { Card, CardHeader, CardContent, CardActions } from '@/ui/shared/components/Card';
 import { useRules, useRuleActions } from '@/ui/shared/hooks/useRules';
 import { ContainerModal } from '@/ui/options/ContainerModal';
 import { RuleModal } from '@/ui/options/RuleModal';
@@ -193,25 +194,27 @@ function ContainersPage(): JSX.Element {
       {error ? (<div className="small" role="alert">{error}</div>) : null}
       <div className="cards-grid">
         {filtered.map((c) => (
-          <div key={c.id} className="card">
-            <div className="cardHead">
+          <Card key={c.id}>
+            <CardHeader>
               <span className="swatch" style={{ background: colorToCss(c.color) }} />
-              <span style={{ marginRight: 6, fontSize: 16 }}>{iconToEmoji(c.icon)}</span>
+              <span className="mr-1.5 text-base">{iconToEmoji(c.icon)}</span>
               <div className="name">{c.name}</div>
-            </div>
-            <div className="small">{c.cookieStoreId}</div>
+            </CardHeader>
+            <CardContent>
+              <div className="small">{c.cookieStoreId}</div>
+            </CardContent>
             <div className="row">
               <div />
-              <div className="actions">
+              <CardActions>
                 <button className="btn ghost sm" type="button" onClick={() => openEditModal(c)}>
                   Edit
                 </button>
                 <button className="btn danger sm" type="button" onClick={() => deleteContainer(c)}>
                   Delete
                 </button>
-              </div>
+              </CardActions>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
       <div className="status">{containers.length} container(s)</div>
@@ -347,7 +350,7 @@ function RulesPage(): JSX.Element {
         </select>
       </div>
 
-      <div className="rules-list">
+      <div className="cards-grid">
         {filteredRules.length === 0 ? (
           <div className="small">
             {filter ? 'No rules match your filter.' : 'No rules configured. Add your first rule!'}
@@ -474,20 +477,20 @@ function SettingsPage(): JSX.Element {
       <div className="header"><h2 className="title">Settings</h2></div>
       <ThemeSwitcher />
 
-      <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}>
+      <div className="mt-8 p-4 border border-gray-300 rounded">
         <h3>Interceptor Test</h3>
-        <div style={{ marginBottom: '1rem' }}>
+        <div className="mb-4">
           <input
             type="text"
             value={testUrl}
             onChange={(e) => setTestUrl(e.target.value)}
             placeholder="Enter URL to test"
-            style={{ width: '300px', marginRight: '10px' }}
+            className="w-80 mr-2.5"
           />
           <button type="button" onClick={testInterceptor}>Test Rules Engine</button>
         </div>
         {testResult && (
-          <pre style={{ background: '#f5f5f5', padding: '1rem', fontSize: '12px', overflow: 'auto' }}>
+          <pre className="bg-gray-100 p-4 text-xs overflow-auto">
             {testResult}
           </pre>
         )}

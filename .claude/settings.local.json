@@ -19,7 +19,8 @@
       "Bash(npm run type-check:*)",
       "mcp__playwright__browser_navigate",
       "Bash(find:*)",
-      "Bash(yarn test:*)"
+      "Bash(yarn test:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

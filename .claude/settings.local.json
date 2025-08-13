@@ -20,7 +20,8 @@
       "mcp__playwright__browser_navigate",
       "Bash(find:*)",
       "Bash(yarn test:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

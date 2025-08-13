@@ -17,10 +17,10 @@ export class BookmarkIntegration {
   private constructor() { }
 
   static getInstance(): BookmarkIntegration {
-    if (!this.instance) {
-      this.instance = new BookmarkIntegration();
+    if (!BookmarkIntegration.instance) {
+      BookmarkIntegration.instance = new BookmarkIntegration();
     }
-    return this.instance;
+    return BookmarkIntegration.instance;
   }
 
   async associate(bookmarkId: string, containerId: string, url: string, autoOpen = true): Promise<void> {

@@ -22,10 +22,10 @@ export class RulesEngine {
   private constructor() { }
 
   static getInstance(): RulesEngine {
-    if (!this.instance) {
-      this.instance = new RulesEngine();
+    if (!RulesEngine.instance) {
+      RulesEngine.instance = new RulesEngine();
     }
-    return this.instance;
+    return RulesEngine.instance;
   }
 
   async addRule(request: CreateRuleRequest): Promise<Rule> {
@@ -78,17 +78,17 @@ export class RulesEngine {
 
   async evaluate(url: string, currentContainer?: string): Promise<EvaluationResult> {
     this.log.debug('Starting rule evaluation', { url, currentContainer });
-    
+
     // Load rules to build a cache signature tied to rule changes
     const allRules = await this.storage.getRules();
     const enabledRules = allRules.filter(r => r.enabled);
-    
-    this.log.debug('Rules loaded', { 
-      totalRules: allRules.length, 
+
+    this.log.debug('Rules loaded', {
+      totalRules: allRules.length,
       enabledRules: enabledRules.length,
       rules: enabledRules.map(r => ({ id: r.id, pattern: r.pattern, type: r.ruleType, matchType: r.matchType, containerId: r.containerId }))
     });
-    
+
     const lastModified = enabledRules.length > 0 ? Math.max(...enabledRules.map(r => r.modified || 0)) : 0;
     const cacheKey = `${url}:${currentContainer || ''}:${lastModified}:${enabledRules.length}`;
 
@@ -177,7 +177,7 @@ export class RulesEngine {
             reason: 'Restricted to required container',
           };
 
-        case 'exclude':
+        case 'exclude': {
           // EXCLUDE rules: Break out of container. Treat missing container as default.
           const isDefault = !currentContainer || currentContainer === 'firefox-default';
           return {
@@ -186,6 +186,7 @@ export class RulesEngine {
             rule,
             reason: 'URL excluded from container',
           };
+        }
 
         case 'include':
           // INCLUDE rules: Only redirect when in the default/non-container. If in a different

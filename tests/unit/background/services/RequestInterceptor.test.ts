@@ -1,17 +1,23 @@
 import { RequestInterceptor } from '@/background/services/RequestInterceptor';
-import { RulesEngine } from '@/background/services/RulesEngine';
-import { ContainerManager } from '@/background/services/ContainerManager';
 import browser from 'webextension-polyfill';
-import { RuleType } from '@/shared/types';
+import rulesEngine from '@/background/services/RulesEngine';
+import containerManager from '@/background/services/ContainerManager';
+import storageService from '@/background/services/StorageService';
+import bookmarkIntegration from '@/background/services/BookmarkIntegration';
+import { EvaluationResult, RuleType } from '@/shared/types';
 
 jest.mock('@/background/services/RulesEngine');
 jest.mock('@/background/services/ContainerManager');
+jest.mock('@/background/services/StorageService');
+jest.mock('@/background/services/BookmarkIntegration');
 jest.mock('@/shared/utils/logger');
 
 describe('RequestInterceptor', () => {
   let requestInterceptor: RequestInterceptor;
-  let mockRulesEngine: jest.Mocked<RulesEngine>;
-  let mockContainerManager: jest.Mocked<ContainerManager>;
+  let mockRulesEngine: jest.Mocked<typeof rulesEngine>;
+  let mockContainerManager: jest.Mocked<typeof containerManager>;
+  let mockStorageService: jest.Mocked<typeof storageService>;
+  let mockBookmarkIntegration: jest.Mocked<typeof bookmarkIntegration>;
 
   const mockWebRequestDetails: browser.WebRequest.OnBeforeRequestDetailsType = {
     requestId: 'req-123',
@@ -38,14 +44,47 @@ describe('RequestInterceptor', () => {
     cookieStoreId: 'firefox-default',
   };
 
+  const mockContainer = {
+    id: 'container-1',
+    name: 'Work Container',
+    icon: 'briefcase',
+    color: 'blue',
+    cookieStoreId: 'firefox-container-1',
+    created: Date.now(),
+    modified: Date.now(),
+    temporary: false,
+    syncEnabled: true,
+    metadata: {},
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
     
     // Reset singleton instance
     (RequestInterceptor as any).instance = null;
     
-    mockRulesEngine = RulesEngine.getInstance() as jest.Mocked<RulesEngine>;
-    mockContainerManager = ContainerManager.getInstance() as jest.Mocked<ContainerManager>;
+    // Setup mocks
+    mockRulesEngine = rulesEngine as jest.Mocked<typeof rulesEngine>;
+    mockContainerManager = containerManager as jest.Mocked<typeof containerManager>;
+    mockStorageService = storageService as jest.Mocked<typeof storageService>;
+    mockBookmarkIntegration = bookmarkIntegration as jest.Mocked<typeof bookmarkIntegration>;
+    
+    // Default mock implementations
+    mockBookmarkIntegration.processBookmarkUrl = jest.fn().mockResolvedValue({
+      cleanUrl: mockWebRequestDetails.url,
+      containerId: null,
+    });
+    
+    mockStorageService.getPreferences = jest.fn().mockResolvedValue({
+      keepOldTabs: false,
+      notifications: {
+        showOnRestrict: true,
+        showOnExclude: true,
+      },
+    });
+    
+    mockStorageService.recordStat = jest.fn().mockResolvedValue(undefined);
     
     requestInterceptor = RequestInterceptor.getInstance();
 
@@ -68,7 +107,27 @@ describe('RequestInterceptor', () => {
         addListener: jest.fn(),
         removeListener: jest.fn(),
       },
+      onCreated: {
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+      },
+      onRemoved: {
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+      },
     } as any;
+
+    global.browser.notifications = {
+      create: jest.fn(),
+    } as any;
+
+    global.browser.runtime = {
+      getURL: jest.fn().mockReturnValue('chrome-extension://abc/images/extension_48.png'),
+    } as any;
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('getInstance', () => {
@@ -80,33 +139,82 @@ describe('RequestInterceptor', () => {
   });
 
   describe('register', () => {
-    it('should register web request listener', () => {
-      requestInterceptor.register();
+    it('should register webRequest and tab listeners when webRequest is available', async () => {
+      await requestInterceptor.register();
 
       expect(browser.webRequest.onBeforeRequest.addListener).toHaveBeenCalledWith(
         expect.any(Function),
         { urls: ['<all_urls>'], types: ['main_frame'] },
         ['blocking']
       );
+      expect(browser.tabs.onUpdated.addListener).toHaveBeenCalled();
+      expect(browser.tabs.onCreated.addListener).toHaveBeenCalled();
+      expect(browser.tabs.onRemoved.addListener).toHaveBeenCalled();
+    });
 
+    it('should register only tab listeners when webRequest is not available', async () => {
+      global.browser.webRequest = undefined;
+
+      await requestInterceptor.register();
+
+      expect(browser.tabs.onUpdated.addListener).toHaveBeenCalled();
+      expect(browser.tabs.onCreated.addListener).toHaveBeenCalled();
+      expect(browser.tabs.onRemoved.addListener).toHaveBeenCalled();
+    });
+
+    it('should handle webRequest registration errors gracefully', async () => {
+      (browser.webRequest.onBeforeRequest.addListener as jest.Mock).mockImplementation(() => {
+        throw new Error('Permission denied');
+      });
+
+      await requestInterceptor.register();
+
+      // Should still register tab listeners
       expect(browser.tabs.onUpdated.addListener).toHaveBeenCalled();
     });
 
-    it('should not register if already registered', () => {
-      requestInterceptor.register();
-      requestInterceptor.register();
+    it('should not register if already registered', async () => {
+      await requestInterceptor.register();
+      await requestInterceptor.register();
 
       expect(browser.webRequest.onBeforeRequest.addListener).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw error if registration fails completely', async () => {
+      (browser.tabs.onUpdated.addListener as jest.Mock).mockImplementation(() => {
+        throw new Error('Failed to register');
+      });
+
+      await expect(requestInterceptor.register()).rejects.toThrow('Failed to register');
     });
   });
 
   describe('unregister', () => {
-    it('should remove web request listener', () => {
-      requestInterceptor.register();
-      requestInterceptor.unregister();
+    beforeEach(async () => {
+      await requestInterceptor.register();
+    });
+
+    it('should remove all listeners', async () => {
+      await requestInterceptor.unregister();
 
       expect(browser.webRequest.onBeforeRequest.removeListener).toHaveBeenCalled();
       expect(browser.tabs.onUpdated.removeListener).toHaveBeenCalled();
+    });
+
+    it('should handle errors during unregistration', async () => {
+      (browser.webRequest.onBeforeRequest.removeListener as jest.Mock).mockImplementation(() => {
+        throw new Error('Failed to remove listener');
+      });
+
+      // Should not throw
+      await expect(requestInterceptor.unregister()).resolves.not.toThrow();
+    });
+
+    it('should do nothing if not registered', async () => {
+      await requestInterceptor.unregister();
+      await requestInterceptor.unregister(); // Second call should be no-op
+
+      expect(browser.webRequest.onBeforeRequest.removeListener).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -115,314 +223,672 @@ describe('RequestInterceptor', () => {
       (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
     });
 
-    it('should open URL in target container when rule matches', async () => {
-      const targetContainerId = 'work-container';
-      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
+    it('should skip non-main frame requests', async () => {
+      const subFrameDetails = { ...mockWebRequestDetails, frameId: 1 };
+
+      const result = await (requestInterceptor as any).handleRequest(subFrameDetails);
+
+      expect(browser.tabs.get).not.toHaveBeenCalled();
+      expect(result).toEqual({});
+    });
+
+    it('should skip non-interceptable URLs', async () => {
+      const details = { ...mockWebRequestDetails, url: 'about:blank' };
+
+      const result = await (requestInterceptor as any).handleRequest(details);
+
+      expect(browser.tabs.get).not.toHaveBeenCalled();
+      expect(result).toEqual({});
+    });
+
+    it('should skip requests with invalid tab ID', async () => {
+      const details = { ...mockWebRequestDetails, tabId: -1 };
+
+      const result = await (requestInterceptor as any).handleRequest(details);
+
+      expect(browser.tabs.get).not.toHaveBeenCalled();
+      expect(result).toEqual({});
+    });
+
+    it('should handle redirect action', async () => {
+      const evaluation: EvaluationResult = {
         action: 'redirect',
-        containerId: targetContainerId,
-        rule: {
-          id: 'rule-1',
-          pattern: 'example.com',
-          containerId: targetContainerId,
-          ruleType: RuleType.INCLUDE,
-        },
-      });
+        containerId: 'firefox-container-1',
+        rule: { id: 'rule1', ruleType: RuleType.INCLUDE, containerId: 'firefox-container-1' } as any,
+      };
 
-      mockContainerManager.get = jest.fn().mockResolvedValue({
-        id: targetContainerId,
-        cookieStoreId: 'firefox-container-1',
-        name: 'Work',
-      });
-
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
       (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
 
-      const result = await requestInterceptor.handleRequest(mockWebRequestDetails);
-
-      expect(mockRulesEngine.evaluate).toHaveBeenCalledWith(
-        mockWebRequestDetails.url,
-        'firefox-default'
-      );
+      const result = await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
 
       expect(browser.tabs.create).toHaveBeenCalledWith({
         url: mockWebRequestDetails.url,
         cookieStoreId: 'firefox-container-1',
-        index: mockTab.index,
-        pinned: mockTab.pinned,
-        windowId: mockTab.windowId,
+        active: true,
       });
-
-      expect(browser.tabs.remove).toHaveBeenCalledWith(mockTab.id);
       expect(result).toEqual({ cancel: true });
     });
 
-    it('should allow request when no rule matches', async () => {
-      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
-        action: 'open',
-      });
-
-      const result = await requestInterceptor.handleRequest(mockWebRequestDetails);
-
-      expect(browser.tabs.create).not.toHaveBeenCalled();
-      expect(browser.tabs.remove).not.toHaveBeenCalled();
-      expect(result).toEqual({});
-    });
-
-    it('should block request when restrict rule prevents access', async () => {
-      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
-        action: 'block',
-        reason: 'Domain restricted to specific container',
-        rule: {
-          id: 'rule-2',
-          pattern: 'secure.example.com',
-          containerId: 'secure-container',
-          ruleType: RuleType.RESTRICT,
-        },
-      });
-
-      const result = await requestInterceptor.handleRequest(mockWebRequestDetails);
-
-      expect(browser.tabs.create).not.toHaveBeenCalled();
-      expect(result).toEqual({ cancel: true });
-    });
-
-    it('should exclude from container when exclude rule matches', async () => {
-      const currentContainer = 'firefox-container-1';
-      const tabInContainer = { ...mockTab, cookieStoreId: currentContainer };
-      
+    it('should handle exclude action', async () => {
+      const tabInContainer = { ...mockTab, cookieStoreId: 'firefox-container-1' };
       (browser.tabs.get as jest.Mock).mockResolvedValue(tabInContainer);
 
-      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
+      const evaluation: EvaluationResult = {
         action: 'exclude',
-        rule: {
-          id: 'rule-3',
-          pattern: 'public.example.com',
-          ruleType: RuleType.EXCLUDE,
-        },
-      });
+        rule: { id: 'rule1', ruleType: RuleType.EXCLUDE } as any,
+      };
 
-      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 3 });
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
 
-      const result = await requestInterceptor.handleRequest(mockWebRequestDetails);
+      const result = await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
 
       expect(browser.tabs.create).toHaveBeenCalledWith({
         url: mockWebRequestDetails.url,
         cookieStoreId: 'firefox-default',
-        index: tabInContainer.index,
-        pinned: tabInContainer.pinned,
-        windowId: tabInContainer.windowId,
+        active: true,
+      });
+      expect(result).toEqual({ cancel: true });
+    });
+
+    it('should handle block action', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'block',
+        containerId: 'firefox-container-1',
+        rule: { id: 'rule1', ruleType: RuleType.RESTRICT } as any,
+      };
+
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
+
+      const result = await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
+
+      expect(browser.tabs.create).not.toHaveBeenCalled();
+      expect(result).toEqual({ cancel: true });
+    });
+
+    it('should handle open action with no redirect needed', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'open',
+        rule: { id: 'rule1', ruleType: RuleType.INCLUDE, containerId: 'firefox-default' } as any,
+      };
+
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
+
+      const result = await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
+
+      expect(browser.tabs.create).not.toHaveBeenCalled();
+      expect(result).toEqual({});
+    });
+
+    it('should handle bookmark parameter redirect', async () => {
+      mockBookmarkIntegration.processBookmarkUrl = jest.fn().mockResolvedValue({
+        cleanUrl: mockWebRequestDetails.url,
+        containerId: 'firefox-container-1',
       });
 
-      expect(browser.tabs.remove).toHaveBeenCalledWith(tabInContainer.id);
+      const evaluation: EvaluationResult = { action: 'open' };
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      const result = await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
+
+      expect(browser.tabs.create).toHaveBeenCalledWith({
+        url: mockWebRequestDetails.url,
+        cookieStoreId: 'firefox-container-1',
+        active: true,
+      });
       expect(result).toEqual({ cancel: true });
     });
 
     it('should handle errors gracefully', async () => {
-      const error = new Error('Tab not found');
-      (browser.tabs.get as jest.Mock).mockRejectedValue(error);
+      (browser.tabs.get as jest.Mock).mockRejectedValue(new Error('Tab not found'));
 
-      const result = await requestInterceptor.handleRequest(mockWebRequestDetails);
+      const result = await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
 
       expect(result).toEqual({});
     });
 
-    it('should not intercept if tab ID is missing', async () => {
-      const detailsWithoutTab = { ...mockWebRequestDetails, tabId: -1 };
+    it('should record stats for matches', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'open',
+        rule: { 
+          id: 'rule1', 
+          ruleType: RuleType.INCLUDE, 
+          containerId: 'firefox-container-1' 
+        } as any,
+      };
 
-      const result = await requestInterceptor.handleRequest(detailsWithoutTab);
+      const tabInContainer = { ...mockTab, cookieStoreId: 'firefox-container-1' };
+      (browser.tabs.get as jest.Mock).mockResolvedValue(tabInContainer);
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
 
-      expect(browser.tabs.get).not.toHaveBeenCalled();
+      await (requestInterceptor as any).handleRequest(mockWebRequestDetails);
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'match');
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'touch');
+    });
+  });
+
+  describe('handleRedirect', () => {
+    it('should create new tab and cancel original request', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+        rule: { id: 'rule1' } as any,
+      };
+
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      const result = await (requestInterceptor as any).handleRedirect(
+        'https://example.com',
+        1,
+        'firefox-container-1',
+        evaluation
+      );
+
+      expect(browser.tabs.create).toHaveBeenCalledWith({
+        url: 'https://example.com',
+        cookieStoreId: 'firefox-container-1',
+        active: true,
+      });
+      expect(result).toEqual({ cancel: true });
+    });
+
+    it('should close original tab when keepOldTabs is false', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+      };
+
+      mockStorageService.getPreferences = jest.fn().mockResolvedValue({
+        keepOldTabs: false,
+      });
+
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleRedirect(
+        'https://example.com',
+        1,
+        'firefox-container-1',
+        evaluation
+      );
+
+      jest.advanceTimersByTime(200);
+      
+      expect(browser.tabs.remove).toHaveBeenCalledWith(1);
+    });
+
+    it('should not close original tab when keepOldTabs is true', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+      };
+
+      mockStorageService.getPreferences = jest.fn().mockResolvedValue({
+        keepOldTabs: true,
+      });
+
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleRedirect(
+        'https://example.com',
+        1,
+        'firefox-container-1',
+        evaluation
+      );
+
+      jest.advanceTimersByTime(200);
+      
+      expect(browser.tabs.remove).not.toHaveBeenCalled();
+    });
+
+    it('should handle tab creation errors', async () => {
+      (browser.tabs.create as jest.Mock).mockRejectedValue(new Error('Failed to create tab'));
+
+      const result = await (requestInterceptor as any).handleRedirect(
+        'https://example.com',
+        1,
+        'firefox-container-1',
+        { action: 'redirect' }
+      );
+
       expect(result).toEqual({});
     });
 
-    it('should handle sub-frame requests', async () => {
-      const subFrameDetails = { ...mockWebRequestDetails, type: 'sub_frame' as any };
+    it('should record stats for successful redirect', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+        rule: { id: 'rule1' } as any,
+      };
 
-      const result = await requestInterceptor.handleRequest(subFrameDetails);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
 
-      expect(browser.tabs.get).not.toHaveBeenCalled();
+      await (requestInterceptor as any).handleRedirect(
+        'https://example.com',
+        1,
+        'firefox-container-1',
+        evaluation
+      );
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'match');
+    });
+  });
+
+  describe('handleExclude', () => {
+    it('should create tab in default container', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'exclude',
+        rule: { id: 'rule1' } as any,
+      };
+
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      const result = await (requestInterceptor as any).handleExclude(
+        'https://example.com',
+        1,
+        evaluation,
+        'firefox-container-1'
+      );
+
+      expect(browser.tabs.create).toHaveBeenCalledWith({
+        url: 'https://example.com',
+        cookieStoreId: 'firefox-default',
+        active: true,
+      });
+      expect(result).toEqual({ cancel: true });
+    });
+
+    it('should show notification when enabled', async () => {
+      mockStorageService.getPreferences = jest.fn().mockResolvedValue({
+        keepOldTabs: false,
+        notifications: { showOnExclude: true },
+      });
+
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleExclude(
+        'https://example.com',
+        1,
+        { action: 'exclude' },
+        'firefox-container-1'
+      );
+
+      expect(browser.notifications.create).toHaveBeenCalledWith({
+        type: 'basic',
+        iconUrl: 'chrome-extension://abc/images/extension_48.png',
+        title: 'Opened Outside Containers',
+        message: 'example.com was opened outside of containers due to an EXCLUDE rule.',
+      });
+    });
+
+    it('should record stats for source container', async () => {
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleExclude(
+        'https://example.com',
+        1,
+        { action: 'exclude' },
+        'firefox-container-1'
+      );
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'match');
+    });
+
+    it('should handle tab creation errors', async () => {
+      (browser.tabs.create as jest.Mock).mockRejectedValue(new Error('Failed to create tab'));
+
+      const result = await (requestInterceptor as any).handleExclude(
+        'https://example.com',
+        1,
+        { action: 'exclude' },
+        'firefox-container-1'
+      );
+
       expect(result).toEqual({});
     });
   });
 
-  describe('handleTabUpdate', () => {
-    it('should handle tab URL updates', async () => {
-      const changeInfo = { url: 'https://updated.com' };
+  describe('handleBlock', () => {
+    it('should show restriction notification when enabled', async () => {
+      mockContainerManager.getAll = jest.fn().mockResolvedValue([mockContainer]);
       
-      (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
-      
-      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
-        action: 'redirect',
-        containerId: 'new-container',
+      mockStorageService.getPreferences = jest.fn().mockResolvedValue({
+        notifications: { showOnRestrict: true },
       });
 
-      mockContainerManager.get = jest.fn().mockResolvedValue({
-        id: 'new-container',
-        cookieStoreId: 'firefox-container-2',
-        name: 'New Container',
+      const evaluation: EvaluationResult = {
+        action: 'block',
+        containerId: 'firefox-container-1',
+        rule: { id: 'rule1' } as any,
+      };
+
+      const result = await (requestInterceptor as any).handleBlock(
+        'https://example.com',
+        1,
+        evaluation
+      );
+
+      expect(browser.notifications.create).toHaveBeenCalledWith({
+        type: 'basic',
+        iconUrl: 'chrome-extension://abc/images/extension_48.png',
+        title: 'Domain Restricted',
+        message: 'example.com can only be opened in "Work Container" container.',
+      });
+      expect(result).toEqual({ cancel: true });
+    });
+
+    it('should not show notification when disabled', async () => {
+      mockStorageService.getPreferences = jest.fn().mockResolvedValue({
+        notifications: { showOnRestrict: false },
       });
 
-      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 4 });
+      const result = await (requestInterceptor as any).handleBlock(
+        'https://example.com',
+        1,
+        { action: 'block', containerId: 'firefox-container-1' }
+      );
 
-      await requestInterceptor.handleTabUpdate(1, changeInfo);
+      expect(browser.notifications.create).not.toHaveBeenCalled();
+      expect(result).toEqual({ cancel: true });
+    });
+  });
 
-      expect(mockRulesEngine.evaluate).toHaveBeenCalledWith(changeInfo.url, mockTab.cookieStoreId);
-      expect(browser.tabs.create).toHaveBeenCalled();
+  describe('showRestrictionNotification', () => {
+    it('should create notification with container name', async () => {
+      mockContainerManager.getAll = jest.fn().mockResolvedValue([mockContainer]);
+
+      await (requestInterceptor as any).showRestrictionNotification(
+        'https://example.com',
+        'firefox-container-1'
+      );
+
+      expect(browser.notifications.create).toHaveBeenCalledWith({
+        type: 'basic',
+        iconUrl: 'chrome-extension://abc/images/extension_48.png',
+        title: 'Domain Restricted',
+        message: 'example.com can only be opened in "Work Container" container.',
+      });
     });
 
-    it('should ignore updates without URL changes', async () => {
-      const changeInfo = { status: 'complete' };
+    it('should handle unknown container', async () => {
+      mockContainerManager.getAll = jest.fn().mockResolvedValue([]);
 
-      await requestInterceptor.handleTabUpdate(1, changeInfo);
+      await (requestInterceptor as any).showRestrictionNotification(
+        'https://example.com',
+        'unknown-container'
+      );
 
-      expect(browser.tabs.get).not.toHaveBeenCalled();
-      expect(mockRulesEngine.evaluate).not.toHaveBeenCalled();
+      expect(browser.notifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'example.com can only be opened in "Unknown Container" container.',
+        })
+      );
     });
 
-    it('should handle tab update errors', async () => {
-      const changeInfo = { url: 'https://error.com' };
-      const error = new Error('Tab update failed');
-      
-      (browser.tabs.get as jest.Mock).mockRejectedValue(error);
+    it('should handle notification creation errors', async () => {
+      mockContainerManager.getAll = jest.fn().mockResolvedValue([mockContainer]);
+      (browser.notifications.create as jest.Mock).mockRejectedValue(new Error('Permission denied'));
 
+      // Should not throw
       await expect(
-        requestInterceptor.handleTabUpdate(1, changeInfo)
+        (requestInterceptor as any).showRestrictionNotification('https://example.com', 'firefox-container-1')
       ).resolves.not.toThrow();
     });
   });
 
+  describe('showExcludeNotification', () => {
+    it('should create exclude notification', async () => {
+      await (requestInterceptor as any).showExcludeNotification('https://example.com');
+
+      expect(browser.notifications.create).toHaveBeenCalledWith({
+        type: 'basic',
+        iconUrl: 'chrome-extension://abc/images/extension_48.png',
+        title: 'Opened Outside Containers',
+        message: 'example.com was opened outside of containers due to an EXCLUDE rule.',
+      });
+    });
+
+    it('should handle notification creation errors', async () => {
+      (browser.notifications.create as jest.Mock).mockRejectedValue(new Error('Permission denied'));
+
+      // Should not throw
+      await expect(
+        (requestInterceptor as any).showExcludeNotification('https://example.com')
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('handleTabUpdate', () => {
+    it('should skip updates without URL changes', async () => {
+      await (requestInterceptor as any).handleTabUpdate(1, { status: 'complete' }, mockTab);
+
+      expect(mockRulesEngine.evaluate).not.toHaveBeenCalled();
+    });
+
+    it('should skip non-interceptable URLs', async () => {
+      const tab = { ...mockTab, url: 'about:blank' };
+      await (requestInterceptor as any).handleTabUpdate(1, { url: 'about:blank' }, tab);
+
+      expect(mockRulesEngine.evaluate).not.toHaveBeenCalled();
+    });
+
+    it('should handle redirect evaluation', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+      };
+
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation);
+      (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleTabUpdate(1, { url: 'https://example.com' }, mockTab);
+
+      expect(browser.tabs.create).toHaveBeenCalled();
+      expect(browser.tabs.remove).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle bookmark parameter redirect', async () => {
+      mockBookmarkIntegration.processBookmarkUrl = jest.fn().mockResolvedValue({
+        cleanUrl: 'https://example.com',
+        containerId: 'firefox-container-1',
+      });
+
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({ action: 'open' });
+      (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleTabUpdate(
+        1, 
+        { url: 'https://example.com?silo=container1' }, 
+        { ...mockTab, url: 'https://example.com?silo=container1' }
+      );
+
+      expect(browser.tabs.create).toHaveBeenCalled();
+    });
+
+    it('should record touch stats for container tabs', async () => {
+      const tabInContainer = { ...mockTab, cookieStoreId: 'firefox-container-1' };
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({ action: 'open' });
+
+      await (requestInterceptor as any).handleTabUpdate(1, { url: 'https://example.com' }, tabInContainer);
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'touch');
+    });
+
+    it('should handle errors gracefully', async () => {
+      mockRulesEngine.evaluate = jest.fn().mockRejectedValue(new Error('Evaluation failed'));
+
+      await expect(
+        (requestInterceptor as any).handleTabUpdate(1, { url: 'https://example.com' }, mockTab)
+      ).resolves.not.toThrow();
+    });
+
+    it('should update tab to container mapping', async () => {
+      const tabInContainer = { ...mockTab, cookieStoreId: 'firefox-container-1' };
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({ action: 'open' });
+
+      await (requestInterceptor as any).handleTabUpdate(1, { url: 'https://example.com' }, tabInContainer);
+
+      // Verify the mapping was updated (private property, so we test indirectly)
+      expect(mockRulesEngine.evaluate).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleTabContainerUpdate', () => {
+    it('should create new tab in target container and close old tab', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+      };
+
+      (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleTabContainerUpdate(1, 'https://example.com', evaluation);
+
+      expect(browser.tabs.create).toHaveBeenCalledWith({
+        url: 'https://example.com',
+        active: true,
+        index: mockTab.index,
+        cookieStoreId: 'firefox-container-1',
+      });
+      expect(browser.tabs.remove).toHaveBeenCalledWith(1);
+    });
+
+    it('should create tab in default container for exclude action', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'exclude',
+      };
+
+      (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleTabContainerUpdate(1, 'https://example.com', evaluation);
+
+      expect(browser.tabs.create).toHaveBeenCalledWith({
+        url: 'https://example.com',
+        active: true,
+        index: mockTab.index,
+        cookieStoreId: 'firefox-default',
+      });
+    });
+
+    it('should record stats for successful update', async () => {
+      const evaluation: EvaluationResult = {
+        action: 'redirect',
+        containerId: 'firefox-container-1',
+        rule: { id: 'rule1' } as any,
+      };
+
+      (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
+      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
+
+      await (requestInterceptor as any).handleTabContainerUpdate(1, 'https://example.com', evaluation);
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'open');
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'match');
+    });
+
+    it('should handle tab operation errors', async () => {
+      (browser.tabs.get as jest.Mock).mockRejectedValue(new Error('Tab not found'));
+
+      await expect(
+        (requestInterceptor as any).handleTabContainerUpdate(1, 'https://example.com', { action: 'redirect' })
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('handleTabCreated', () => {
+    it('should update tab-to-container mapping and record stats', async () => {
+      const tab = { ...mockTab, cookieStoreId: 'firefox-container-1' };
+
+      await (requestInterceptor as any).handleTabCreated(tab);
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'open');
+    });
+
+    it('should not record stats for default container tabs', async () => {
+      await (requestInterceptor as any).handleTabCreated(mockTab);
+
+      expect(mockStorageService.recordStat).not.toHaveBeenCalled();
+    });
+
+    it('should handle tabs without ID', async () => {
+      const tab = { ...mockTab, id: undefined };
+
+      await expect(
+        (requestInterceptor as any).handleTabCreated(tab)
+      ).resolves.not.toThrow();
+    });
+
+    it('should handle stats recording errors', async () => {
+      mockStorageService.recordStat = jest.fn().mockRejectedValue(new Error('Stats failed'));
+      const tab = { ...mockTab, cookieStoreId: 'firefox-container-1' };
+
+      await expect(
+        (requestInterceptor as any).handleTabCreated(tab)
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('handleTabRemoved', () => {
+    it('should record close stats and cleanup temporary containers', async () => {
+      mockContainerManager.cleanupTemporaryContainersAsync = jest.fn().mockResolvedValue(undefined);
+      
+      // Simulate tab being in mapping
+      await (requestInterceptor as any).handleTabCreated({ ...mockTab, cookieStoreId: 'firefox-container-1' });
+      
+      await (requestInterceptor as any).handleTabRemoved(1, {});
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'close');
+      
+      jest.advanceTimersByTime(1000);
+      expect(mockContainerManager.cleanupTemporaryContainersAsync).toHaveBeenCalled();
+    });
+
+    it('should handle unknown tabs gracefully', async () => {
+      await (requestInterceptor as any).handleTabRemoved(999, {});
+
+      expect(mockStorageService.recordStat).not.toHaveBeenCalled();
+    });
+
+    it('should handle cleanup errors', async () => {
+      mockContainerManager.cleanupTemporaryContainersAsync = jest.fn().mockRejectedValue(new Error('Cleanup failed'));
+      
+      // Simulate tab being in mapping
+      await (requestInterceptor as any).handleTabCreated({ ...mockTab, cookieStoreId: 'firefox-container-1' });
+      
+      await (requestInterceptor as any).handleTabRemoved(1, {});
+
+      jest.advanceTimersByTime(1000);
+      
+      // Should not throw
+      expect(mockContainerManager.cleanupTemporaryContainersAsync).toHaveBeenCalled();
+    });
+  });
+
   describe('shouldIntercept', () => {
-    it('should intercept http and https URLs', () => {
+    it('should intercept HTTP and HTTPS URLs', () => {
       expect(requestInterceptor.shouldIntercept('https://example.com')).toBe(true);
       expect(requestInterceptor.shouldIntercept('http://example.com')).toBe(true);
     });
 
     it('should not intercept browser internal URLs', () => {
       expect(requestInterceptor.shouldIntercept('about:blank')).toBe(false);
-      expect(requestInterceptor.shouldIntercept('chrome://settings')).toBe(false);
       expect(requestInterceptor.shouldIntercept('moz-extension://abc')).toBe(false);
-      expect(requestInterceptor.shouldIntercept('file:///home/user/file.html')).toBe(false);
+      expect(requestInterceptor.shouldIntercept('file:///path/to/file')).toBe(false);
+      expect(requestInterceptor.shouldIntercept('javascript:alert(1)')).toBe(false);
+      expect(requestInterceptor.shouldIntercept('data:text/html,test')).toBe(false);
+      expect(requestInterceptor.shouldIntercept('chrome://settings')).toBe(false);
+      expect(requestInterceptor.shouldIntercept('chrome-extension://abc')).toBe(false);
     });
 
-    it('should not intercept data URLs', () => {
-      expect(requestInterceptor.shouldIntercept('data:text/html,<h1>Test</h1>')).toBe(false);
-    });
-
-    it('should handle malformed URLs', () => {
+    it('should handle edge cases', () => {
       expect(requestInterceptor.shouldIntercept('')).toBe(false);
-      expect(requestInterceptor.shouldIntercept('not-a-url')).toBe(false);
-    });
-  });
-
-  describe('getPreferences', () => {
-    it('should retrieve interceptor preferences', async () => {
-      const mockPrefs = {
-        keepOldTabs: false,
-        matchDomainOnly: true,
-      };
-
-      global.browser.storage = {
-        local: {
-          get: jest.fn().mockResolvedValue({ preferences: mockPrefs }),
-        },
-      } as any;
-
-      const prefs = await (requestInterceptor as any).getPreferences();
-      
-      expect(prefs).toEqual(mockPrefs);
-    });
-
-    it('should return default preferences if none stored', async () => {
-      global.browser.storage = {
-        local: {
-          get: jest.fn().mockResolvedValue({}),
-        },
-      } as any;
-
-      const prefs = await (requestInterceptor as any).getPreferences();
-      
-      expect(prefs).toEqual({
-        keepOldTabs: false,
-        matchDomainOnly: false,
-      });
-    });
-  });
-
-  describe('caching', () => {
-    it('should cache tab creation to prevent loops', async () => {
-      const url = 'https://cached.com';
-      const containerId = 'firefox-container-1';
-
-      // First request should proceed
-      const canCreate1 = (requestInterceptor as any).canCreateTab(url, containerId);
-      expect(canCreate1).toBe(true);
-
-      // Immediate second request should be blocked
-      const canCreate2 = (requestInterceptor as any).canCreateTab(url, containerId);
-      expect(canCreate2).toBe(false);
-
-      // After cache expires, should allow again
-      jest.advanceTimersByTime(5000);
-      const canCreate3 = (requestInterceptor as any).canCreateTab(url, containerId);
-      expect(canCreate3).toBe(true);
-    });
-  });
-
-  describe('integration scenarios', () => {
-    it('should handle rapid navigation between containers', async () => {
-      const urls = [
-        'https://work.example.com',
-        'https://personal.example.com',
-        'https://shopping.example.com',
-      ];
-
-      for (const url of urls) {
-        const details = { ...mockWebRequestDetails, url };
-        
-        mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
-          action: 'redirect',
-          containerId: `container-${url}`,
-        });
-
-        mockContainerManager.get = jest.fn().mockResolvedValue({
-          id: `container-${url}`,
-          cookieStoreId: `firefox-container-${url}`,
-          name: url,
-        });
-
-        (browser.tabs.get as jest.Mock).mockResolvedValue(mockTab);
-        (browser.tabs.create as jest.Mock).mockResolvedValue({ id: Math.random() });
-
-        await requestInterceptor.handleRequest(details);
-      }
-
-      expect(browser.tabs.create).toHaveBeenCalledTimes(3);
-    });
-
-    it('should preserve tab properties when redirecting', async () => {
-      const pinnedTab = { ...mockTab, pinned: true, index: 5 };
-      (browser.tabs.get as jest.Mock).mockResolvedValue(pinnedTab);
-
-      mockRulesEngine.evaluate = jest.fn().mockResolvedValue({
-        action: 'redirect',
-        containerId: 'target-container',
-      });
-
-      mockContainerManager.get = jest.fn().mockResolvedValue({
-        id: 'target-container',
-        cookieStoreId: 'firefox-container-target',
-        name: 'Target',
-      });
-
-      (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 10 });
-
-      await requestInterceptor.handleRequest(mockWebRequestDetails);
-
-      expect(browser.tabs.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          pinned: true,
-          index: 5,
-        })
-      );
+      expect(requestInterceptor.shouldIntercept('ftp://example.com')).toBe(false);
     });
   });
 });

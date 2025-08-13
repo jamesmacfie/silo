@@ -14,15 +14,15 @@ export class ContainerManager {
   }
 
   static getInstance(): ContainerManager {
-    if (!this.instance) {
-      this.instance = new ContainerManager();
+    if (!ContainerManager.instance) {
+      ContainerManager.instance = new ContainerManager();
     }
-    return this.instance;
+    return ContainerManager.instance;
   }
 
   private setupEventListeners(): void {
     // Listen for container changes from Firefox
-    if (browser.contextualIdentities && browser.contextualIdentities.onCreated) {
+    if (browser.contextualIdentities?.onCreated) {
       browser.contextualIdentities.onCreated.addListener(async (changeInfo) => {
         this.log.info('Firefox container created', changeInfo);
         await this.syncWithFirefox();
@@ -85,8 +85,8 @@ export class ContainerManager {
 
     const containers = await this.storage.getContainers();
     // Try to find by internal ID first, then by cookieStoreId for backwards compatibility
-    const container = containers.find((c: Container) => c.id === id) || 
-                     containers.find((c: Container) => c.cookieStoreId === id);
+    const container = containers.find((c: Container) => c.id === id) ||
+      containers.find((c: Container) => c.cookieStoreId === id);
 
     if (!container) {
       throw new Error(`Container not found: ${id}`);
@@ -123,8 +123,8 @@ export class ContainerManager {
 
     const containers = await this.storage.getContainers();
     // Try to find by internal ID first, then by cookieStoreId for backwards compatibility
-    const container = containers.find((c: Container) => c.id === id) || 
-                     containers.find((c: Container) => c.cookieStoreId === id);
+    const container = containers.find((c: Container) => c.id === id) ||
+      containers.find((c: Container) => c.cookieStoreId === id);
 
     if (!container) {
       throw new Error(`Container not found: ${id}`);
@@ -229,7 +229,7 @@ export class ContainerManager {
       return firefoxContainer.cookieStoreId;
     } catch (error) {
       // Container was deleted in Firefox, need to recreate or remove
-      this.log.warn('Firefox container no longer exists', { container });
+      this.log.warn('Firefox container no longer exists', { container, error });
 
       if (!container.temporary) {
         // Try to recreate the container

@@ -18,10 +18,10 @@ export class RequestInterceptor {
   private constructor() { }
 
   static getInstance(): RequestInterceptor {
-    if (!this.instance) {
-      this.instance = new RequestInterceptor();
+    if (!RequestInterceptor.instance) {
+      RequestInterceptor.instance = new RequestInterceptor();
     }
-    return this.instance;
+    return RequestInterceptor.instance;
   }
 
   async register(): Promise<void> {
@@ -34,7 +34,7 @@ export class RequestInterceptor {
       let webRequestRegistered = false;
 
       // Try to register webRequest listener if available
-      if (browser.webRequest && browser.webRequest.onBeforeRequest) {
+      if (browser.webRequest?.onBeforeRequest) {
         try {
           browser.webRequest.onBeforeRequest.addListener(
             this.handleRequest.bind(this),

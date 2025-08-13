@@ -33,11 +33,14 @@ export interface BookmarkAssociation {
   created: number;
 }
 
+import type { Container } from './container';
+import type { Rule } from './rule';
+
 export interface BackupData {
   version: string;
   timestamp: number;
-  containers: any[];
-  rules: any[];
+  containers: Container[];
+  rules: Rule[];
   preferences: Preferences;
   bookmarks: BookmarkAssociation[];
   categories?: string[];
@@ -54,8 +57,8 @@ export interface SyncState {
 export interface SyncConflict {
   type: 'container' | 'rule' | 'preference';
   id: string;
-  local: any;
-  remote: any;
+  local: unknown;
+  remote: unknown;
   timestamp: number;
 }
 

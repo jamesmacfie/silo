@@ -5,11 +5,9 @@ import type {
   Rule,
   Preferences,
   BackupData,
-  SyncState,
   ValidationResult,
-  BookmarkAssociation
+  BookmarkAssociation,
 } from '@/shared/types';
-import { MatchType, RuleType } from '@/shared/types';
 import { STORAGE_KEYS, DEFAULT_PREFERENCES } from '@/shared/constants';
 import type { ContainerStats, ContainerTemplate } from '@/shared/types';
 
@@ -56,10 +54,10 @@ export class StorageService {
   private constructor() { }
 
   static getInstance(): StorageService {
-    if (!this.instance) {
-      this.instance = new StorageService();
+    if (!StorageService.instance) {
+      StorageService.instance = new StorageService();
     }
-    return this.instance;
+    return StorageService.instance;
   }
 
   async migrate(): Promise<void> {
@@ -359,7 +357,7 @@ export class StorageService {
       if (rule.matchType === 'regex') {
         try {
           new RegExp(rule.pattern);
-        } catch (error) {
+        } catch {
           errors.push(`Invalid regex pattern at index ${index}: ${rule.pattern}`);
         }
       }
@@ -441,7 +439,7 @@ export class StorageService {
     // Check preference gate
     try {
       const prefs = await this.getPreferences();
-      if (prefs?.stats && (prefs.stats as any).enabled === false) {
+      if (prefs?.stats?.enabled === false) {
         return;
       }
     } catch {

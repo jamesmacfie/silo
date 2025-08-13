@@ -147,7 +147,7 @@ export function ContainerModal({ isOpen, mode, container, onClose, onSuccess }: 
                   onClick={() => setIcon(iconOption)}
                   title={iconOption}
                 >
-                  <span style={{ fontSize: '18px' }}>{iconToEmoji(iconOption)}</span>
+                  <span className="text-lg">{iconToEmoji(iconOption)}</span>
                 </button>
               ))}
             </div>

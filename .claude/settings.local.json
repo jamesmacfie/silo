@@ -18,7 +18,8 @@
       "Bash(npm test:*)",
       "Bash(npm run type-check:*)",
       "mcp__playwright__browser_navigate",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

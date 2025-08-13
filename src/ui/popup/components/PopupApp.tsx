@@ -208,7 +208,7 @@ export function PopupApp(_props: Props): JSX.Element {
 
       <div id="contextInfo" className="context">
         Tab: <b><span>{currentHost}</span></b>
-        <span style={{ marginLeft: 8 }}>Current: <b><span>{currentContainerName}</span></b></span>
+        <span className="ml-2">Current: <b><span>{currentContainerName}</span></b></span>
       </div>
 
       <label htmlFor="containerSelect">Container</label>
@@ -223,8 +223,8 @@ export function PopupApp(_props: Props): JSX.Element {
         ))}
       </select>
 
-      <div className="row" style={{ marginTop: 8 }}>
-        <button className="btn" style={{ flex: 1 }} type="button" onClick={() => { openInSelectedContainer(); return; }}>
+      <div className="row mt-2">
+        <button className="btn flex-1" type="button" onClick={() => { openInSelectedContainer(); return; }}>
           Open in container…
         </button>
         <button className="ghost small" title="Add a rule for the current domain" type="button" onClick={() => { quickAddCurrentDomain(); return; }}>

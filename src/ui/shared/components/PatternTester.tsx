@@ -1,6 +1,6 @@
 import React from 'react';
 import { MatchType } from '@/shared/types';
-import { validatePattern, getPatternExamples, suggestMatchType, type ValidationResult } from '@/shared/utils/patternValidator';
+import { validatePattern, getPatternExamples, suggestMatchType } from '@/shared/utils/patternValidator';
 import { useRuleActions } from '../hooks/useRules';
 
 interface Props {
@@ -11,12 +11,12 @@ interface Props {
   className?: string;
 }
 
-export function PatternTester({ 
-  pattern, 
-  matchType, 
-  onPatternChange, 
+export function PatternTester({
+  pattern,
+  matchType,
+  onPatternChange,
   onMatchTypeChange,
-  className = '', 
+  className = '',
 }: Props): JSX.Element {
   const { testPattern } = useRuleActions();
   const [testUrl, setTestUrl] = React.useState('');
@@ -24,8 +24,8 @@ export function PatternTester({
   const [isTesting, setIsTesting] = React.useState(false);
 
   // Validate pattern
-  const validation: ValidationResult = React.useMemo(() => {
-    if (!pattern) return { valid: true };
+  const validation = React.useMemo(() => {
+    if (!pattern) return { isValid: true };
     return validatePattern(pattern, matchType);
   }, [pattern, matchType]);
 
@@ -40,7 +40,7 @@ export function PatternTester({
   }, [pattern, matchType]);
 
   const handleTest = React.useCallback(async () => {
-    if (!testUrl || !pattern || !validation.valid) return;
+    if (!testUrl || !pattern || !validation.isValid) return;
 
     setIsTesting(true);
     try {
@@ -52,7 +52,7 @@ export function PatternTester({
     } finally {
       setIsTesting(false);
     }
-  }, [testUrl, pattern, matchType, validation.valid, testPattern]);
+  }, [testUrl, pattern, matchType, validation.isValid, testPattern]);
 
   const handleUseExample = React.useCallback((example: string) => {
     onPatternChange?.(example);
@@ -71,9 +71,10 @@ export function PatternTester({
         <div className="validation-message error">
           <strong>Error:</strong> {validation.error}
           {validation.suggestion && (
-            <button 
+            <button
+              type="button"
               className="suggestion-btn"
-              onClick={() => onPatternChange?.(validation.suggestion!)}
+              onClick={() => onPatternChange?.(validation.suggestion)}
             >
               Use: {validation.suggestion}
             </button>
@@ -91,7 +92,7 @@ export function PatternTester({
       {suggestedMatchType && (
         <div className="validation-message suggestion">
           <strong>Suggestion:</strong> This pattern looks like it should use {suggestedMatchType} matching.
-          <button className="suggestion-btn" onClick={handleUseSuggestion}>
+          <button type="button" className="suggestion-btn" onClick={handleUseSuggestion}>
             Switch to {suggestedMatchType}
           </button>
         </div>
@@ -109,9 +110,10 @@ export function PatternTester({
             onChange={(e) => setTestUrl(e.target.value)}
           />
           <button
+            type="button"
             className="test-btn"
             onClick={handleTest}
-            disabled={!testUrl || !pattern || !validation.valid || isTesting}
+            disabled={!testUrl || !pattern || !validation.isValid || isTesting}
           >
             {isTesting ? 'Testing...' : 'Test'}
           </button>
@@ -129,9 +131,10 @@ export function PatternTester({
         <div className="examples-section">
           <h4>Examples for {matchType} patterns:</h4>
           <div className="examples-list">
-            {examples.map((example, index) => (
+            {examples.map((example) => (
               <button
-                key={index}
+                type="button"
+                key={example}
                 className="example-btn"
                 onClick={() => handleUseExample(example)}
                 title="Click to use this pattern"

@@ -40,12 +40,14 @@ export interface CSVExportOptions {
 /**
  * Parse CSV content into rules
  */
-export function parseCSV(content: string, containers: Container[]): CSVImportResult {
-  const lines = content.split('\n').map(line => line.trim());
+export function parseCSV(content: string, containers: Container[], options?: { createMissingContainers?: boolean, preserveMetadata?: boolean, source?: string }): CSVImportResult & { comments?: string[], containersToCreate?: string[] } {
+  const lines = content.split(/\r\n|\r|\n/).map(line => line.trim());
   const rules: CreateRuleRequest[] = [];
   const missingContainers = new Set<string>();
   const errors: CSVError[] = [];
   const warnings: CSVWarning[] = [];
+  const comments: string[] = [];
+  const containersToCreate: string[] = [];
   let skipped = 0;
 
   const containerMap = new Map<string, Container>();
@@ -58,7 +60,12 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
     const lineNum = i + 1;
 
     // Skip empty lines and comments
-    if (!line || line.startsWith('#')) {
+    if (!line) {
+      skipped++;
+      continue;
+    }
+    if (line.startsWith('#')) {
+      comments.push(line);
       skipped++;
       continue;
     }
@@ -66,7 +73,11 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
     try {
       const parsed = parseCSVLine(line);
       if (!parsed) {
-        skipped++;
+        errors.push({
+          line: lineNum,
+          message: `Minimum 2 fields required (pattern, container), got: ${line}`,
+          data: line,
+        });
         continue;
       }
 
@@ -80,8 +91,18 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
         continue;
       }
 
-      // Validate container name
-      if (!parsed.containerName) {
+      // Validate pattern format
+      if (parsed.pattern.includes('[') && !parsed.pattern.includes(']')) {
+        errors.push({
+          line: lineNum,
+          message: `Invalid domain pattern: ${parsed.pattern}`,
+          data: line,
+        });
+        continue;
+      }
+
+      // Validate container name (unless exclude rule)
+      if (!parsed.containerName && (!parsed.ruleType || parsed.ruleType.toLowerCase() !== 'exclude')) {
         errors.push({
           line: lineNum,
           message: 'Container name is required',
@@ -94,11 +115,15 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
       const container = containerMap.get(parsed.containerName.toLowerCase());
       if (!container) {
         missingContainers.add(parsed.containerName);
-        warnings.push({
-          line: lineNum,
-          message: `Container "${parsed.containerName}" does not exist`,
-          data: line,
-        });
+        if (options?.createMissingContainers) {
+          containersToCreate.push(parsed.containerName);
+        } else {
+          warnings.push({
+            line: lineNum,
+            message: `Container "${parsed.containerName}" does not exist`,
+            data: line,
+          });
+        }
       }
 
       // Parse match type
@@ -144,7 +169,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
         enabled: parsed.enabled !== false,
         metadata: {
           description: parsed.description,
-          source: 'import',
+          source: (options?.source as 'user' | 'bookmark' | 'import') || 'import',
         },
       };
 
@@ -165,6 +190,8 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
     errors,
     warnings,
     skipped,
+    comments,
+    containersToCreate,
   };
 }
 
@@ -181,7 +208,14 @@ function parseCSVLine(line: string): CSVRule | null {
     const char = line[i];
 
     if (char === '"') {
-      inQuotes = !inQuotes;
+      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+        // Escaped quote - add single quote to current field
+        current += '"';
+        i++; // Skip the next quote
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+      }
     } else if (char === ',' && !inQuotes) {
       fields.push(current.trim());
       current = '';
@@ -191,7 +225,7 @@ function parseCSVLine(line: string): CSVRule | null {
   }
   fields.push(current.trim());
 
-  // Remove quotes from fields
+  // Remove outer quotes from fields
   const cleanFields = fields.map(field => {
     if (field.startsWith('"') && field.endsWith('"')) {
       return field.slice(1, -1);
@@ -323,7 +357,17 @@ export function validateCSVRow(fields: string[], containers: Container[]): CSVVa
 
   // Validate pattern
   if (!pattern || pattern.trim() === '') {
-    return { isValid: false, error: 'Pattern cannot be empty' };
+    return { isValid: false, error: 'Domain cannot be empty' };
+  }
+
+  // Validate pattern format for domain patterns  
+  if (matchType === 'domain') {
+    if (pattern.startsWith('http://') || pattern.startsWith('https://') || pattern.startsWith('ftp://') || pattern.startsWith('javascript:')) {
+      return { isValid: false, error: 'Invalid domain pattern' };
+    }
+    if (pattern.includes('[') && !pattern.includes(']')) {
+      return { isValid: false, error: 'Invalid domain pattern' };
+    }
   }
 
   // Validate container (unless it's an exclude rule)
@@ -346,7 +390,7 @@ export function validateCSVRow(fields: string[], containers: Container[]): CSVVa
 
   // Validate priority
   const priority = parseInt(priorityStr, 10);
-  if (isNaN(priority) || priority < 1 || priority > 100) {
+  if (Number.isNaN(priority) || priority < 1 || priority > 100) {
     return { isValid: false, error: `Priority must be a number between 1 and 100, got "${priorityStr}"` };
   }
 

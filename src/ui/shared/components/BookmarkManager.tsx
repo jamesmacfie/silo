@@ -4,7 +4,7 @@ import type { Container, BookmarkAssociation } from '@/shared/types';
 import { useBookmarkAssociations, useBookmarkActions, useBookmarksTree } from '../hooks/useBookmarks';
 
 interface Props {
-  containers: Container[];
+  containers?: Container[];
 }
 
 interface BookmarkWithAssociation extends browser.Bookmarks.BookmarkTreeNode {
@@ -12,9 +12,9 @@ interface BookmarkWithAssociation extends browser.Bookmarks.BookmarkTreeNode {
   containerName?: string;
 }
 
-export function BookmarkManager({ containers }: Props): JSX.Element {
-  const { data: associations = [], isLoading: associationsLoading } = useBookmarkAssociations();
-  const { data: bookmarksTree = [], isLoading: treeLoading } = useBookmarksTree();
+export function BookmarkManager({ containers = [] }: Props): JSX.Element {
+  const { data: associations = [], isLoading: associationsLoading, error: associationsError } = useBookmarkAssociations();
+  const { data: bookmarksTree = [], isLoading: treeLoading, error: treeError } = useBookmarksTree();
   const { addAssociation, removeAssociation } = useBookmarkActions();
   const [_expandedFolders, _setExpandedFolders] = React.useState<Set<string>>(new Set());
   const [selectedContainer, setSelectedContainer] = React.useState<string>('');
@@ -28,7 +28,7 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
       for (const node of nodes) {
         if (node.url) {
           const association = associations.find(a => a.bookmarkId === node.id);
-          const container = association ? containers.find(c => c.cookieStoreId === association.containerId) : undefined;
+          const container = association ? containers?.find(c => c.cookieStoreId === association.containerId) : undefined;
 
           bookmarks.push({
             ...node,
@@ -111,6 +111,19 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
     return <div className="bookmark-manager loading">Loading bookmarks...</div>;
   }
 
+  if (associationsError || treeError) {
+    return (
+      <div className="bookmark-manager error">
+        <div className="error-message">
+          <h3>Error loading bookmarks</h3>
+          <p>
+            {associationsError?.message || treeError?.message || 'An unexpected error occurred'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const associatedCount = filteredBookmarks.filter(b => b.association).length;
   const totalCount = filteredBookmarks.length;
 
@@ -131,6 +144,7 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
           placeholder="Filter bookmarks..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
+          aria-label="Search bookmarks"
         />
 
         <div className="bulk-controls">
@@ -138,9 +152,10 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
             className="container-select"
             value={selectedContainer}
             onChange={(e) => setSelectedContainer(e.target.value)}
+            aria-label="Filter by container"
           >
             <option value="">Select Container</option>
-            {containers.map(container => (
+            {containers?.map(container => (
               <option key={container.cookieStoreId} value={container.cookieStoreId}>
                 {container.name}
               </option>
@@ -148,9 +163,11 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
           </select>
 
           <button
+            type="button"
             className="bulk-assign-btn"
             onClick={handleBulkAssign}
             disabled={!selectedContainer || filteredBookmarks.filter(b => !b.association).length === 0}
+            data-testid="bulk-associate-button"
           >
             Bulk Assign ({filteredBookmarks.filter(b => !b.association).length})
           </button>
@@ -189,6 +206,7 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
               <div className="bookmark-actions">
                 {bookmark.association ? (
                   <button
+                    type="button"
                     className="remove-btn"
                     onClick={() => handleRemoveAssociation(bookmark)}
                     title="Remove association"
@@ -197,10 +215,12 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
                   </button>
                 ) : (
                   <button
+                    type="button"
                     className="assign-btn"
                     onClick={() => handleAssignContainer(bookmark)}
                     disabled={!selectedContainer}
                     title="Assign to selected container"
+                    data-testid="associate-button"
                   >
                     Assign
                   </button>

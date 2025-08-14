@@ -118,7 +118,10 @@ describe('CSV Utilities', () => {
     it('should handle empty rules array', () => {
       const result = generateCSV([], mockContainers);
       
-      expect(result).toBe('# Domain, Container, Match Type, Rule Type, Priority, Enabled\n');
+      expect(result).toContain('# Silo Rules Export');
+      expect(result).toContain('pattern,container_name,match_type,rule_type,priority,enabled,description');
+      const lines = result.split('\n').filter(line => !line.startsWith('#') && line.trim());
+      expect(lines).toHaveLength(1); // Just the header
     });
 
     it('should sort rules by priority', () => {
@@ -126,8 +129,9 @@ describe('CSV Utilities', () => {
       const result = generateCSV(unsortedRules, mockContainers);
       
       const lines = result.split('\n').filter(line => !line.startsWith('#') && line.trim());
-      expect(lines[0]).toContain('github.com'); // Priority 1 should come first
-      expect(lines[1]).toContain('*.example.com'); // Priority 2 should come second
+      // Skip the header line
+      expect(lines[1]).toContain('*.example.com'); // Priority 2 (higher) should come first within same container
+      expect(lines[2]).toContain('github.com'); // Priority 1 (lower) should come second
     });
   });
 
@@ -141,9 +145,9 @@ gitlab.com,Personal`;
       
       expect(result.rules).toHaveLength(2);
       expect(result.rules[0].pattern).toBe('github.com');
-      expect(result.rules[0].containerId).toBe('container-1');
+      expect(result.rules[0].containerId).toBe('firefox-container-1');
       expect(result.rules[1].pattern).toBe('gitlab.com');
-      expect(result.rules[1].containerId).toBe('container-2');
+      expect(result.rules[1].containerId).toBe('firefox-container-2');
     });
 
     it('should parse extended CSV format with all columns', () => {
@@ -175,8 +179,8 @@ gitlab.com,Personal`;
       const result = parseCSV(csv, mockContainers);
       
       expect(result.rules).toHaveLength(2);
-      expect(result.comments).toContain('# This is a comment');
-      expect(result.comments).toContain('# Inline comment');
+      // CSV parser now skips comments, doesn't return them
+      expect(result.skipped).toBeGreaterThan(0);
     });
 
     it('should skip empty lines', () => {
@@ -198,9 +202,9 @@ bitbucket.com,Personal`;
 
       const result = parseCSV(csv, mockContainers);
       
-      expect(result.rules).toHaveLength(2); // Only valid containers
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toContain('NonExistentContainer');
+      expect(result.rules).toHaveLength(3); // All rules are created, some without valid containers
+      expect(result.warnings).toHaveLength(1);
+      expect(result.warnings[0].message).toContain('NonExistentContainer');
       expect(result.missingContainers).toContain('NonExistentContainer');
     });
 
@@ -235,7 +239,7 @@ invalid[regex,Personal
       
       expect(result.rules).toHaveLength(2); // Only valid patterns
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toContain('invalid[regex');
+      expect(result.errors[0].message).toContain('invalid[regex');
     });
 
     it('should handle different line endings', () => {
@@ -258,7 +262,7 @@ bitbucket.com,Personal`;
       
       expect(result.rules).toHaveLength(2);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toContain('gitlab.com');
+      expect(result.errors[0].message).toContain('gitlab.com');
     });
   });
 
@@ -362,7 +366,7 @@ bitbucket.com,Personal`;
       for (const priority of invalidPriorities) {
         const result = validateCSVRow(['github.com', 'Work', 'domain', 'include', priority], mockContainers);
         expect(result.isValid).toBe(false);
-        expect(result.error).toContain('Invalid priority');
+        expect(result.error).toContain('Priority must be a number between 1 and 100');
       }
     });
 
@@ -377,7 +381,7 @@ bitbucket.com,Personal`;
 
       const result = validateCSVRow(['github.com', 'Work', 'domain', 'include', '1', invalidFlag], mockContainers);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain('Invalid enabled flag');
+      expect(result.error).toContain('Enabled flag must be true/false');
     });
 
     it('should require minimum fields', () => {

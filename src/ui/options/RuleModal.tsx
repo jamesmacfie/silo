@@ -67,14 +67,14 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
   }, [isOpen, mode, rule, containers]);
 
   const validation = React.useMemo(() => {
-    if (!pattern) return { valid: false, error: 'Pattern is required' };
+    if (!pattern) return { isValid: false, error: 'Pattern is required' };
     return validatePattern(pattern, matchType);
   }, [pattern, matchType]);
 
   const handleSave = React.useCallback(async () => {
     // For EXCLUDE rules, containerId is not required
     const isContainerRequired = ruleType !== RuleType.EXCLUDE;
-    if (!validation.valid || !pattern.trim() || (isContainerRequired && !containerId)) return;
+    if (!validation.isValid || !pattern.trim() || (isContainerRequired && !containerId)) return;
 
     setSaving(true);
     try {
@@ -116,28 +116,27 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
     } finally {
       setSaving(false);
     }
-  }, [pattern, matchType, ruleType, containerId, priority, enabled, description, validation.valid, mode, rule, onSuccess, onClose]);
+  }, [pattern, matchType, ruleType, containerId, priority, enabled, description, validation.isValid, mode, rule, onSuccess, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="modalRoot open">
-      <div className="backdrop" onClick={onClose} />
+      <div className="backdrop" onClick={onClose} onKeyDown={onClose} onKeyUp={onClose} />
       <div className="modal large">
         <div className="modalHeader">
           <div className="title">{mode === 'create' ? 'New Rule' : 'Edit Rule'}</div>
-          <button className="btn ghost" onClick={onClose}>Close</button>
+          <button type="button" className="btn ghost" onClick={onClose}>Close</button>
         </div>
         <div className="modalBody">
           <div className="formRow">
-            <label className="label">Pattern</label>
+            <label htmlFor="pattern" className="label">Pattern</label>
             <input
-              className={`input ${!validation.valid ? 'error' : ''}`}
+              className={`input ${!validation.isValid ? 'error' : ''}`}
               type="text"
               placeholder="e.g. example.com or *.google.com"
               value={pattern}
               onChange={(e) => setPattern(e.target.value)}
-              autoFocus
             />
             {validation.error && (
               <div className="errorText">{validation.error}</div>
@@ -148,8 +147,9 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           </div>
 
           <div className="formRow">
-            <label className="label">Match Type</label>
+            <label htmlFor="matchType" className="label">Match Type</label>
             <select
+              id="matchType"
               className="input"
               value={matchType}
               onChange={(e) => setMatchType(e.target.value as MatchType)}
@@ -161,7 +161,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           </div>
 
           <div className="formRow">
-            <label className="label">Rule Type</label>
+            <label htmlFor="ruleType" className="label">Rule Type</label>
             <div className="radioGroup">
               {RULE_TYPE_OPTIONS.map(option => (
                 <label key={option.value} className="radioLabel">
@@ -183,7 +183,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
 
           {ruleType !== RuleType.EXCLUDE && (
             <div className="formRow">
-              <label className="label">Container</label>
+              <label htmlFor="container" className="label">Container</label>
               <select
                 className="input"
                 value={containerId}
@@ -199,7 +199,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           )}
 
           <div className="formRow">
-            <label className="label">Priority ({priority})</label>
+            <label htmlFor="priority" className="label">Priority ({priority})</label>
             <input
               type="range"
               className="slider"
@@ -212,7 +212,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           </div>
 
           <div className="formRow">
-            <label className="label">Description (optional)</label>
+            <label htmlFor="description" className="label">Description (optional)</label>
             <input
               className="input"
               type="text"
@@ -241,13 +241,14 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           />
         </div>
         <div className="modalFooter">
-          <button className="btn ghost" onClick={onClose} disabled={saving}>
+          <button type="button" className="btn ghost" onClick={onClose} disabled={saving}>
             Cancel
           </button>
           <button
+            type="button"
             className="btn"
             onClick={handleSave}
-            disabled={saving || !validation.valid || !pattern.trim() || (ruleType !== RuleType.EXCLUDE && !containerId)}
+            disabled={saving || !validation.isValid || !pattern.trim() || (ruleType !== RuleType.EXCLUDE && !containerId)}
           >
             {saving ? 'Saving...' : 'Save Rule'}
           </button>

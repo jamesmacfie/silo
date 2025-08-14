@@ -5,7 +5,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 interface LogEntry {
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: unknown;
   timestamp: number;
   context?: string;
 }
@@ -46,7 +46,7 @@ class Logger {
     }
   }
 
-  debug(message: string, data?: any, context?: string): void {
+  debug(message: string, data?: unknown, context?: string): void {
     if (!this.shouldLog('debug')) return;
     
     const entry: LogEntry = {
@@ -64,7 +64,7 @@ class Logger {
     }
   }
 
-  info(message: string, data?: any, context?: string): void {
+  info(message: string, data?: unknown, context?: string): void {
     if (!this.shouldLog('info')) return;
     
     const entry: LogEntry = {
@@ -79,7 +79,7 @@ class Logger {
     console.info(this.formatMessage('info', message, context), data);
   }
 
-  warn(message: string, data?: any, context?: string): void {
+  warn(message: string, data?: unknown, context?: string): void {
     if (!this.shouldLog('warn')) return;
     
     const entry: LogEntry = {
@@ -94,7 +94,7 @@ class Logger {
     console.warn(this.formatMessage('warn', message, context), data);
   }
 
-  error(message: string, data?: any, context?: string): void {
+  error(message: string, data?: unknown, context?: string): void {
     const entry: LogEntry = {
       level: 'error',
       message,
@@ -122,10 +122,10 @@ class Logger {
   // Create a logger with context
   withContext(context: string) {
     return {
-      debug: (message: string, data?: any) => this.debug(message, data, context),
-      info: (message: string, data?: any) => this.info(message, data, context),
-      warn: (message: string, data?: any) => this.warn(message, data, context),
-      error: (message: string, data?: any) => this.error(message, data, context),
+      debug: (message: string, data?: unknown) => this.debug(message, data, context),
+      info: (message: string, data?: unknown) => this.info(message, data, context),
+      warn: (message: string, data?: unknown) => this.warn(message, data, context),
+      error: (message: string, data?: unknown) => this.error(message, data, context),
     };
   }
 

@@ -86,7 +86,7 @@ export class RulesEngine {
     this.log.debug('Rules loaded', {
       totalRules: allRules.length,
       enabledRules: enabledRules.length,
-      rules: enabledRules.map(r => ({ id: r.id, pattern: r.pattern, type: r.ruleType, matchType: r.matchType, containerId: r.containerId }))
+      rules: enabledRules.map(r => ({ id: r.id, pattern: r.pattern, type: r.ruleType, matchType: r.matchType, containerId: r.containerId })),
     });
 
     const lastModified = enabledRules.length > 0 ? Math.max(...enabledRules.map(r => r.modified || 0)) : 0;
@@ -107,7 +107,7 @@ export class RulesEngine {
       url,
       currentContainer,
       result,
-      duration: `${duration.toFixed(2)}ms`
+      duration: `${duration.toFixed(2)}ms`,
     });
 
     // Cache the result
@@ -120,7 +120,7 @@ export class RulesEngine {
 
     // Find matching rules (we'll apply type precedence explicitly)
     const matchingRules = enabledRules.filter(rule =>
-      this.matcher.match(url, rule.pattern, rule.matchType)
+      this.matcher.match(url, rule.pattern, rule.matchType),
     );
 
     if (matchingRules.length === 0) {

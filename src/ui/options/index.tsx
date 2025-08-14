@@ -13,7 +13,7 @@ import { useRules, useRuleActions } from '@/ui/shared/hooks/useRules';
 import { ContainerModal } from '@/ui/options/ContainerModal';
 import { RuleModal } from '@/ui/options/RuleModal';
 import type { CSVImportResult } from '@/shared/utils/csv';
-import type { Rule, Container } from '@/shared/types';
+import type { Rule } from '@/shared/types';
 
 interface ContainerLite {
   id: string;
@@ -129,7 +129,7 @@ function ContainersPage(): JSX.Element {
     try {
       await browser.runtime.sendMessage({
         type: 'DELETE_CONTAINER',
-        payload: { id: container.cookieStoreId }
+        payload: { id: container.cookieStoreId },
       });
       await refresh();
     } catch (e: unknown) {
@@ -262,7 +262,7 @@ function RulesPage(): JSX.Element {
       filtered = rules.filter(rule =>
         rule.pattern.toLowerCase().includes(lowerFilter) ||
         rule.metadata.description?.toLowerCase().includes(lowerFilter) ||
-        containers.find(c => c.cookieStoreId === rule.containerId)?.name.toLowerCase().includes(lowerFilter)
+        containers.find(c => c.cookieStoreId === rule.containerId)?.name.toLowerCase().includes(lowerFilter),
       );
     }
 
@@ -367,7 +367,7 @@ function RulesPage(): JSX.Element {
                 created: c.created || Date.now(),
                 modified: c.modified || Date.now(),
                 temporary: c.temporary || false,
-                syncEnabled: c.syncEnabled || false
+                syncEnabled: c.syncEnabled || false,
               }))}
               onToggleEnabled={handleToggleEnabled}
               onDelete={handleDeleteRule}
@@ -450,7 +450,7 @@ function BookmarksPage(): JSX.Element {
         created: c.created || Date.now(),
         modified: c.modified || Date.now(),
         temporary: c.temporary || false,
-        syncEnabled: c.syncEnabled || false
+        syncEnabled: c.syncEnabled || false,
       }))} />
     </div>
   );
@@ -464,7 +464,7 @@ function SettingsPage(): JSX.Element {
     try {
       const response = await browser.runtime.sendMessage({
         type: 'TEST_INTERCEPTOR',
-        payload: { url: testUrl }
+        payload: { url: testUrl },
       });
       setTestResult(JSON.stringify(response, null, 2));
     } catch (error) {

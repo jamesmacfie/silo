@@ -202,14 +202,14 @@ export class ContainerManager {
       // Find containers that exist in our storage but not in Firefox
       const orphanedContainers = ourContainers.filter(ourContainer =>
         !firefoxContainers.find(ffContainer =>
-          ffContainer.cookieStoreId === ourContainer.cookieStoreId
-        )
+          ffContainer.cookieStoreId === ourContainer.cookieStoreId,
+        ),
       );
 
       // Remove orphaned containers
       if (orphanedContainers.length > 0) {
         const validContainers = ourContainers.filter(c =>
-          !orphanedContainers.includes(c)
+          !orphanedContainers.includes(c),
         );
         await this.storage.setContainers(validContainers);
         this.log.info('Removed orphaned containers',

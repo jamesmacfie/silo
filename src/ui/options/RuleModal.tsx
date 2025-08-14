@@ -88,7 +88,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
         metadata: {
           description: description.trim() || undefined,
           source: 'user' as const,
-        }
+        },
       };
 
       if (mode === 'create') {
@@ -100,14 +100,14 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
       } else if (mode === 'edit' && rule) {
         const response = await browser.runtime.sendMessage({
           type: 'UPDATE_RULE',
-          payload: { 
-            id: rule.id, 
-            updates: ruleData 
+          payload: {
+            id: rule.id,
+            updates: ruleData,
           },
         });
         if (!response?.success) throw new Error(response?.error || 'Failed to update rule');
       }
-      
+
       onSuccess();
       onClose();
     } catch (e: unknown) {
@@ -131,9 +131,9 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
         <div className="modalBody">
           <div className="formRow">
             <label className="label">Pattern</label>
-            <input 
+            <input
               className={`input ${!validation.valid ? 'error' : ''}`}
-              type="text" 
+              type="text"
               placeholder="e.g. example.com or *.google.com"
               value={pattern}
               onChange={(e) => setPattern(e.target.value)}
@@ -149,7 +149,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
 
           <div className="formRow">
             <label className="label">Match Type</label>
-            <select 
+            <select
               className="input"
               value={matchType}
               onChange={(e) => setMatchType(e.target.value as MatchType)}
@@ -184,7 +184,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           {ruleType !== RuleType.EXCLUDE && (
             <div className="formRow">
               <label className="label">Container</label>
-              <select 
+              <select
                 className="input"
                 value={containerId}
                 onChange={(e) => setContainerId(e.target.value)}
@@ -213,9 +213,9 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
 
           <div className="formRow">
             <label className="label">Description (optional)</label>
-            <input 
+            <input
               className="input"
-              type="text" 
+              type="text"
               placeholder="What does this rule do?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -244,9 +244,9 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
           <button className="btn ghost" onClick={onClose} disabled={saving}>
             Cancel
           </button>
-          <button 
-            className="btn" 
-            onClick={handleSave} 
+          <button
+            className="btn"
+            onClick={handleSave}
             disabled={saving || !validation.valid || !pattern.trim() || (ruleType !== RuleType.EXCLUDE && !containerId)}
           >
             {saving ? 'Saving...' : 'Save Rule'}

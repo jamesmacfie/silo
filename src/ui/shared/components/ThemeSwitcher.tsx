@@ -42,7 +42,7 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
         {[
           { value: 'auto', label: 'Auto', icon: '🌓', description: 'Match system preference' },
           { value: 'light', label: 'Light', icon: '☀️', description: 'Light theme' },
-          { value: 'dark', label: 'Dark', icon: '🌙', description: 'Dark theme' }
+          { value: 'dark', label: 'Dark', icon: '🌙', description: 'Dark theme' },
         ].map((option) => (
           <label key={option.value} className={`theme-option ${theme === option.value ? 'selected' : ''}`}>
             <input

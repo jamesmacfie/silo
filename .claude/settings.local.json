@@ -21,7 +21,8 @@
       "Bash(find:*)",
       "Bash(yarn test:*)",
       "Bash(npm run lint)",
-      "Bash(pkill:*)"
+      "Bash(npm run lint)",
+      "Bash(npm run lint:*)"
     ],
     "deny": []
   }

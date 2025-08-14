@@ -8,7 +8,7 @@ export function useBookmarkAssociations() {
     queryKey: ['bookmarkAssociations'],
     queryFn: async (): Promise<BookmarkAssociation[]> => {
       const response = await browser.runtime.sendMessage({
-        type: MESSAGE_TYPES.GET_BOOKMARK_ASSOCIATIONS
+        type: MESSAGE_TYPES.GET_BOOKMARK_ASSOCIATIONS,
       });
 
       if (!response?.success) {
@@ -31,7 +31,7 @@ export function useBookmarkActions() {
   const addAssociation = async (bookmarkId: string, containerId: string, url: string, autoOpen = true) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.ADD_BOOKMARK_ASSOCIATION,
-      payload: { bookmarkId, containerId, url, autoOpen }
+      payload: { bookmarkId, containerId, url, autoOpen },
     });
 
     if (!response?.success) {
@@ -44,7 +44,7 @@ export function useBookmarkActions() {
   const removeAssociation = async (bookmarkId: string) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.REMOVE_BOOKMARK_ASSOCIATION,
-      payload: { bookmarkId }
+      payload: { bookmarkId },
     });
 
     if (!response?.success) {
@@ -57,7 +57,7 @@ export function useBookmarkActions() {
   const processBookmarkUrl = async (url: string) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.PROCESS_BOOKMARK_URL,
-      payload: { url }
+      payload: { url },
     });
 
     if (!response?.success) {
@@ -71,7 +71,7 @@ export function useBookmarkActions() {
     addAssociation,
     removeAssociation,
     processBookmarkUrl,
-    invalidateBookmarks
+    invalidateBookmarks,
   };
 }
 

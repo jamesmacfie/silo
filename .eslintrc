@@ -1,28 +1,47 @@
 {
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 2020,
     "sourceType": "module",
     "ecmaFeatures": {
-      "experimentalObjectRestSpread": true
-    }
+      "jsx": true
+    },
+    "project": "./tsconfig.json"
   },
   "extends": [
     "eslint:recommended"
   ],
+  "plugins": [
+    "@typescript-eslint",
+    "react",
+    "react-hooks"
+  ],
   "rules": {
-    "semi": 2,
-    "quotes": [2, "single"],
-    "eqeqeq": 2,
-    "comma-dangle": [2, "always-multiline"]
+    "semi": ["error", "always"],
+    "quotes": ["error", "single"],
+    "eqeqeq": "error",
+    "comma-dangle": ["error", "always-multiline"],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "react/jsx-uses-react": "off",
+    "react/react-in-jsx-scope": "off",
+    "no-undef": "off"
   },
   "env": {
-    "es6": true,
+    "es2020": true,
     "browser": true,
     "node": true,
     "jest": true
   },
-  "parser": "@babel/eslint-parser",
   "globals": {
-    "browser": true
+    "browser": "readonly"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   }
 }

@@ -85,7 +85,7 @@ export function ContainerModal({ isOpen, mode, container, onClose, onSuccess }: 
           type: 'UPDATE_CONTAINER',
           payload: { 
             id: container.cookieStoreId, 
-            updates: { name: name.trim(), color, icon } 
+            updates: { name: name.trim(), color, icon }, 
           },
         });
       }

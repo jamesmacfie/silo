@@ -82,7 +82,7 @@ export class BookmarkIntegration {
           associations.map(async (a) => ({
             ...a,
             containerId: (await this.resolveToCookieStoreId(a.containerId)) || a.containerId,
-          }))
+          })),
         );
         await this.storage.setBookmarkAssociations(resolved);
         this.log.info('Synced bookmark associations from bookmarks tree', { count: associations.length });

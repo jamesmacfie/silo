@@ -8,7 +8,7 @@ export function useRules() {
     queryKey: ['rules'],
     queryFn: async (): Promise<Rule[]> => {
       const response = await browser.runtime.sendMessage({
-        type: MESSAGE_TYPES.GET_RULES
+        type: MESSAGE_TYPES.GET_RULES,
       });
 
       if (!response?.success) {
@@ -31,7 +31,7 @@ export function useRuleActions() {
   const createRule = async (rule: Partial<Rule>) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.CREATE_RULE,
-      payload: rule
+      payload: rule,
     });
 
     if (!response?.success) {
@@ -45,7 +45,7 @@ export function useRuleActions() {
   const updateRule = async (id: string, updates: Partial<Rule>) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.UPDATE_RULE,
-      payload: { id, updates }
+      payload: { id, updates },
     });
 
     if (!response?.success) {
@@ -58,7 +58,7 @@ export function useRuleActions() {
   const deleteRule = async (id: string) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.DELETE_RULE,
-      payload: { id }
+      payload: { id },
     });
 
     if (!response?.success) {
@@ -71,7 +71,7 @@ export function useRuleActions() {
   const testPattern = async (url: string, pattern: string, matchType: string) => {
     const response = await browser.runtime.sendMessage({
       type: MESSAGE_TYPES.TEST_PATTERN,
-      payload: { url, pattern, matchType }
+      payload: { url, pattern, matchType },
     });
 
     if (!response?.success) {
@@ -86,6 +86,6 @@ export function useRuleActions() {
     updateRule,
     deleteRule,
     testPattern,
-    invalidateRules
+    invalidateRules,
   };
 }

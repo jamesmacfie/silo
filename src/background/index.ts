@@ -15,7 +15,7 @@ console.log('🔧 Browser APIs available:', {
   webRequest: !!browser.webRequest,
   contextualIdentities: !!browser.contextualIdentities,
   tabs: !!browser.tabs,
-  storage: !!browser.storage
+  storage: !!browser.storage,
 });
 
 async function initialize(): Promise<void> {

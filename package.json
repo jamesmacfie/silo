@@ -25,7 +25,8 @@
     "test:e2e": "playwright test",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "check": "npm run type-check && npm run lint"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",

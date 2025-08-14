@@ -16,7 +16,7 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
   const { data: associations = [], isLoading: associationsLoading } = useBookmarkAssociations();
   const { data: bookmarksTree = [], isLoading: treeLoading } = useBookmarksTree();
   const { addAssociation, removeAssociation } = useBookmarkActions();
-  const [expandedFolders, setExpandedFolders] = React.useState<Set<string>>(new Set());
+  const [_expandedFolders, _setExpandedFolders] = React.useState<Set<string>>(new Set());
   const [selectedContainer, setSelectedContainer] = React.useState<string>('');
   const [filter, setFilter] = React.useState('');
 
@@ -34,7 +34,7 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
             ...node,
             association,
             containerName: container?.name,
-            title: `${path.length > 0 ? path.join(' > ') + ' > ' : ''}${node.title || node.url}`
+            title: `${path.length > 0 ? path.join(' > ') + ' > ' : ''}${node.title || node.url}`,
           });
         }
 
@@ -57,7 +57,7 @@ export function BookmarkManager({ containers }: Props): JSX.Element {
       filtered = filtered.filter(bookmark =>
         (bookmark.title?.toLowerCase().includes(lowerFilter)) ||
         (bookmark.url?.toLowerCase().includes(lowerFilter)) ||
-        (bookmark.containerName?.toLowerCase().includes(lowerFilter))
+        (bookmark.containerName?.toLowerCase().includes(lowerFilter)),
       );
     }
 

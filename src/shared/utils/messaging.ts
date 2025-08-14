@@ -7,7 +7,7 @@ import type {
   EvaluationResult,
   CreateContainerRequest,
   CreateRuleRequest,
-  BackupData
+  BackupData,
 } from '@/shared/types';
 import { logger } from './logger';
 
@@ -134,7 +134,7 @@ export class MessagingService {
   async evaluateUrl(url: string, currentContainer?: string): Promise<EvaluationResult> {
     const response = await this.sendMessage<EvaluationResult>(
       MESSAGE_TYPES.EVALUATE_URL,
-      { url, currentContainer }
+      { url, currentContainer },
     );
     return response.data!;
   }
@@ -142,7 +142,7 @@ export class MessagingService {
   async testPattern(url: string, pattern: string, matchType: string): Promise<{ matches: boolean }> {
     const response = await this.sendMessage<{ matches: boolean }>(
       MESSAGE_TYPES.TEST_PATTERN,
-      { url, pattern, matchType }
+      { url, pattern, matchType },
     );
     return (response.data || { matches: false }) as { matches: boolean };
   }

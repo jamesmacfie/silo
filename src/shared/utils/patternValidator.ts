@@ -14,7 +14,7 @@ export function validatePattern(pattern: string, matchType: MatchType): Validati
   if (!pattern || pattern.trim().length === 0) {
     return {
       valid: false,
-      error: 'Pattern cannot be empty'
+      error: 'Pattern cannot be empty',
     };
   }
 
@@ -32,7 +32,7 @@ export function validatePattern(pattern: string, matchType: MatchType): Validati
     default:
       return {
         valid: false,
-        error: 'Unknown match type'
+        error: 'Unknown match type',
       };
   }
 }
@@ -45,7 +45,7 @@ function validateExactPattern(pattern: string): ValidationResult {
     return {
       valid: false,
       error: 'Pattern must be a valid URL for exact matching',
-      suggestion: 'Try: https://example.com/path'
+      suggestion: 'Try: https://example.com/path',
     };
   }
 }
@@ -56,14 +56,14 @@ function validateDomainPattern(pattern: string): ValidationResult {
     return {
       valid: false,
       error: 'Domain patterns should not include protocol',
-      suggestion: pattern.replace(/^https?:\/\//, '')
+      suggestion: pattern.replace(/^https?:\/\//, ''),
     };
   }
 
   if (pattern.includes('/') && !pattern.startsWith('*.')) {
     return {
       valid: true,
-      warning: 'Domain patterns typically don\'t include paths. Consider using exact or glob matching.'
+      warning: 'Domain patterns typically don\'t include paths. Consider using exact or glob matching.',
     };
   }
 
@@ -74,7 +74,7 @@ function validateDomainPattern(pattern: string): ValidationResult {
     return {
       valid: false,
       error: 'Invalid domain format',
-      suggestion: 'Try: example.com or *.example.com'
+      suggestion: 'Try: example.com or *.example.com',
     };
   }
 
@@ -83,7 +83,7 @@ function validateDomainPattern(pattern: string): ValidationResult {
     return {
       valid: false,
       error: 'Wildcards in domain patterns must be at the start (*.example.com)',
-      suggestion: pattern.startsWith('*') ? pattern : `*.${pattern}`
+      suggestion: pattern.startsWith('*') ? pattern : `*.${pattern}`,
     };
   }
 
@@ -98,7 +98,7 @@ function validateGlobPattern(pattern: string): ValidationResult {
   if (cleanPattern.includes('**') && !cleanPattern.includes('/')) {
     return {
       valid: true,
-      warning: '** is typically used with paths. For domains, consider using *'
+      warning: '** is typically used with paths. For domains, consider using *',
     };
   }
 
@@ -107,7 +107,7 @@ function validateGlobPattern(pattern: string): ValidationResult {
   if (regexChars.test(cleanPattern)) {
     return {
       valid: true,
-      warning: 'Pattern contains regex characters. Consider using regex match type if this is intentional.'
+      warning: 'Pattern contains regex characters. Consider using regex match type if this is intentional.',
     };
   }
 
@@ -115,7 +115,7 @@ function validateGlobPattern(pattern: string): ValidationResult {
   if (cleanPattern.includes('***')) {
     return {
       valid: false,
-      error: 'Invalid glob pattern: too many consecutive wildcards'
+      error: 'Invalid glob pattern: too many consecutive wildcards',
     };
   }
 
@@ -132,7 +132,7 @@ function validateRegexPattern(pattern: string): ValidationResult {
     return {
       valid: false,
       error: `Invalid regular expression: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      suggestion: 'Check your regex syntax'
+      suggestion: 'Check your regex syntax',
     };
   }
 
@@ -140,7 +140,7 @@ function validateRegexPattern(pattern: string): ValidationResult {
   if (cleanPattern.includes('.*.*') || cleanPattern.includes('.+.+')) {
     return {
       valid: true,
-      warning: 'Pattern may cause performance issues. Consider optimizing.'
+      warning: 'Pattern may cause performance issues. Consider optimizing.',
     };
   }
 
@@ -148,7 +148,7 @@ function validateRegexPattern(pattern: string): ValidationResult {
   if (cleanPattern === '.*' || cleanPattern === '.+' || cleanPattern === '.*?') {
     return {
       valid: true,
-      warning: 'Very broad pattern. This will match almost any URL.'
+      warning: 'Very broad pattern. This will match almost any URL.',
     };
   }
 
@@ -164,28 +164,28 @@ export function getPatternExamples(matchType: MatchType): string[] {
       return [
         'https://example.com',
         'https://github.com/user/repo',
-        'https://mail.google.com/mail/u/0/'
+        'https://mail.google.com/mail/u/0/',
       ];
     case MatchType.DOMAIN:
       return [
         'example.com',
         '*.google.com',
         'github.com',
-        'localhost:3000'
+        'localhost:3000',
       ];
     case MatchType.GLOB:
       return [
         '*.example.com/api/*',
         'github.com/*/settings',
         '*.google.com/*/admin',
-        'example.com/user/*/profile'
+        'example.com/user/*/profile',
       ];
     case MatchType.REGEX:
       return [
         'github\\.com/[^/]+/settings',
         '.*\\.dev$',
         '^https://.*\\.example\\.com',
-        'localhost:\\d+/admin'
+        'localhost:\\d+/admin',
       ];
     default:
       return [];

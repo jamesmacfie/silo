@@ -181,7 +181,7 @@ export class StorageService {
     containers[index] = {
       ...containers[index],
       ...updates,
-      modified: Date.now()
+      modified: Date.now(),
     };
 
     await this.setContainers(containers);
@@ -226,7 +226,7 @@ export class StorageService {
     rules[index] = {
       ...rules[index],
       ...updates,
-      modified: Date.now()
+      modified: Date.now(),
     };
 
     // Re-sort if priority changed

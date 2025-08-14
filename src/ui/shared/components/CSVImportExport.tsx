@@ -18,7 +18,7 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
   const [exportOptions, setExportOptions] = React.useState<CSVExportOptions>({
     includeComments: true,
     includeHeaders: true,
-    includeDisabled: true
+    includeDisabled: true,
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -30,7 +30,7 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
     try {
       const response = await browser.runtime.sendMessage({
         type: MESSAGE_TYPES.EXPORT_CSV,
-        payload: { options: exportOptions }
+        payload: { options: exportOptions },
       });
 
       if (response?.success) {
@@ -59,7 +59,7 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
   const handleDownloadTemplate = React.useCallback(async () => {
     try {
       const response = await browser.runtime.sendMessage({
-        type: MESSAGE_TYPES.GENERATE_CSV_TEMPLATE
+        type: MESSAGE_TYPES.GENERATE_CSV_TEMPLATE,
       });
 
       if (response?.success) {
@@ -83,26 +83,13 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
     }
   }, [onError]);
 
-  const handleFileSelect = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setCsvContent(content);
-      previewImport(content);
-    };
-    reader.readAsText(file);
-  }, []);
-
   const previewImport = React.useCallback(async (content: string) => {
     setImporting(true);
     try {
       // We don't actually import yet, just parse to show preview
       const response = await browser.runtime.sendMessage({
         type: MESSAGE_TYPES.IMPORT_CSV,
-        payload: { csvContent: content, createMissingContainers: false }
+        payload: { csvContent: content, createMissingContainers: false },
       });
 
       if (response?.success) {
@@ -118,6 +105,19 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
     }
   }, [onError]);
 
+  const handleFileSelect = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setCsvContent(content);
+      previewImport(content);
+    };
+    reader.readAsText(file);
+  }, [previewImport]);
+
   const handleConfirmImport = React.useCallback(async () => {
     if (!csvContent) return;
 
@@ -127,8 +127,8 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
         type: MESSAGE_TYPES.IMPORT_CSV,
         payload: {
           csvContent,
-          createMissingContainers: createMissing
-        }
+          createMissingContainers: createMissing,
+        },
       });
 
       if (response?.success) {

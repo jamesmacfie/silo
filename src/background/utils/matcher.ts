@@ -115,7 +115,7 @@ export class URLMatcher {
       return parsed.hostname;
     } catch {
       // Try to extract domain from incomplete URLs
-      const match = url.match(/^(?:https?:\/\/)?([^\/\?#]+)/i);
+      const match = url.match(/^(?:https?:\/\/)?([^/?#]+)/i);
       return match ? match[1] : url;
     }
   }

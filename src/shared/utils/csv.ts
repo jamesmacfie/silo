@@ -75,7 +75,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
         errors.push({
           line: lineNum,
           message: 'Pattern is required',
-          data: line
+          data: line,
         });
         continue;
       }
@@ -85,7 +85,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
         errors.push({
           line: lineNum,
           message: 'Container name is required',
-          data: line
+          data: line,
         });
         continue;
       }
@@ -97,7 +97,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
         warnings.push({
           line: lineNum,
           message: `Container "${parsed.containerName}" does not exist`,
-          data: line
+          data: line,
         });
       }
 
@@ -113,7 +113,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
           warnings.push({
             line: lineNum,
             message: `Unknown match type "${parsed.matchType}", using domain`,
-            data: line
+            data: line,
           });
         }
       }
@@ -129,7 +129,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
           warnings.push({
             line: lineNum,
             message: `Unknown rule type "${parsed.ruleType}", using include`,
-            data: line
+            data: line,
           });
         }
       }
@@ -144,8 +144,8 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
         enabled: parsed.enabled !== false,
         metadata: {
           description: parsed.description,
-          source: 'import'
-        }
+          source: 'import',
+        },
       };
 
       rules.push(rule);
@@ -154,7 +154,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
       errors.push({
         line: lineNum,
         message: error instanceof Error ? error.message : 'Parse error',
-        data: line
+        data: line,
       });
     }
   }
@@ -164,7 +164,7 @@ export function parseCSV(content: string, containers: Container[]): CSVImportRes
     missingContainers: Array.from(missingContainers),
     errors,
     warnings,
-    skipped
+    skipped,
   };
 }
 
@@ -210,7 +210,7 @@ function parseCSVLine(line: string): CSVRule | null {
     ruleType: cleanFields[3] || undefined,
     priority: cleanFields[4] ? parseInt(cleanFields[4], 10) : undefined,
     enabled: cleanFields[5] ? cleanFields[5].toLowerCase() !== 'false' : undefined,
-    description: cleanFields[6] || undefined
+    description: cleanFields[6] || undefined,
   };
 }
 
@@ -221,7 +221,7 @@ export function exportToCSV(rules: Rule[], containers: Container[], options: CSV
   const {
     includeComments = true,
     includeHeaders = true,
-    includeDisabled = true
+    includeDisabled = true,
   } = options;
 
   const lines: string[] = [];
@@ -276,7 +276,7 @@ export function exportToCSV(rules: Rule[], containers: Container[], options: CSV
       rule.ruleType,
       rule.priority.toString(),
       rule.enabled.toString(),
-      escapeCSVField(rule.metadata.description || '')
+      escapeCSVField(rule.metadata.description || ''),
     ];
 
     lines.push(fields.join(','));
@@ -367,8 +367,8 @@ export function validateCSVRow(fields: string[], containers: Container[]): CSVVa
     enabled,
     metadata: {
       description: description.trim() || undefined,
-      source: 'csv-import'
-    }
+      source: 'import',
+    },
   };
 
   return { isValid: true, rule };
@@ -394,7 +394,7 @@ export function generateCSVTemplate(): string {
     '*.google.com,Work,glob,include,1,true,Google services',
     '@.*\\.dev$,Development,regex,include,3,true,Development domains',
     'example.com/admin,Work,exact,restrict,10,true,Admin area restricted to Work',
-    'ads.example.com,,domain,exclude,5,true,Break out of container for ads'
+    'ads.example.com,,domain,exclude,5,true,Break out of container for ads',
   ];
 
   return lines.join('\n');

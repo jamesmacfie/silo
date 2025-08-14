@@ -35,7 +35,7 @@ export function ThemeProvider({ children }: Props): JSX.Element {
     const loadTheme = async () => {
       try {
         const response = await browser.runtime.sendMessage({
-          type: MESSAGE_TYPES.GET_PREFERENCES
+          type: MESSAGE_TYPES.GET_PREFERENCES,
         });
 
         if (response?.success) {
@@ -100,7 +100,7 @@ export function ThemeProvider({ children }: Props): JSX.Element {
     try {
       // Save to preferences
       const response = await browser.runtime.sendMessage({
-        type: MESSAGE_TYPES.GET_PREFERENCES
+        type: MESSAGE_TYPES.GET_PREFERENCES,
       });
 
       if (response?.success) {
@@ -109,8 +109,8 @@ export function ThemeProvider({ children }: Props): JSX.Element {
           type: MESSAGE_TYPES.UPDATE_PREFERENCES,
           payload: {
             ...preferences,
-            theme: newTheme
-          }
+            theme: newTheme,
+          },
         });
       }
     } catch (error) {
@@ -122,7 +122,7 @@ export function ThemeProvider({ children }: Props): JSX.Element {
     theme,
     resolvedTheme,
     setTheme,
-    loading
+    loading,
   };
 
   return (

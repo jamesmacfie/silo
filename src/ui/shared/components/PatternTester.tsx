@@ -16,7 +16,7 @@ export function PatternTester({
   matchType, 
   onPatternChange, 
   onMatchTypeChange,
-  className = '' 
+  className = '', 
 }: Props): JSX.Element {
   const { testPattern } = useRuleActions();
   const [testUrl, setTestUrl] = React.useState('');

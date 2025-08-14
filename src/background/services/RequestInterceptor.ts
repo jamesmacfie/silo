@@ -39,7 +39,7 @@ export class RequestInterceptor {
           browser.webRequest.onBeforeRequest.addListener(
             this.handleRequest.bind(this),
             { urls: ['<all_urls>'], types: ['main_frame'] },
-            ['blocking']
+            ['blocking'],
           );
           webRequestRegistered = true;
           console.log('✅ webRequest listener registered');
@@ -60,12 +60,12 @@ export class RequestInterceptor {
       this.log.info('Request interceptor registered', {
         webRequestAvailable: !!browser.webRequest,
         webRequestRegistered,
-        tabListenersRegistered: true
+        tabListenersRegistered: true,
       });
 
       console.log('✅ Request interceptor registered:', {
         webRequestRegistered,
-        tabListenersRegistered: true
+        tabListenersRegistered: true,
       });
 
     } catch (error) {
@@ -137,7 +137,7 @@ export class RequestInterceptor {
       this.log.debug('Request evaluation', {
         url: urlToEvaluate,
         currentContainer,
-        evaluation
+        evaluation,
       });
 
       switch (evaluation.action) {
@@ -187,7 +187,7 @@ export class RequestInterceptor {
     url: string,
     tabId: number,
     targetContainer: string,
-    evaluation: EvaluationResult
+    evaluation: EvaluationResult,
   ): Promise<browser.WebRequest.BlockingResponse> {
 
     try {
@@ -202,7 +202,7 @@ export class RequestInterceptor {
         url,
         targetContainer,
         newTabId: newTab.id,
-        rule: evaluation.rule?.id
+        rule: evaluation.rule?.id,
       });
 
       // stats: count rule match for target container
@@ -230,7 +230,7 @@ export class RequestInterceptor {
       this.log.error('Failed to redirect to container', {
         url,
         targetContainer,
-        error
+        error,
       });
       return {}; // Allow original request to proceed
     }
@@ -240,7 +240,7 @@ export class RequestInterceptor {
     url: string,
     tabId: number,
     evaluation: EvaluationResult,
-    sourceContainerId?: string
+    sourceContainerId?: string,
   ): Promise<browser.WebRequest.BlockingResponse> {
 
     try {
@@ -254,7 +254,7 @@ export class RequestInterceptor {
       this.log.info('Excluded from container', {
         url,
         newTabId: newTab.id,
-        rule: evaluation.rule?.id
+        rule: evaluation.rule?.id,
       });
 
       // stats: attribute match to the source container (being excluded from)
@@ -297,13 +297,13 @@ export class RequestInterceptor {
   private async handleBlock(
     url: string,
     _tabId: number,
-    evaluation: EvaluationResult
+    evaluation: EvaluationResult,
   ): Promise<browser.WebRequest.BlockingResponse> {
 
     this.log.warn('Blocked restricted URL', {
       url,
       requiredContainer: evaluation.containerId,
-      rule: evaluation.rule?.id
+      rule: evaluation.rule?.id,
     });
 
     // Show notification about restriction
@@ -353,7 +353,7 @@ export class RequestInterceptor {
   private async handleTabUpdate(
     tabId: number,
     changeInfo: browser.Tabs.OnUpdatedChangeInfoType,
-    tab: browser.Tabs.Tab
+    tab: browser.Tabs.Tab,
   ): Promise<void> {
 
     console.log('🔄 Tab update:', tabId, changeInfo, tab.url);
@@ -383,7 +383,7 @@ export class RequestInterceptor {
         tabId,
         url: tab.url,
         currentContainer,
-        evaluation
+        evaluation,
       });
 
       // Handle tab updates that require action
@@ -433,7 +433,7 @@ export class RequestInterceptor {
         url,
         oldTabId: tabId,
         newTabId: newTab.id,
-        targetContainer
+        targetContainer,
       });
 
       // stats events

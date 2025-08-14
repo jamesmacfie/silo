@@ -10,7 +10,7 @@ import {
   Plus, 
   Minus, 
   Lock, 
-  HelpCircle 
+  HelpCircle, 
 } from 'lucide-react';
 
 interface Props {

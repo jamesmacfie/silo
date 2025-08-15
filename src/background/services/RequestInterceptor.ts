@@ -15,15 +15,6 @@ export class RequestInterceptor {
   private log = logger.withContext('RequestInterceptor');
   private tabToContainer = new Map<number, string>();
 
-  private constructor() { }
-
-  static getInstance(): RequestInterceptor {
-    if (!RequestInterceptor.instance) {
-      RequestInterceptor.instance = new RequestInterceptor();
-    }
-    return RequestInterceptor.instance;
-  }
-
   async register(): Promise<void> {
     if (this.isRegistered) {
       this.log.warn('Request interceptor already registered');
@@ -496,5 +487,5 @@ export class RequestInterceptor {
     return url.startsWith('http://') || url.startsWith('https://');
   }
 }
-
-export default RequestInterceptor.getInstance();
+export const requestInterceptor = new RequestInterceptor();
+export default requestInterceptor;

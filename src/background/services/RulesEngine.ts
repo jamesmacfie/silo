@@ -1,32 +1,12 @@
 import type { Rule, CreateRuleRequest, EvaluationResult, ValidationResult } from '@/shared/types';
 import { RuleType, MatchType } from '@/shared/types';
 import storageService from './StorageService';
-import urlMatcher from '../utils/matcher';
+import * as matcher from '../utils/matcher';
 import { logger } from '@/shared/utils/logger';
 
-interface RuleCache {
-  url: string;
-  result: EvaluationResult;
-  timestamp: number;
-}
-
 export class RulesEngine {
-  private static instance: RulesEngine | null = null;
   private storage = storageService;
-  private matcher = urlMatcher;
-  private cache = new Map<string, RuleCache>();
-  private readonly CACHE_TTL = 60000; // 1 minute
-  private readonly MAX_CACHE_SIZE = 1000;
   private log = logger.withContext('RulesEngine');
-
-  private constructor() { }
-
-  static getInstance(): RulesEngine {
-    if (!RulesEngine.instance) {
-      RulesEngine.instance = new RulesEngine();
-    }
-    return RulesEngine.instance;
-  }
 
   async addRule(request: CreateRuleRequest): Promise<Rule> {
     this.log.info('Adding rule', request);
@@ -52,7 +32,6 @@ export class RulesEngine {
     };
 
     await this.storage.addRule(rule);
-    this.invalidateCache();
 
     this.log.info('Rule added successfully', rule);
     return rule;
@@ -62,7 +41,6 @@ export class RulesEngine {
     this.log.info('Removing rule', { id });
 
     await this.storage.removeRule(id);
-    this.invalidateCache();
 
     this.log.info('Rule removed successfully', { id });
   }
@@ -71,7 +49,6 @@ export class RulesEngine {
     this.log.info('Updating rule', { id, updates });
 
     await this.storage.updateRule(id, updates);
-    this.invalidateCache();
 
     this.log.info('Rule updated successfully', { id });
   }
@@ -79,7 +56,7 @@ export class RulesEngine {
   async evaluate(url: string, currentContainer?: string): Promise<EvaluationResult> {
     this.log.debug('Starting rule evaluation', { url, currentContainer });
 
-    // Load rules to build a cache signature tied to rule changes
+    // Load rules
     const allRules = await this.storage.getRules();
     const enabledRules = allRules.filter(r => r.enabled);
 
@@ -88,16 +65,6 @@ export class RulesEngine {
       enabledRules: enabledRules.length,
       rules: enabledRules.map(r => ({ id: r.id, pattern: r.pattern, type: r.ruleType, matchType: r.matchType, containerId: r.containerId })),
     });
-
-    const lastModified = enabledRules.length > 0 ? Math.max(...enabledRules.map(r => r.modified || 0)) : 0;
-    const cacheKey = `${url}:${currentContainer || ''}:${lastModified}:${enabledRules.length}`;
-
-    // Check cache first (now rules-aware)
-    const cached = this.cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      this.log.debug('Returning cached result', { url, result: cached.result });
-      return cached.result;
-    }
 
     const startTime = performance.now();
     const result = await this.performEvaluation(url, currentContainer, enabledRules);
@@ -110,9 +77,6 @@ export class RulesEngine {
       duration: `${duration.toFixed(2)}ms`,
     });
 
-    // Cache the result
-    this.setCache(cacheKey, result);
-
     return result;
   }
 
@@ -120,7 +84,7 @@ export class RulesEngine {
 
     // Find matching rules (we'll apply type precedence explicitly)
     const matchingRules = enabledRules.filter(rule =>
-      this.matcher.match(url, rule.pattern, rule.matchType),
+      matcher.match(url, rule.pattern, rule.matchType),
     );
 
     if (matchingRules.length === 0) {
@@ -233,7 +197,6 @@ export class RulesEngine {
     }
 
     await this.storage.setRules(rules);
-    this.invalidateCache();
 
     this.log.info('Rules imported successfully');
   }
@@ -268,7 +231,7 @@ export class RulesEngine {
             }
             break;
           case MatchType.EXACT:
-            if (!this.matcher.isValid(rule.pattern) && !rule.pattern.startsWith('*')) {
+            if (!matcher.isValid(rule.pattern) && !rule.pattern.startsWith('*')) {
               warnings.push(`Rule ${index}: Exact pattern should be a valid URL`);
             }
             break;
@@ -319,51 +282,6 @@ export class RulesEngine {
   private generateRuleId(): string {
     return `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
-
-  private setCache(key: string, result: EvaluationResult): void {
-    // Remove oldest entries if cache is full
-    if (this.cache.size >= this.MAX_CACHE_SIZE) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
-    }
-
-    this.cache.set(key, {
-      url: key.split(':')[0],
-      result,
-      timestamp: Date.now(),
-    });
-  }
-
-  private invalidateCache(pattern?: string): void {
-    if (pattern) {
-      // Invalidate cache entries that might be affected by this pattern
-      for (const [key, cached] of this.cache.entries()) {
-        if (this.matcher.match(cached.url, pattern, MatchType.GLOB)) {
-          this.cache.delete(key);
-        }
-      }
-    } else {
-      // Clear entire cache
-      this.cache.clear();
-    }
-
-    this.log.debug('Cache invalidated', { pattern });
-  }
-
-  // Clean up expired cache entries
-  private cleanupCache(): void {
-    const now = Date.now();
-    for (const [key, cached] of this.cache.entries()) {
-      if (now - cached.timestamp > this.CACHE_TTL) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  // Start periodic cache cleanup
-  startCacheCleanup(): void {
-    setInterval(() => this.cleanupCache(), this.CACHE_TTL);
-  }
 }
-
-export default RulesEngine.getInstance();
+export const rulesEngine = new RulesEngine();
+export default rulesEngine;

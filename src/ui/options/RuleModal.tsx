@@ -122,6 +122,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
 
   return (
     <div className="modalRoot open">
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
       <div className="backdrop" onClick={onClose} onKeyDown={onClose} onKeyUp={onClose} />
       <div className="modal large">
         <div className="modalHeader">

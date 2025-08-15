@@ -60,22 +60,22 @@ describe('RequestInterceptor', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
+
     // Reset singleton instance
     (RequestInterceptor as any).instance = null;
-    
+
     // Setup mocks
     mockRulesEngine = rulesEngine as jest.Mocked<typeof rulesEngine>;
     mockContainerManager = containerManager as jest.Mocked<typeof containerManager>;
     mockStorageService = storageService as jest.Mocked<typeof storageService>;
     mockBookmarkIntegration = bookmarkIntegration as jest.Mocked<typeof bookmarkIntegration>;
-    
+
     // Default mock implementations
     mockBookmarkIntegration.processBookmarkUrl = jest.fn().mockResolvedValue({
       cleanUrl: mockWebRequestDetails.url,
       containerId: null,
     });
-    
+
     mockStorageService.getPreferences = jest.fn().mockResolvedValue({
       keepOldTabs: false,
       notifications: {
@@ -83,10 +83,10 @@ describe('RequestInterceptor', () => {
         showOnExclude: true,
       },
     });
-    
+
     mockStorageService.recordStat = jest.fn().mockResolvedValue(undefined);
-    
-    requestInterceptor = RequestInterceptor.getInstance();
+
+    requestInterceptor = new RequestInterceptor;
 
     // Mock browser APIs
     global.browser.webRequest = {
@@ -128,14 +128,6 @@ describe('RequestInterceptor', () => {
 
   afterEach(() => {
     jest.useRealTimers();
-  });
-
-  describe('getInstance', () => {
-    it('should return singleton instance', () => {
-      const instance1 = RequestInterceptor.getInstance();
-      const instance2 = RequestInterceptor.getInstance();
-      expect(instance1).toBe(instance2);
-    });
   });
 
   describe('register', () => {
@@ -352,10 +344,10 @@ describe('RequestInterceptor', () => {
     it('should record stats for matches', async () => {
       const evaluation: EvaluationResult = {
         action: 'open',
-        rule: { 
-          id: 'rule1', 
-          ruleType: RuleType.INCLUDE, 
-          containerId: 'firefox-container-1' 
+        rule: {
+          id: 'rule1',
+          ruleType: RuleType.INCLUDE,
+          containerId: 'firefox-container-1'
         } as any,
       };
 
@@ -415,7 +407,7 @@ describe('RequestInterceptor', () => {
       );
 
       jest.advanceTimersByTime(200);
-      
+
       expect(browser.tabs.remove).toHaveBeenCalledWith(1);
     });
 
@@ -439,7 +431,7 @@ describe('RequestInterceptor', () => {
       );
 
       jest.advanceTimersByTime(200);
-      
+
       expect(browser.tabs.remove).not.toHaveBeenCalled();
     });
 
@@ -553,7 +545,7 @@ describe('RequestInterceptor', () => {
   describe('handleBlock', () => {
     it('should show restriction notification when enabled', async () => {
       mockContainerManager.getAll = jest.fn().mockResolvedValue([mockContainer]);
-      
+
       mockStorageService.getPreferences = jest.fn().mockResolvedValue({
         notifications: { showOnRestrict: true },
       });
@@ -701,8 +693,8 @@ describe('RequestInterceptor', () => {
       (browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 });
 
       await (requestInterceptor as any).handleTabUpdate(
-        1, 
-        { url: 'https://example.com?silo=container1' }, 
+        1,
+        { url: 'https://example.com?silo=container1' },
         { ...mockTab, url: 'https://example.com?silo=container1' }
       );
 
@@ -837,14 +829,14 @@ describe('RequestInterceptor', () => {
   describe('handleTabRemoved', () => {
     it('should record close stats and cleanup temporary containers', async () => {
       mockContainerManager.cleanupTemporaryContainersAsync = jest.fn().mockResolvedValue(undefined);
-      
+
       // Simulate tab being in mapping
       await (requestInterceptor as any).handleTabCreated({ ...mockTab, cookieStoreId: 'firefox-container-1' });
-      
+
       await (requestInterceptor as any).handleTabRemoved(1, {});
 
       expect(mockStorageService.recordStat).toHaveBeenCalledWith('firefox-container-1', 'close');
-      
+
       jest.advanceTimersByTime(1000);
       expect(mockContainerManager.cleanupTemporaryContainersAsync).toHaveBeenCalled();
     });
@@ -857,14 +849,14 @@ describe('RequestInterceptor', () => {
 
     it('should handle cleanup errors', async () => {
       mockContainerManager.cleanupTemporaryContainersAsync = jest.fn().mockRejectedValue(new Error('Cleanup failed'));
-      
+
       // Simulate tab being in mapping
       await (requestInterceptor as any).handleTabCreated({ ...mockTab, cookieStoreId: 'firefox-container-1' });
-      
+
       await (requestInterceptor as any).handleTabRemoved(1, {});
 
       jest.advanceTimersByTime(1000);
-      
+
       // Should not throw
       expect(mockContainerManager.cleanupTemporaryContainersAsync).toHaveBeenCalled();
     });

@@ -7,6 +7,7 @@ import requestInterceptor from './services/RequestInterceptor';
 import { logger } from '@/shared/utils/logger';
 import bookmarkIntegration from './services/BookmarkIntegration';
 import type { Message } from '@/shared/utils/messaging';
+import * as matcher from './utils/matcher';
 import type { CreateContainerRequest, CreateRuleRequest, BackupData, Rule } from '@/shared/types';
 import { parseCSV, exportToCSV, generateCSVTemplate, type CSVExportOptions } from '@/shared/utils/csv';
 
@@ -53,11 +54,7 @@ async function initialize(): Promise<void> {
     logger.error('Failed to register request interceptor', error);
   }
 
-  try {
-    rulesEngine.startCacheCleanup();
-  } catch (error: unknown) {
-    logger.warn('Failed to start cache cleanup (continuing)', error);
-  }
+
 
   try {
     // Best-effort sync of existing bookmarks that include container hints
@@ -173,9 +170,7 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
 
       case MESSAGE_TYPES.TEST_PATTERN: {
         const { url, pattern, matchType } = (message.payload || {}) as { url: string; pattern: string; matchType: import('@/shared/types').MatchType };
-        // Use the URLMatcher singleton directly to avoid private access
-        const { URLMatcher } = await import('@/background/utils/matcher');
-        const ok = URLMatcher.getInstance().match(url, pattern, matchType);
+        const ok = matcher.match(url, pattern, matchType);
         return { success: true, data: { matches: ok } };
       }
 

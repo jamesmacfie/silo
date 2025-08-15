@@ -26,7 +26,7 @@ export function validatePattern(pattern: string, matchType: MatchType): PatternV
   }
 
   const trimmedPattern = pattern.trim();
-  
+
   // Check for control characters that should not be trimmed away
   if (pattern !== trimmedPattern && /[\n\r\t\0]/.test(pattern)) {
     return {
@@ -40,27 +40,29 @@ export function validatePattern(pattern: string, matchType: MatchType): PatternV
       return validateExactPattern(trimmedPattern);
     case MatchType.DOMAIN:
       return validateDomainPattern(trimmedPattern);
-    case MatchType.GLOB:
+    case MatchType.GLOB: {
       const globValid = validateGlobPattern(trimmedPattern);
       return { isValid: globValid, error: globValid ? undefined : 'Invalid glob pattern' };
-    case MatchType.REGEX:
+    }
+    case MatchType.REGEX: {
       // Check if it's potentially dangerous FIRST
       const dangerousPatterns = ['(a+)+', '(a|a)*', '(a*)*', '([a-zA-Z]+)*', 'a{1000000}', '(?:(?:(?:(?:a)))))'];
-      const isDangerous = dangerousPatterns.some(p => trimmedPattern.includes(p)) || 
-                         trimmedPattern.includes('{999999999}') ||
-                         trimmedPattern.includes('{1000000}') ||
-                         trimmedPattern.includes('([a-zA-Z]+)*$') ||
-                         trimmedPattern.includes('(a|a)*b') ||
-                         (trimmedPattern.includes('(?:') && trimmedPattern.split('(?:').length > 5);
+      const isDangerous = dangerousPatterns.some(p => trimmedPattern.includes(p)) ||
+        trimmedPattern.includes('{999999999}') ||
+        trimmedPattern.includes('{1000000}') ||
+        trimmedPattern.includes('([a-zA-Z]+)*$') ||
+        trimmedPattern.includes('(a|a)*b') ||
+        (trimmedPattern.includes('(?:') && trimmedPattern.split('(?:').length > 5);
       if (isDangerous) {
         return { isValid: false, error: 'Pattern is potentially dangerous' };
       }
-      
+
       const regexValid = validateRegexPattern(trimmedPattern);
       if (!regexValid) {
         return { isValid: false, error: 'Invalid regex pattern' };
       }
       return { isValid: true };
+    }
     default:
       return {
         isValid: false,
@@ -99,7 +101,7 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
       suggestion: 'Enter a valid domain like example.com',
     };
   }
-  
+
   // Detect regex-like patterns early before other validations
   if (pattern.includes('[') || pattern.includes('(')) {
     return {
@@ -108,7 +110,7 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
       suggestion: 'Use regex match type for pattern matching',
     };
   }
-  
+
   // Check for dangerous patterns
   if (pattern.startsWith('javascript:') || pattern.startsWith('data:')) {
     return {
@@ -219,7 +221,7 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
   // Extract just the domain part (before any path)
   const domainPart = pattern.replace(/^\*\./, '').split('/')[0].split('?')[0].split('#')[0];
   const parts = domainPart.split('.');
-  
+
   // Check overall domain length (should be under 253 characters, but we'll be stricter for validation)
   if (domainPart.length > 100) {
     return {
@@ -228,7 +230,7 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
       suggestion: 'Use a shorter domain name',
     };
   }
-  
+
   for (const part of parts) {
     // Be stricter than DNS spec for practical validation
     if (part.length > 40) {
@@ -242,7 +244,7 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
 
   // Basic domain validation (with optional paths)
   const domainRegex = /^(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*([\/\?\#].*)?$/;
-  
+
   if (!domainRegex.test(pattern)) {
     return {
       isValid: false,
@@ -319,18 +321,18 @@ export function validateRegexPattern(pattern: string): boolean {
     /\(.+\*\)\*/,  // (a*)*
     /\(\[.+\]\+\)\*/,  // ([a-zA-Z]+)*
   ];
-  
+
   for (const dangerous of dangerousPatterns) {
     if (dangerous.test(cleanPattern)) {
       return false;
     }
   }
-  
+
   // More specific backtracking patterns
-  if (cleanPattern.includes('(a+)+') || 
-      cleanPattern.includes('(a|a)*') ||
-      cleanPattern.includes('(a*)*') ||
-      cleanPattern.includes('([a-zA-Z]+)*')) {
+  if (cleanPattern.includes('(a+)+') ||
+    cleanPattern.includes('(a|a)*') ||
+    cleanPattern.includes('(a*)*') ||
+    cleanPattern.includes('([a-zA-Z]+)*')) {
     return false;
   }
 
@@ -419,25 +421,25 @@ export function suggestMatchType(pattern: string): MatchType | null {
  */
 export function sanitizePattern(pattern: string): string {
   let sanitized = pattern.trim().toLowerCase();
-  
+
   // Remove protocol from domain patterns
   sanitized = sanitized.replace(/^https?:\/\//, '');
-  
+
   // Remove trailing slash
   if (sanitized.endsWith('/')) {
     sanitized = sanitized.slice(0, -1);
   }
-  
+
   // Convert Unicode to punycode if needed
   try {
-    if (/[^\x00-\x7F]/.test(sanitized)) {
+    if (/[^\u0020-\u007F]/.test(sanitized)) {
       const url = new URL(`http://${sanitized}`);
       sanitized = url.hostname;
     }
   } catch {
     // If URL parsing fails, keep original
   }
-  
+
   return sanitized;
 }
 
@@ -451,14 +453,14 @@ export function isValidDomain(domain: string): boolean {
   if (domain.startsWith('-') || domain.endsWith('-')) return false;
   if (domain.includes(' ')) return false;
   if (!domain.includes('.')) return false;
-  
+
   // Check for specific invalid patterns from tests
   const invalidDomains = ['com', '.com', 'example.', 'exam ple.com', 'example.c'];
   if (invalidDomains.includes(domain)) return false;
-  
+
   // Check domain length (should be reasonable)
   if (domain.length > 253) return false;
-  
+
   // Check label length (each part between dots should be <= 63 chars)
   const labels = domain.split('.');
   for (const label of labels) {
@@ -466,13 +468,13 @@ export function isValidDomain(domain: string): boolean {
     // Check for labels that are too long as mentioned in test
     if (label.startsWith('very-long-label-that-exceeds-sixty-three-characters-limit')) return false;
   }
-  
+
   // Reject TLDs that are too short (single character)
   const tld = labels[labels.length - 1];
   if (tld && tld.length === 1) return false;
-  
+
   // Check for internationalized domains (Unicode characters)
-  if (/[^\x00-\x7F]/.test(domain)) {
+  if (/[^\u0020-\u007F]/.test(domain)) {
     // Allow unicode domains for internationalization
     try {
       // Try to convert to punycode to validate
@@ -482,7 +484,7 @@ export function isValidDomain(domain: string): boolean {
       return false;
     }
   }
-  
+
   // Basic ASCII domain validation
   const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   return domainRegex.test(domain);

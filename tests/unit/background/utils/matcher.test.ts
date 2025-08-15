@@ -1,12 +1,7 @@
-import { URLMatcher } from '@/background/utils/matcher';
+import * as matcher from '@/background/utils/matcher';
 import { MatchType } from '@/shared/types';
 
 describe('URLMatcher', () => {
-  let matcher: URLMatcher;
-
-  beforeEach(() => {
-    matcher = URLMatcher.getInstance();
-  });
 
   describe('URL Parsing', () => {
     it('should parse valid URLs correctly', () => {
@@ -106,17 +101,17 @@ describe('URLMatcher', () => {
 
       it('should match all subdomain variants with wildcard pattern', () => {
         const pattern = '*.example.com';
-        
+
         // Base domain (new behavior)
         expect(matcher.match('https://example.com', pattern, MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://example.com/', pattern, MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://example.com/path', pattern, MatchType.DOMAIN)).toBe(true);
-        
+
         // Single level subdomains
         expect(matcher.match('https://www.example.com', pattern, MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://api.example.com', pattern, MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://blog.example.com', pattern, MatchType.DOMAIN)).toBe(true);
-        
+
         // Multi-level subdomains
         expect(matcher.match('https://api.v1.example.com', pattern, MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://secure.admin.example.com', pattern, MatchType.DOMAIN)).toBe(true);
@@ -124,7 +119,7 @@ describe('URLMatcher', () => {
 
       it('should not match unrelated domains with wildcard', () => {
         const pattern = '*.example.com';
-        
+
         expect(matcher.match('https://example.org', pattern, MatchType.DOMAIN)).toBe(false);
         expect(matcher.match('https://notexample.com', pattern, MatchType.DOMAIN)).toBe(false);
         expect(matcher.match('https://example.com.evil.com', pattern, MatchType.DOMAIN)).toBe(false);
@@ -136,13 +131,13 @@ describe('URLMatcher', () => {
         expect(matcher.match('https://heroku.com', '*.heroku.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://www.heroku.com', '*.heroku.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://dashboard.heroku.com', '*.heroku.com', MatchType.DOMAIN)).toBe(true);
-        
+
         // GitHub scenarios
         expect(matcher.match('https://github.com', '*.github.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://www.github.com', '*.github.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://api.github.com', '*.github.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://raw.githubusercontent.com', '*.github.com', MatchType.DOMAIN)).toBe(false);
-        
+
         // Google scenarios
         expect(matcher.match('https://google.com', '*.google.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://www.google.com', '*.google.com', MatchType.DOMAIN)).toBe(true);
@@ -162,7 +157,7 @@ describe('URLMatcher', () => {
         expect(matcher.match('https://heroku.com/admin', '*.heroku.com/admin', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://www.heroku.com/admin/users', '*.heroku.com/admin', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://api.heroku.com/admin', '*.heroku.com/admin', MatchType.DOMAIN)).toBe(true);
-        
+
         // Should not match different paths
         expect(matcher.match('https://heroku.com/public', '*.heroku.com/admin', MatchType.DOMAIN)).toBe(false);
         expect(matcher.match('https://www.heroku.com/public', '*.heroku.com/admin', MatchType.DOMAIN)).toBe(false);
@@ -217,7 +212,7 @@ describe('URLMatcher', () => {
         // Punycode domains
         expect(matcher.match('https://xn--nxasmq6b.com', '*.xn--nxasmq6b.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://www.xn--nxasmq6b.com', '*.xn--nxasmq6b.com', MatchType.DOMAIN)).toBe(true);
-        
+
         // Unicode domains (should work if browser supports them)
         expect(matcher.match('https://test.münchen.de', '*.münchen.de', MatchType.DOMAIN)).toBe(true);
       });
@@ -227,7 +222,7 @@ describe('URLMatcher', () => {
         expect(matcher.match('https://example.com', 'example.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://www.example.com', 'example.com', MatchType.DOMAIN)).toBe(true);
         expect(matcher.match('https://api.example.com', 'example.com', MatchType.DOMAIN)).toBe(true);
-        
+
         // These should still not match
         expect(matcher.match('https://example.org', 'example.com', MatchType.DOMAIN)).toBe(false);
         expect(matcher.match('https://notexample.com', 'example.com', MatchType.DOMAIN)).toBe(false);

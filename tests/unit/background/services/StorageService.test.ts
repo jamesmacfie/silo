@@ -51,10 +51,10 @@ describe('StorageService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset singleton instance
     (StorageService as any).instance = null;
-    
+
     // Setup default browser storage mocks
     global.browser.storage = {
       local: {
@@ -69,34 +69,26 @@ describe('StorageService', () => {
         remove: jest.fn(),
       },
     } as any;
-    
-    storageService = StorageService.getInstance();
-  });
 
-  describe('getInstance', () => {
-    it('should return singleton instance', () => {
-      const instance1 = StorageService.getInstance();
-      const instance2 = StorageService.getInstance();
-      expect(instance1).toBe(instance2);
-    });
+    storageService = new StorageService();
   });
 
   describe('Generic Storage Operations', () => {
     it('should get and set values', async () => {
       const testData = { foo: 'bar' };
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ testKey: testData });
-      
+
       const result = await storageService.get<typeof testData>('testKey');
       expect(result).toEqual(testData);
       expect(browser.storage.local.get).toHaveBeenCalledWith('testKey');
-      
+
       await storageService.set('testKey', testData);
       expect(browser.storage.local.set).toHaveBeenCalledWith({ testKey: testData });
     });
 
     it('should return null for missing keys', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({});
-      
+
       const result = await storageService.get('missingKey');
       expect(result).toBeNull();
     });
@@ -116,7 +108,7 @@ describe('StorageService', () => {
     it('should handle sync get operations', async () => {
       const testData = { synced: true };
       (browser.storage.sync.get as jest.Mock).mockResolvedValue({ syncKey: testData });
-      
+
       const result = await storageService.syncGet<typeof testData>('syncKey');
       expect(result).toEqual(testData);
       expect(browser.storage.sync.get).toHaveBeenCalledWith('syncKey');
@@ -124,21 +116,21 @@ describe('StorageService', () => {
 
     it('should return null for sync get failures', async () => {
       (browser.storage.sync.get as jest.Mock).mockRejectedValue(new Error('Sync not available'));
-      
+
       const result = await storageService.syncGet('syncKey');
       expect(result).toBeNull();
     });
 
     it('should handle sync set operations', async () => {
       const testData = { synced: true };
-      
+
       await storageService.syncSet('syncKey', testData);
       expect(browser.storage.sync.set).toHaveBeenCalledWith({ syncKey: testData });
     });
 
     it('should throw on sync set failures', async () => {
       (browser.storage.sync.set as jest.Mock).mockRejectedValue(new Error('Sync quota exceeded'));
-      
+
       await expect(storageService.syncSet('syncKey', {})).rejects.toThrow('Sync quota exceeded');
     });
 
@@ -149,7 +141,7 @@ describe('StorageService', () => {
 
     it('should not throw on sync remove failures', async () => {
       (browser.storage.sync.remove as jest.Mock).mockRejectedValue(new Error('Sync error'));
-      
+
       await expect(storageService.syncRemove('syncKey')).resolves.not.toThrow();
     });
   });
@@ -166,9 +158,9 @@ describe('StorageService', () => {
 
     it('should add containers', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.CONTAINERS]: [] });
-      
+
       await storageService.addContainer(mockContainer);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.CONTAINERS]: [mockContainer]
       });
@@ -176,7 +168,7 @@ describe('StorageService', () => {
 
     it('should set containers with validation', async () => {
       await storageService.setContainers([mockContainer]);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.CONTAINERS]: [mockContainer]
       });
@@ -184,13 +176,13 @@ describe('StorageService', () => {
 
     it('should reject invalid containers', async () => {
       const invalidContainer = { ...mockContainer, id: 123 as any }; // Invalid: number instead of string
-      
+
       await expect(storageService.setContainers([invalidContainer])).rejects.toThrow('Invalid containers');
     });
 
     it('should reject duplicate container IDs', async () => {
       const duplicate = { ...mockContainer };
-      
+
       await expect(storageService.setContainers([mockContainer, duplicate])).rejects.toThrow('Duplicate container ID');
     });
 
@@ -213,7 +205,7 @@ describe('StorageService', () => {
 
     it('should throw error when updating non-existent container', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.CONTAINERS]: [] });
-      
+
       await expect(storageService.updateContainer('non-existent', { name: 'Test' })).rejects.toThrow('Container not found: non-existent');
     });
 
@@ -242,9 +234,9 @@ describe('StorageService', () => {
 
     it('should add rules', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.RULES]: [] });
-      
+
       await storageService.addRule(mockRule);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.RULES]: [mockRule]
       });
@@ -252,7 +244,7 @@ describe('StorageService', () => {
 
     it('should set rules with validation', async () => {
       await storageService.setRules([mockRule]);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.RULES]: [mockRule]
       });
@@ -260,47 +252,47 @@ describe('StorageService', () => {
 
     it('should reject invalid rules', async () => {
       const invalidRule = { ...mockRule, pattern: 123 as any }; // Invalid: number instead of string
-      
+
       await expect(storageService.setRules([invalidRule])).rejects.toThrow('Invalid rules');
     });
 
     it('should reject duplicate rule IDs', async () => {
       const duplicate = { ...mockRule };
-      
+
       await expect(storageService.setRules([mockRule, duplicate])).rejects.toThrow('Duplicate rule ID');
     });
 
     it('should validate INCLUDE rules require containerId', async () => {
       const includeRule = { ...mockRule, ruleType: 'include' as const, containerId: undefined };
-      
+
       await expect(storageService.setRules([includeRule])).rejects.toThrow('Missing containerId');
     });
 
     it('should validate RESTRICT rules require containerId', async () => {
       const restrictRule = { ...mockRule, ruleType: 'restrict' as const, containerId: undefined };
-      
+
       await expect(storageService.setRules([restrictRule])).rejects.toThrow('Missing containerId');
     });
 
     it('should warn about containerId on EXCLUDE rules', async () => {
       const excludeRule = { ...mockRule, ruleType: 'exclude' as const, containerId: 'some-container' };
-      
+
       // Should not throw, but validation should warn (we test this indirectly)
       await expect(storageService.setRules([excludeRule])).resolves.not.toThrow();
     });
 
     it('should validate regex patterns', async () => {
       const regexRule = { ...mockRule, matchType: 'regex' as const, pattern: '(unclosed' };
-      
+
       await expect(storageService.setRules([regexRule])).rejects.toThrow('Invalid regex pattern');
     });
 
     it('should update rules', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.RULES]: [mockRule] });
-      
+
       const updates = { pattern: 'updated.com' };
       await storageService.updateRule(mockRule.id, updates);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.RULES]: [expect.objectContaining({
           ...mockRule,
@@ -314,9 +306,9 @@ describe('StorageService', () => {
       const rule1 = { ...mockRule, id: 'rule1', priority: 1 };
       const rule2 = { ...mockRule, id: 'rule2', priority: 5 };
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.RULES]: [rule1, rule2] });
-      
+
       await storageService.updateRule('rule1', { priority: 10 });
-      
+
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       const lastCall = calls[calls.length - 1][0];
       expect(lastCall[STORAGE_KEYS.RULES][0].id).toBe('rule1'); // Should be first due to higher priority
@@ -324,15 +316,15 @@ describe('StorageService', () => {
 
     it('should throw error when updating non-existent rule', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.RULES]: [] });
-      
+
       await expect(storageService.updateRule('non-existent', { priority: 5 })).rejects.toThrow('Rule not found: non-existent');
     });
 
     it('should remove rules', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.RULES]: [mockRule] });
-      
+
       await storageService.removeRule(mockRule.id);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.RULES]: []
       });
@@ -358,7 +350,7 @@ describe('StorageService', () => {
   describe('Preferences Operations', () => {
     it('should get preferences with defaults', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({});
-      
+
       const prefs = await storageService.getPreferences();
       expect(prefs).toEqual(DEFAULT_PREFERENCES);
     });
@@ -366,7 +358,7 @@ describe('StorageService', () => {
     it('should merge saved preferences with defaults', async () => {
       const savedPrefs = { theme: 'dark' as const };
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.PREFERENCES]: savedPrefs });
-      
+
       const prefs = await storageService.getPreferences();
       expect(prefs).toEqual({ ...DEFAULT_PREFERENCES, ...savedPrefs });
     });
@@ -374,10 +366,10 @@ describe('StorageService', () => {
     it('should update preferences', async () => {
       const currentPrefs = { ...DEFAULT_PREFERENCES, theme: 'light' as const };
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.PREFERENCES]: currentPrefs });
-      
+
       const updates = { theme: 'dark' as const, keepOldTabs: true };
       await storageService.updatePreferences(updates);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.PREFERENCES]: { ...currentPrefs, ...updates }
       });
@@ -387,21 +379,21 @@ describe('StorageService', () => {
   describe('Bookmark Associations', () => {
     it('should get bookmark associations', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.BOOKMARKS]: [mockBookmark] });
-      
+
       const bookmarks = await storageService.getBookmarkAssociations();
       expect(bookmarks).toEqual([mockBookmark]);
     });
 
     it('should return empty array when no bookmarks', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({});
-      
+
       const bookmarks = await storageService.getBookmarkAssociations();
       expect(bookmarks).toEqual([]);
     });
 
     it('should set bookmark associations', async () => {
       await storageService.setBookmarkAssociations([mockBookmark]);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.BOOKMARKS]: [mockBookmark]
       });
@@ -409,9 +401,9 @@ describe('StorageService', () => {
 
     it('should add bookmark association', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.BOOKMARKS]: [] });
-      
+
       await storageService.addBookmarkAssociation(mockBookmark);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.BOOKMARKS]: [mockBookmark]
       });
@@ -420,11 +412,11 @@ describe('StorageService', () => {
     it('should update existing bookmark association', async () => {
       const existingBookmark = { ...mockBookmark, containerId: 'old-container' };
       const updatedBookmark = { ...mockBookmark, containerId: 'new-container' };
-      
+
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.BOOKMARKS]: [existingBookmark] });
-      
+
       await storageService.addBookmarkAssociation(updatedBookmark);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.BOOKMARKS]: [updatedBookmark]
       });
@@ -432,9 +424,9 @@ describe('StorageService', () => {
 
     it('should remove bookmark association', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.BOOKMARKS]: [mockBookmark] });
-      
+
       await storageService.removeBookmarkAssociation(mockBookmark.bookmarkId);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.BOOKMARKS]: []
       });
@@ -442,14 +434,14 @@ describe('StorageService', () => {
 
     it('should get specific bookmark association', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.BOOKMARKS]: [mockBookmark] });
-      
+
       const result = await storageService.getBookmarkAssociation(mockBookmark.bookmarkId);
       expect(result).toEqual(mockBookmark);
     });
 
     it('should return null for non-existent bookmark association', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.BOOKMARKS]: [] });
-      
+
       const result = await storageService.getBookmarkAssociation('non-existent');
       expect(result).toBeNull();
     });
@@ -459,23 +451,23 @@ describe('StorageService', () => {
     it('should get categories', async () => {
       const categories = ['Work', 'Personal'];
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.CATEGORIES]: categories });
-      
+
       const result = await storageService.getCategories();
       expect(result).toEqual(categories);
     });
 
     it('should return empty array when no categories', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({});
-      
+
       const result = await storageService.getCategories();
       expect(result).toEqual([]);
     });
 
     it('should set categories with deduplication', async () => {
       const categories = ['Work', 'Personal', 'Work', '', 'Gaming'];
-      
+
       await storageService.setCategories(categories);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.CATEGORIES]: ['Work', 'Personal', 'Gaming']
       });
@@ -483,9 +475,9 @@ describe('StorageService', () => {
 
     it('should add new category', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.CATEGORIES]: ['Work'] });
-      
+
       await storageService.addCategory('Personal');
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.CATEGORIES]: ['Work', 'Personal']
       });
@@ -493,22 +485,22 @@ describe('StorageService', () => {
 
     it('should not add duplicate category', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.CATEGORIES]: ['Work'] });
-      
+
       await storageService.addCategory('Work');
-      
+
       expect(browser.storage.local.set).not.toHaveBeenCalled();
     });
 
     it('should rename category and update container references', async () => {
       const categories = ['Work', 'Personal'];
       const containerWithCategory = { ...mockContainer, metadata: { ...mockContainer.metadata, categories: ['Work'] } };
-      
+
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.CATEGORIES]: categories })
         .mockResolvedValueOnce({ [STORAGE_KEYS.CONTAINERS]: [containerWithCategory] });
-      
+
       await storageService.renameCategory('Work', 'Business');
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.CATEGORIES]: ['Business', 'Personal']
       });
@@ -524,13 +516,13 @@ describe('StorageService', () => {
     it('should delete category and remove from container references', async () => {
       const categories = ['Work', 'Personal'];
       const containerWithCategory = { ...mockContainer, metadata: { ...mockContainer.metadata, categories: ['Work', 'Personal'] } };
-      
+
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.CATEGORIES]: categories })
         .mockResolvedValueOnce({ [STORAGE_KEYS.CONTAINERS]: [containerWithCategory] });
-      
+
       await storageService.deleteCategory('Work');
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.CATEGORIES]: ['Personal']
       });
@@ -560,23 +552,23 @@ describe('StorageService', () => {
     it('should get stats', async () => {
       const statsData = { 'firefox-container-1': mockStats };
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.STATS]: statsData });
-      
+
       const result = await storageService.getStats();
       expect(result).toEqual(statsData);
     });
 
     it('should return empty object when no stats', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({});
-      
+
       const result = await storageService.getStats();
       expect(result).toEqual({});
     });
 
     it('should set stats', async () => {
       const statsData = { 'firefox-container-1': mockStats };
-      
+
       await storageService.setStats(statsData);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.STATS]: statsData
       });
@@ -586,13 +578,13 @@ describe('StorageService', () => {
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.PREFERENCES]: { stats: { enabled: true } } })
         .mockResolvedValueOnce({ [STORAGE_KEYS.STATS]: {} });
-      
+
       await storageService.recordStat('firefox-container-1', 'open');
-      
+
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       const statsCall = calls.find(call => call[0][STORAGE_KEYS.STATS]);
       const stats = statsCall[0][STORAGE_KEYS.STATS]['firefox-container-1'];
-      
+
       expect(stats.tabsOpened).toBe(1);
       expect(stats.activeTabCount).toBe(1);
       expect(stats.lastUsed).toBeDefined();
@@ -604,13 +596,13 @@ describe('StorageService', () => {
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.PREFERENCES]: { stats: { enabled: true } } })
         .mockResolvedValueOnce({ [STORAGE_KEYS.STATS]: {} });
-      
+
       await storageService.recordStat('firefox-container-1', 'match');
-      
+
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       const statsCall = calls.find(call => call[0][STORAGE_KEYS.STATS]);
       const stats = statsCall[0][STORAGE_KEYS.STATS]['firefox-container-1'];
-      
+
       expect(stats.rulesMatched).toBe(1);
     });
 
@@ -619,13 +611,13 @@ describe('StorageService', () => {
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.PREFERENCES]: { stats: { enabled: true } } })
         .mockResolvedValueOnce({ [STORAGE_KEYS.STATS]: { 'firefox-container-1': existingStats } });
-      
+
       await storageService.recordStat('firefox-container-1', 'close');
-      
+
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       const statsCall = calls.find(call => call[0][STORAGE_KEYS.STATS]);
       const stats = statsCall[0][STORAGE_KEYS.STATS]['firefox-container-1'];
-      
+
       expect(stats.activeTabCount).toBe(1);
     });
 
@@ -633,23 +625,23 @@ describe('StorageService', () => {
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.PREFERENCES]: { stats: { enabled: true } } })
         .mockResolvedValueOnce({ [STORAGE_KEYS.STATS]: {} });
-      
+
       await storageService.recordStat('firefox-container-1', 'touch');
-      
+
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       const statsCall = calls.find(call => call[0][STORAGE_KEYS.STATS]);
       const stats = statsCall[0][STORAGE_KEYS.STATS]['firefox-container-1'];
-      
+
       expect(stats.lastUsed).toBeDefined();
     });
 
     it('should not record stats when disabled', async () => {
-      (browser.storage.local.get as jest.Mock).mockResolvedValue({ 
+      (browser.storage.local.get as jest.Mock).mockResolvedValue({
         [STORAGE_KEYS.PREFERENCES]: { stats: { enabled: false } }
       });
-      
+
       await storageService.recordStat('firefox-container-1', 'open');
-      
+
       expect(browser.storage.local.set).not.toHaveBeenCalled();
     });
 
@@ -657,9 +649,9 @@ describe('StorageService', () => {
       (browser.storage.local.get as jest.Mock)
         .mockRejectedValueOnce(new Error('Preferences error'))
         .mockResolvedValueOnce({ [STORAGE_KEYS.STATS]: {} });
-      
+
       await storageService.recordStat('firefox-container-1', 'open');
-      
+
       // Should still record the stat despite preferences error
       expect(browser.storage.local.set).toHaveBeenCalled();
     });
@@ -667,23 +659,23 @@ describe('StorageService', () => {
     it('should trim history when it exceeds 1000 entries', async () => {
       const largeHistory = Array.from({ length: 1001 }, (_, i) => ({ timestamp: i, event: 'open' as const }));
       const existingStats = { ...mockStats, history: largeHistory };
-      
+
       (browser.storage.local.get as jest.Mock)
         .mockResolvedValueOnce({ [STORAGE_KEYS.PREFERENCES]: { stats: { enabled: true } } })
         .mockResolvedValueOnce({ [STORAGE_KEYS.STATS]: { 'firefox-container-1': existingStats } });
-      
+
       await storageService.recordStat('firefox-container-1', 'open');
-      
+
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       const statsCall = calls.find(call => call[0][STORAGE_KEYS.STATS]);
       const stats = statsCall[0][STORAGE_KEYS.STATS]['firefox-container-1'];
-      
+
       expect(stats.history).toHaveLength(1000);
     });
 
     it('should reset stats', async () => {
       await storageService.resetStats();
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.STATS]: {}
       });
@@ -700,23 +692,23 @@ describe('StorageService', () => {
 
     it('should get templates', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.TEMPLATES]: [mockTemplate] });
-      
+
       const result = await storageService.getTemplates();
       expect(result).toEqual([mockTemplate]);
     });
 
     it('should return empty array when no templates', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({});
-      
+
       const result = await storageService.getTemplates();
       expect(result).toEqual([]);
     });
 
     it('should save new template', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.TEMPLATES]: [] });
-      
+
       await storageService.saveTemplate(mockTemplate);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.TEMPLATES]: [mockTemplate]
       });
@@ -725,11 +717,11 @@ describe('StorageService', () => {
     it('should update existing template', async () => {
       const existingTemplate = { ...mockTemplate, color: 'red' as const };
       const updatedTemplate = { ...mockTemplate, color: 'green' as const };
-      
+
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.TEMPLATES]: [existingTemplate] });
-      
+
       await storageService.saveTemplate(updatedTemplate);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.TEMPLATES]: [updatedTemplate]
       });
@@ -737,9 +729,9 @@ describe('StorageService', () => {
 
     it('should delete template', async () => {
       (browser.storage.local.get as jest.Mock).mockResolvedValue({ [STORAGE_KEYS.TEMPLATES]: [mockTemplate] });
-      
+
       await storageService.deleteTemplate(mockTemplate.name);
-      
+
       expect(browser.storage.local.set).toHaveBeenCalledWith({
         [STORAGE_KEYS.TEMPLATES]: []
       });
@@ -754,7 +746,7 @@ describe('StorageService', () => {
 
       const calls = (browser.storage.local.set as jest.Mock).mock.calls;
       expect(calls.length).toBeGreaterThanOrEqual(1);
-      
+
       // Check that setupDefaults was called
       const setupCall = calls.find(call => call[0][STORAGE_KEYS.CONTAINERS] !== undefined);
       expect(setupCall).toBeDefined();
@@ -770,7 +762,7 @@ describe('StorageService', () => {
           expect.objectContaining({ name: 'Personal' }),
         ]),
       }));
-      
+
       // Check that version was set
       expect(browser.storage.local.set).toHaveBeenCalledWith({ version: '2.0.0' });
     });

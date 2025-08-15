@@ -58,13 +58,13 @@ describe('RulesEngine', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
+
     // Reset singleton instance
     (RulesEngine as any).instance = null;
-    
+
     mockStorageService = storageService as jest.Mocked<typeof storageService>;
     mockUrlMatcher = urlMatcher as jest.Mocked<typeof urlMatcher>;
-    
+
     // Default mock implementations
     mockStorageService.getRules = jest.fn().mockResolvedValue([]);
     mockStorageService.getPreferences = jest.fn().mockResolvedValue(mockPreferences);
@@ -72,23 +72,15 @@ describe('RulesEngine', () => {
     mockStorageService.removeRule = jest.fn().mockResolvedValue(undefined);
     mockStorageService.updateRule = jest.fn().mockResolvedValue(undefined);
     mockStorageService.setRules = jest.fn().mockResolvedValue(undefined);
-    
+
     mockUrlMatcher.match = jest.fn().mockReturnValue(false);
     mockUrlMatcher.isValid = jest.fn().mockReturnValue(true);
-    
-    rulesEngine = RulesEngine.getInstance();
+
+    rulesEngine = new RulesEngine();
   });
 
   afterEach(() => {
     jest.useRealTimers();
-  });
-
-  describe('getInstance', () => {
-    it('should return singleton instance', () => {
-      const instance1 = RulesEngine.getInstance();
-      const instance2 = RulesEngine.getInstance();
-      expect(instance1).toBe(instance2);
-    });
   });
 
   describe('addRule', () => {
@@ -163,7 +155,7 @@ describe('RulesEngine', () => {
   });
 
   describe('removeRule', () => {
-    it('should remove rule and invalidate cache', async () => {
+    it('should remove rule', async () => {
       await rulesEngine.removeRule('rule-1');
 
       expect(mockStorageService.removeRule).toHaveBeenCalledWith('rule-1');
@@ -171,7 +163,7 @@ describe('RulesEngine', () => {
   });
 
   describe('updateRule', () => {
-    it('should update rule and invalidate cache', async () => {
+    it('should update rule', async () => {
       const updates = { pattern: 'updated.com', priority: 10 };
 
       await rulesEngine.updateRule('rule-1', updates);
@@ -390,35 +382,6 @@ describe('RulesEngine', () => {
       expect(result.reason).toBe('No matching rules found');
     });
 
-    it('should use cache for repeated evaluations', async () => {
-      mockStorageService.getRules = jest.fn().mockResolvedValue([mockRule]);
-      mockUrlMatcher.match = jest.fn().mockReturnValue(true);
-
-      // First call
-      await rulesEngine.evaluate('https://github.com');
-      
-      // Second call should use cache
-      await rulesEngine.evaluate('https://github.com');
-
-      // getRules should only be called once due to caching
-      expect(mockStorageService.getRules).toHaveBeenCalledTimes(2); // Once per call for cache key generation
-    });
-
-    it('should invalidate cache when rules are modified', async () => {
-      mockStorageService.getRules = jest.fn()
-        .mockResolvedValueOnce([mockRule])
-        .mockResolvedValueOnce([{ ...mockRule, modified: 1234567891 }]);
-      mockUrlMatcher.match = jest.fn().mockReturnValue(true);
-
-      // First evaluation
-      await rulesEngine.evaluate('https://github.com');
-      
-      // Simulate rule modification by changing modified timestamp
-      await rulesEngine.evaluate('https://github.com');
-
-      expect(mockStorageService.getRules).toHaveBeenCalledTimes(2);
-    });
-
     it('should handle different match types', async () => {
       const exactRule: Rule = { ...mockRule, matchType: MatchType.EXACT };
       const domainRule: Rule = { ...mockRule, matchType: MatchType.DOMAIN };
@@ -576,79 +539,6 @@ describe('RulesEngine', () => {
     });
   });
 
-  describe('cache management', () => {
-    it('should generate unique rule IDs', () => {
-      const id1 = (rulesEngine as any).generateRuleId();
-      const id2 = (rulesEngine as any).generateRuleId();
-
-      expect(id1).toMatch(/^rule_\d+_[a-z0-9]+$/);
-      expect(id2).toMatch(/^rule_\d+_[a-z0-9]+$/);
-      expect(id1).not.toBe(id2);
-    });
-
-    it('should manage cache size limits', async () => {
-      const engine = rulesEngine as any;
-      
-      // Fill cache beyond limit
-      for (let i = 0; i < 1001; i++) {
-        engine.setCache(`key${i}:container:123:1`, { action: 'open' });
-      }
-
-      expect(engine.cache.size).toBeLessThanOrEqual(1000);
-    });
-
-    it('should invalidate cache completely', async () => {
-      const engine = rulesEngine as any;
-      engine.setCache('test:container:123:1', { action: 'open' });
-      
-      engine.invalidateCache();
-      
-      expect(engine.cache.size).toBe(0);
-    });
-
-    it('should invalidate cache by pattern', async () => {
-      const engine = rulesEngine as any;
-      engine.setCache('https://example.com:container:123:1', { action: 'open' });
-      engine.setCache('https://other.com:container:123:1', { action: 'open' });
-      
-      mockUrlMatcher.match = jest.fn()
-        .mockReturnValueOnce(true)  // example.com matches pattern
-        .mockReturnValueOnce(false); // other.com doesn't match
-      
-      engine.invalidateCache('example.com');
-      
-      expect(engine.cache.size).toBe(1);
-      expect(engine.cache.has('https://other.com:container:123:1')).toBe(true);
-    });
-
-    it('should cleanup expired cache entries', async () => {
-      const engine = rulesEngine as any;
-      
-      // Set initial timestamp
-      jest.setSystemTime(1000);
-      engine.setCache('old:container:123:1', { action: 'open' });
-      
-      // Advance time beyond TTL (60000ms)
-      jest.setSystemTime(62000);
-      engine.setCache('new:container:123:1', { action: 'open' });
-      
-      engine.cleanupCache();
-      
-      expect(engine.cache.size).toBe(1);
-      expect(engine.cache.has('new:container:123:1')).toBe(true);
-    });
-
-    it('should start periodic cache cleanup', () => {
-      const setIntervalSpy = jest.spyOn(global, 'setInterval');
-      
-      rulesEngine.startCacheCleanup();
-      
-      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 60000);
-      
-      setIntervalSpy.mockRestore();
-    });
-  });
-
   describe('error handling', () => {
     it('should handle storage errors in evaluate', async () => {
       mockStorageService.getRules = jest.fn().mockRejectedValue(new Error('Storage error'));
@@ -682,7 +572,7 @@ describe('RulesEngine', () => {
 
   describe('performance', () => {
     beforeEach(() => {
-      global.performance = { 
+      global.performance = {
         now: jest.fn()
           .mockReturnValueOnce(0)    // Start time
           .mockReturnValueOnce(5.5)  // End time
@@ -754,15 +644,6 @@ describe('RulesEngine', () => {
       const result = await rulesEngine.evaluate('https://github.com', 'firefox-container-1');
 
       expect(result.action).toBe('exclude');
-    });
-
-    it('should handle malformed cache keys', async () => {
-      const engine = rulesEngine as any;
-      
-      // Set a malformed cache entry
-      engine.setCache('malformed', { action: 'open' });
-      
-      expect(engine.cache.size).toBe(1);
     });
   });
 });

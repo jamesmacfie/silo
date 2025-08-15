@@ -48,17 +48,7 @@ const RuleSchema = z.object({
 });
 
 export class StorageService {
-  private static instance: StorageService | null = null;
   private readonly CURRENT_VERSION = '2.0.0';
-
-  private constructor() { }
-
-  static getInstance(): StorageService {
-    if (!StorageService.instance) {
-      StorageService.instance = new StorageService();
-    }
-    return StorageService.instance;
-  }
 
   async migrate(): Promise<void> {
     const version = await this.getVersion();
@@ -529,5 +519,5 @@ export class StorageService {
     return list.find(a => a.bookmarkId === bookmarkId) || null;
   }
 }
-
-export default StorageService.getInstance();
+export const storageService = new StorageService();
+export default storageService;

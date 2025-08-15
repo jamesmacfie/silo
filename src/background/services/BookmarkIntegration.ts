@@ -10,18 +10,8 @@ export interface ProcessedBookmarkUrlResult {
 }
 
 export class BookmarkIntegration {
-  private static instance: BookmarkIntegration | null = null;
   private storage = storageService;
   private log = logger.withContext('BookmarkIntegration');
-
-  private constructor() { }
-
-  static getInstance(): BookmarkIntegration {
-    if (!BookmarkIntegration.instance) {
-      BookmarkIntegration.instance = new BookmarkIntegration();
-    }
-    return BookmarkIntegration.instance;
-  }
 
   async associate(bookmarkId: string, containerId: string, url: string, autoOpen = true): Promise<void> {
     const association: BookmarkAssociation = {
@@ -147,6 +137,6 @@ export class BookmarkIntegration {
     return undefined;
   }
 }
-
-export default BookmarkIntegration.getInstance();
+export const bookmarkIntegration = new BookmarkIntegration();
+export default bookmarkIntegration;
 

@@ -5,19 +5,11 @@ import StorageService from './StorageService';
 import { logger } from '@/shared/utils/logger';
 
 export class ContainerManager {
-  private static instance: ContainerManager | null = null;
   private storage = StorageService;
   private log = logger.withContext('ContainerManager');
 
-  private constructor() {
+  constructor() {
     this.setupEventListeners();
-  }
-
-  static getInstance(): ContainerManager {
-    if (!ContainerManager.instance) {
-      ContainerManager.instance = new ContainerManager();
-    }
-    return ContainerManager.instance;
   }
 
   private setupEventListeners(): void {
@@ -308,5 +300,5 @@ export class ContainerManager {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 }
-
-export default ContainerManager.getInstance();
+export const containerManager = new ContainerManager();
+export default containerManager;

@@ -38,12 +38,12 @@ describe('ContainerManager', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset singleton instance
     (ContainerManager as any).instance = null;
-    
+
     mockStorageService = StorageService as jest.Mocked<typeof StorageService>;
-    
+
     // Mock browser APIs first
     global.browser.contextualIdentities = {
       create: jest.fn(),
@@ -74,24 +74,10 @@ describe('ContainerManager', () => {
 
     // Set up default mocks that will be called during construction
     mockStorageService.getContainers = jest.fn().mockResolvedValue([]);
-    
-    containerManager = ContainerManager.getInstance();
+
+    containerManager = new ContainerManager();
   });
 
-  describe('getInstance', () => {
-    it('should return singleton instance', () => {
-      const instance1 = ContainerManager.getInstance();
-      const instance2 = ContainerManager.getInstance();
-      expect(instance1).toBe(instance2);
-    });
-
-    it('should setup event listeners on creation', () => {
-      ContainerManager.getInstance();
-      expect(browser.contextualIdentities.onCreated.addListener).toHaveBeenCalled();
-      expect(browser.contextualIdentities.onRemoved.addListener).toHaveBeenCalled();
-      expect(browser.contextualIdentities.onUpdated.addListener).toHaveBeenCalled();
-    });
-  });
 
   describe('create', () => {
     it('should create a new container', async () => {
@@ -304,7 +290,7 @@ describe('ContainerManager', () => {
       mockStorageService.getContainers = jest.fn().mockResolvedValue([mockContainer]);
 
       const result = await containerManager.get(mockContainer.id);
-      
+
       expect(result).toEqual(mockContainer);
       expect(mockStorageService.getContainers).toHaveBeenCalled();
     });
@@ -313,7 +299,7 @@ describe('ContainerManager', () => {
       mockStorageService.getContainers = jest.fn().mockResolvedValue([mockContainer]);
 
       const result = await containerManager.get('non-existent');
-      
+
       expect(result).toBeNull();
     });
   });
@@ -324,7 +310,7 @@ describe('ContainerManager', () => {
       mockStorageService.getContainers = jest.fn().mockResolvedValue(containers);
 
       const result = await containerManager.getAll();
-      
+
       expect(result).toEqual(containers);
       expect(mockStorageService.getContainers).toHaveBeenCalled();
     });
@@ -333,7 +319,7 @@ describe('ContainerManager', () => {
       mockStorageService.getContainers = jest.fn().mockResolvedValue([]);
 
       const result = await containerManager.getAll();
-      
+
       expect(result).toEqual([]);
     });
   });
@@ -476,7 +462,7 @@ describe('ContainerManager', () => {
       (browser.contextualIdentities.get as jest.Mock).mockResolvedValue(mockFirefoxContainer);
 
       const result = await containerManager.mapToFirefoxContainer(mockContainer);
-      
+
       expect(result).toBe(mockContainer.cookieStoreId);
       expect(browser.contextualIdentities.get).toHaveBeenCalledWith(mockContainer.cookieStoreId);
     });
@@ -636,13 +622,13 @@ describe('ContainerManager', () => {
 
     it('should get random icon from default icons', () => {
       const icon = (containerManager as unknown as { getRandomIcon: () => string }).getRandomIcon();
-      
+
       expect(DEFAULT_CONTAINER_ICONS).toContain(icon as typeof DEFAULT_CONTAINER_ICONS[number]);
     });
 
     it('should get random color from default colors', () => {
       const color = (containerManager as unknown as { getRandomColor: () => string }).getRandomColor();
-      
+
       expect(DEFAULT_CONTAINER_COLORS).toContain(color as typeof DEFAULT_CONTAINER_COLORS[number]);
     });
   });

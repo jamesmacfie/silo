@@ -43,7 +43,6 @@ export default {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/index.ts',
-    '!src/**/__mocks__/**',
     '!src/**/node_modules/**',
   ],
 };

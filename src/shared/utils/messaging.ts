@@ -25,22 +25,14 @@ export interface MessageResponse<T = unknown> {
 }
 
 export class MessagingService {
-  private static instance: MessagingService | null = null;
   private requestCounter = 0;
   private pendingRequests = new Map<string, {
     resolve: (value: unknown) => void;
     reject: (error: unknown) => void;
   }>();
 
-  private constructor() {
+  constructor() {
     this.setupMessageHandler();
-  }
-
-  static getInstance(): MessagingService {
-    if (!this.instance) {
-      this.instance = new MessagingService();
-    }
-    return this.instance;
   }
 
   private setupMessageHandler(): void {
@@ -249,5 +241,4 @@ export function createResponse<T>(success: boolean, data?: T, error?: string): M
 }
 
 // Singleton instance
-export const messaging = MessagingService.getInstance();
-export default messaging;
+export default new MessagingService();

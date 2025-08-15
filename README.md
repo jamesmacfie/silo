@@ -261,8 +261,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation**: Full documentation in [CLAUDE.md](CLAUDE.md)
-- **Issues**: [GitHub Issues](https://github.com/silo/silo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/silo/silo/discussions)
+- **Issues**: [GitHub Issues](https://github.com/jamesmacfie/silo/issues)
 
 ---
 

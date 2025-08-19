@@ -22,7 +22,8 @@
       "Bash(yarn test:*)",
       "Bash(npm run lint)",
       "Bash(npm run lint)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

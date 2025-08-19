@@ -12,7 +12,6 @@ import {
   Lock, 
   HelpCircle, 
 } from 'lucide-react';
-import './RuleItem.css';
 
 interface Props {
   rule: Rule;
@@ -32,11 +31,11 @@ function ExpandableDescription({ description }: { description: string }): JSX.El
     : description;
 
   return (
-    <div className="rule-description">
+    <div className="text-sm text-gray-600 dark:text-gray-400 italic leading-relaxed">
       <span>{displayText}</span>
       {needsTruncation && (
         <button
-          className="expand-btn"
+          className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium underline ml-2 bg-none border-none cursor-pointer p-0"
           onClick={() => setIsExpanded(!isExpanded)}
           type="button"
         >
@@ -56,8 +55,6 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
   }
 
   const container = containers.find(c => c.cookieStoreId === rule.containerId);
-  if (rule.containerId && !container) {
-  }
 
   const getContainerColor = (color: string | undefined): string => {
     switch ((color || '').toLowerCase()) {
@@ -109,43 +106,43 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
   const renderMatchIcon = () => {
     switch (rule.matchType) {
       case MatchType.EXACT:
-        return <Target className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+        return <Target className="text-lg flex-shrink-0" size={16} title={matchTypeInfo.description} />;
       case MatchType.DOMAIN:
-        return <Globe className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+        return <Globe className="text-lg flex-shrink-0" size={16} title={matchTypeInfo.description} />;
       case MatchType.GLOB:
-        return <Sparkles className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+        return <Sparkles className="text-lg flex-shrink-0" size={16} title={matchTypeInfo.description} />;
       case MatchType.REGEX:
-        return <Search className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+        return <Search className="text-lg flex-shrink-0" size={16} title={matchTypeInfo.description} />;
       default:
-        return <HelpCircle className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+        return <HelpCircle className="text-lg flex-shrink-0" size={16} title={matchTypeInfo.description} />;
     }
   };
 
   const renderRuleIcon = () => {
     switch (rule.ruleType) {
       case RuleType.INCLUDE:
-        return <Plus className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+        return <Plus className="text-lg flex-shrink-0" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
       case RuleType.EXCLUDE:
-        return <Minus className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+        return <Minus className="text-lg flex-shrink-0" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
       case RuleType.RESTRICT:
-        return <Lock className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+        return <Lock className="text-lg flex-shrink-0" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
       default:
-        return <HelpCircle className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+        return <HelpCircle className="text-lg flex-shrink-0" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
     }
   };
 
   return (
-    <Card className={!rule.enabled ? 'disabled' : ''}>
-      <CardHeader>
-        <div className="rule-left">
+    <Card className={`h-full flex flex-col ${!rule.enabled ? 'opacity-70' : ''}`}>
+      <CardHeader className="flex justify-between items-center gap-3 min-h-10">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           {renderMatchIcon()}
           {renderRuleIcon()}
-          <span className="pattern" title={rule.pattern}>{rule.pattern}</span>
+          <span className="font-mono font-medium overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0" title={rule.pattern}>{rule.pattern}</span>
         </div>
-        <div className="rule-right">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {container && (
             <span 
-              className="container-name" 
+              className="text-sm font-medium max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap" 
               title={container.name}
               style={{ color: getContainerColor(container.color) }}
             >
@@ -153,30 +150,31 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
             </span>
           )}
           {rule.ruleType === RuleType.EXCLUDE && (
-            <span className="no-container-note">No Container</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 italic">No Container</span>
           )}
-          <div className="rule-priority">#{rule.priority}</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 px-2 py-1 rounded whitespace-nowrap">#{rule.priority}</div>
         </div>
       </CardHeader>
 
-      <CardContent>
-        {rule.metadata?.description && (
-          <ExpandableDescription description={rule.metadata.description} />
-        )}
-        {!rule.metadata?.description && <div className="description-spacer" />}
+      <CardContent className="flex-1 flex flex-col justify-between min-h-12">
+        <div>
+          {rule.metadata?.description && (
+            <ExpandableDescription description={rule.metadata.description} />
+          )}
+          {!rule.metadata?.description && <div className="h-5" />}
+        </div>
         {!rule.enabled && (
-          <div className="status-indicator">
-            <span className="status-badge disabled">Disabled</span>
+          <div className="mt-2">
+            <span className="px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-red-100 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/40">Disabled</span>
           </div>
         )}
       </CardContent>
 
-      <div className="row">
-        <div />
+      <div className="flex justify-end">
         <CardActions>
           <button 
             type="button"
-            className={`btn ghost sm ${rule.enabled ? 'enabled' : 'disabled'}`}
+            className={`btn ghost sm ${rule.enabled ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600 hover:border-emerald-600' : 'bg-gray-500 text-white border-gray-500 hover:bg-gray-600 hover:border-gray-600'}`}
             onClick={() => onToggleEnabled?.(rule)}
             title={rule.enabled ? 'Disable rule' : 'Enable rule'}
           >

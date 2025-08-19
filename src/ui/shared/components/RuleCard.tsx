@@ -57,9 +57,9 @@ export function RuleCard({
   };
 
   return (
-    <div className="card">
-      <div className="cardHead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
-        <div className="rule-left" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+    <div className="card flex flex-col h-full">
+      <div className="cardHead flex justify-between items-center gap-3">
+        <div className="rule-left flex items-center gap-2 flex-1 min-w-0">
           <span className="match-type-icon" title={`${rule.matchType} match`}>
             {getMatchTypeIcon()}
           </span>
@@ -71,35 +71,20 @@ export function RuleCard({
             {getRuleTypeIcon()}
           </span>
           <span 
-            className="pattern" 
-            title={rule.pattern} 
-            style={{ 
-              fontFamily: 'monospace', 
-              fontWeight: 500, 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap', 
-              flex: 1, 
-              minWidth: 0 
-            }}
+            className="pattern font-mono font-medium overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0" 
+            title={rule.pattern}
           >
             {rule.pattern}
           </span>
         </div>
-        <div className="rule-right" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+        <div className="rule-right flex items-center gap-2 flex-shrink-0">
           {container && containerColors && (
             <span
-              className="container-badge"
+              className="container-badge px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap"
               style={{
                 backgroundColor: containerColors.bg,
                 borderColor: containerColors.border,
                 color: containerColors.text,
-                padding: '0.25rem 0.5rem',
-                borderRadius: '9999px',
-                fontSize: '0.75rem',
-                fontWeight: '500',
-                border: '1px solid',
-                whiteSpace: 'nowrap',
               }}
               title={container.name}
             >
@@ -107,45 +92,19 @@ export function RuleCard({
             </span>
           )}
           {rule.ruleType === 'exclude' && !container && (
-            <span
-              className="no-container-badge"
-              style={{
-                backgroundColor: '#F3F4F6',
-                borderColor: '#D1D5DB',
-                color: '#6B7280',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '9999px',
-                fontSize: '0.75rem',
-                fontWeight: '500',
-                border: '1px solid',
-                fontStyle: 'italic',
-              }}
-            >
+            <span className="no-container-badge bg-gray-100 border-gray-300 text-gray-500 px-2 py-1 rounded-full text-xs font-medium border italic">
               No Container
             </span>
           )}
-          <div
-            className="rule-priority"
-            style={{
-              backgroundColor: 'var(--background-secondary, #F8FAFC)',
-              borderColor: 'var(--border, #E2E8F0)',
-              color: 'var(--text-secondary, #475569)',
-              padding: '0.25rem 0.5rem',
-              borderRadius: '4px',
-              fontSize: '0.75rem',
-              fontWeight: '600',
-              border: '1px solid',
-              fontFamily: 'monospace',
-            }}
-          >
+          <div className="rule-priority bg-slate-50 border-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-semibold border font-mono">
             #{rule.priority}
           </div>
         </div>
       </div>
 
-      <div className="card-content">
+      <div className="card-content flex-1">
         {rule.metadata?.description && (
-          <div className="rule-description">
+          <div className="rule-description text-sm text-gray-500">
             {rule.metadata.description}
           </div>
         )}
@@ -156,7 +115,7 @@ export function RuleCard({
         )}
       </div>
 
-      <div className="row">
+      <div className="row mt-auto">
         <div />
         <div className="actions">
           <button

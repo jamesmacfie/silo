@@ -16,8 +16,10 @@ import { RuleCard } from '@/ui/shared/components/RuleCard';
 import { PageHeader } from '@/ui/shared/components/PageHeader';
 import { InterceptorTest } from '@/ui/shared/components/InterceptorTest';
 import { StatusBar } from '@/ui/shared/components/StatusBar';
+import { DuplicateRuleManager } from '@/ui/shared/components/DuplicateRuleManager';
 import type { CSVImportResult } from '@/shared/utils/csv';
 import type { Rule } from '@/shared/types';
+import { getDuplicateCount } from '@/shared/utils/duplicateRules';
 
 
 function PageShell(props: { children: React.ReactNode; }): JSX.Element {
@@ -180,11 +182,14 @@ function RulesPage(): JSX.Element {
   const { updateRule, deleteRule } = useRuleActions();
   const [filter, setFilter] = React.useState('');
   const [sortBy, setSortBy] = React.useState<'pattern' | 'priority' | 'type' | 'container'>('priority');
+  const [showDuplicates, setShowDuplicates] = React.useState(false);
   const [ruleModalState, setRuleModalState] = React.useState<{
     isOpen: boolean;
     mode: 'create' | 'edit';
     rule?: Rule;
   }>({ isOpen: false, mode: 'create' });
+
+  const duplicateCount = React.useMemo(() => getDuplicateCount(rules), [rules]);
 
   const openCreateRuleModal = React.useCallback(() => {
     setRuleModalState({ isOpen: true, mode: 'create' });
@@ -249,6 +254,7 @@ function RulesPage(): JSX.Element {
     }
   }, [deleteRule]);
 
+
   if (rulesLoading) {
     return (
       <div className="page">
@@ -270,9 +276,20 @@ function RulesPage(): JSX.Element {
   return (
     <div className="page">
       <PageHeader title="Rules">
-        <button className="btn" type="button" onClick={openCreateRuleModal}>
-          + New Rule
-        </button>
+        <div className="flex gap-2">
+          {duplicateCount > 0 && (
+            <button 
+              className="btn ghost" 
+              type="button" 
+              onClick={() => setShowDuplicates(!showDuplicates)}
+            >
+              {showDuplicates ? 'Hide' : 'Show'} Duplicates ({duplicateCount})
+            </button>
+          )}
+          <button className="btn" type="button" onClick={openCreateRuleModal}>
+            + New Rule
+          </button>
+        </div>
       </PageHeader>
 
       <div className="toolbar">
@@ -293,6 +310,16 @@ function RulesPage(): JSX.Element {
         </select>
       </div>
 
+      {showDuplicates && duplicateCount > 0 && (
+        <div className="mb-6">
+          <DuplicateRuleManager
+            rules={rules}
+            containers={containers}
+            onDeleteRule={deleteRule}
+          />
+        </div>
+      )}
+
       <div className="cards-grid">
         {filteredRules.length === 0 ? (
           <div className="small">
@@ -311,7 +338,7 @@ function RulesPage(): JSX.Element {
                   onDelete={handleDeleteRule}
                 />
               );
-            } catch (error) {
+            } catch {
               return (
                 <div key={rule.id} className="small">
                   Error rendering rule: {rule.id || 'unknown'}

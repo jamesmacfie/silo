@@ -1,10 +1,11 @@
 import type { Container } from '@/shared/types';
-import { useContainers } from '@/ui/shared/hooks/useContainers';
+import { useContainers, useContainerLoading } from '@/ui/shared/stores';
 
 type Props = { onSelect(container: Container): void };
 
 export function ContainerSelector(props: Props): JSX.Element {
-  const { data: containers = [], isLoading } = useContainers();
+  const containers = useContainers();
+  const isLoading = useContainerLoading();
 
   if (isLoading) {
     return (

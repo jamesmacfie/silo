@@ -1,7 +1,7 @@
 import React from 'react';
 import browser from 'webextension-polyfill';
 import type { Container, BookmarkAssociation } from '@/shared/types';
-import { useBookmarkAssociations, useBookmarkActions, useBookmarksTree } from '../hooks/useBookmarks';
+import { useBookmarkAssociations, useBookmarkActions, useBookmarksTree, useBookmarkLoading, useBookmarkError } from '../stores';
 
 interface Props {
   containers?: Container[];
@@ -13,9 +13,16 @@ interface BookmarkWithAssociation extends browser.Bookmarks.BookmarkTreeNode {
 }
 
 export function BookmarkManager({ containers = [] }: Props): JSX.Element {
-  const { data: associations = [], isLoading: associationsLoading, error: associationsError } = useBookmarkAssociations();
-  const { data: bookmarksTree = [], isLoading: treeLoading, error: treeError } = useBookmarksTree();
+  const associations = useBookmarkAssociations();
+  const bookmarksTree = useBookmarksTree();
+  const bookmarkLoading = useBookmarkLoading();
+  const bookmarkError = useBookmarkError();
   const { addAssociation, removeAssociation } = useBookmarkActions();
+  
+  const associationsLoading = bookmarkLoading.associations;
+  const treeLoading = bookmarkLoading.tree;
+  const associationsError = bookmarkError;
+  const treeError = bookmarkError;
   const [_expandedFolders, _setExpandedFolders] = React.useState<Set<string>>(new Set());
   const [selectedContainer, setSelectedContainer] = React.useState<string>('');
   const [filter, setFilter] = React.useState('');
@@ -114,7 +121,7 @@ export function BookmarkManager({ containers = [] }: Props): JSX.Element {
         <div className="error-message">
           <h3>Error loading bookmarks</h3>
           <p>
-            {associationsError?.message || treeError?.message || 'An unexpected error occurred'}
+            {associationsError || treeError || 'An unexpected error occurred'}
           </p>
         </div>
       </div>

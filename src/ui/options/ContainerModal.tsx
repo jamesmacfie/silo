@@ -1,5 +1,5 @@
 import React from 'react';
-import browser from 'webextension-polyfill';
+import { useContainerActions } from '@/ui/shared/stores';
 
 interface Props {
   isOpen: boolean;
@@ -50,6 +50,7 @@ function colorToCss(color: string): string {
 }
 
 export function ContainerModal({ isOpen, mode, container, onClose, onSuccess }: Props): JSX.Element | null {
+  const { create: createContainer, update: updateContainer } = useContainerActions();
   const [name, setName] = React.useState('');
   const [color, setColor] = React.useState('toolbar');
   const [icon, setIcon] = React.useState('fingerprint');
@@ -75,18 +76,12 @@ export function ContainerModal({ isOpen, mode, container, onClose, onSuccess }: 
     setSaving(true);
     try {
       if (mode === 'create') {
-        const response = await browser.runtime.sendMessage({
-          type: 'CREATE_CONTAINER',
-          payload: { name: name.trim(), color, icon },
-        });
-        if (!response?.success) throw new Error(response?.error || 'No response');
+        await createContainer({ name: name.trim(), color, icon });
       } else if (mode === 'edit' && container) {
-        await browser.runtime.sendMessage({
-          type: 'UPDATE_CONTAINER',
-          payload: { 
-            id: container.cookieStoreId, 
-            updates: { name: name.trim(), color, icon }, 
-          },
+        await updateContainer(container.cookieStoreId, { 
+          name: name.trim(), 
+          color, 
+          icon 
         });
       }
       
@@ -98,7 +93,7 @@ export function ContainerModal({ isOpen, mode, container, onClose, onSuccess }: 
     } finally {
       setSaving(false);
     }
-  }, [name, color, icon, mode, container, onSuccess, onClose]);
+  }, [name, color, icon, mode, container, onSuccess, onClose, createContainer, updateContainer]);
 
   if (!isOpen) return null;
 

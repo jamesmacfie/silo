@@ -1,8 +1,8 @@
 import React from 'react';
-import browser from 'webextension-polyfill';
 import { MatchType, RuleType, type Rule } from '@/shared/types';
 import { validatePattern } from '@/shared/utils/patternValidator';
 import { PatternTester } from '@/ui/shared/components/PatternTester';
+import { useRuleActions } from '@/ui/shared/stores';
 
 interface Container {
   id: string;
@@ -35,6 +35,7 @@ const RULE_TYPE_OPTIONS = [
 ];
 
 export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }: Props): JSX.Element | null {
+  const { create: createRule, update: updateRule } = useRuleActions();
   const [pattern, setPattern] = React.useState('');
   const [matchType, setMatchType] = React.useState<MatchType>(MatchType.DOMAIN);
   const [ruleType, setRuleType] = React.useState<RuleType>(RuleType.INCLUDE);
@@ -92,20 +93,9 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
       };
 
       if (mode === 'create') {
-        const response = await browser.runtime.sendMessage({
-          type: 'CREATE_RULE',
-          payload: ruleData,
-        });
-        if (!response?.success) throw new Error(response?.error || 'Failed to create rule');
+        await createRule(ruleData);
       } else if (mode === 'edit' && rule) {
-        const response = await browser.runtime.sendMessage({
-          type: 'UPDATE_RULE',
-          payload: {
-            id: rule.id,
-            updates: ruleData,
-          },
-        });
-        if (!response?.success) throw new Error(response?.error || 'Failed to update rule');
+        await updateRule(rule.id, ruleData);
       }
 
       onSuccess();
@@ -116,7 +106,7 @@ export function RuleModal({ isOpen, mode, rule, containers, onClose, onSuccess }
     } finally {
       setSaving(false);
     }
-  }, [pattern, matchType, ruleType, containerId, priority, enabled, description, validation.isValid, mode, rule, onSuccess, onClose]);
+  }, [pattern, matchType, ruleType, containerId, priority, enabled, description, validation.isValid, mode, rule, onSuccess, onClose, createRule, updateRule]);
 
   if (!isOpen) return null;
 

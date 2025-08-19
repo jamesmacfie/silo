@@ -1,13 +1,20 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import browser from 'webextension-polyfill';
 import '@/ui/options/index.css';
-import { QueryProvider } from '@/ui/shared/providers/QueryProvider';
-import { ThemeProvider } from '@/ui/shared/contexts/ThemeContext';
+import { useAppInitialization, useStoreEffects } from '@/ui/shared/stores';
 import { CSVImportExport } from '@/ui/shared/components/CSVImportExport';
 import { ThemeSwitcher } from '@/ui/shared/components/ThemeSwitcher';
 import { BookmarkManager } from '@/ui/shared/components/BookmarkManager';
-import { useRules, useRuleActions } from '@/ui/shared/hooks/useRules';
+import { 
+  useRules, 
+  useRuleActions, 
+  useRuleLoading,
+  useRuleError,
+  useContainers, 
+  useContainerActions, 
+  useContainerLoading,
+  useContainerError 
+} from '@/ui/shared/stores';
 import { ContainerModal } from '@/ui/options/ContainerModal';
 import { RuleModal } from '@/ui/options/RuleModal';
 import { SearchInput } from '@/ui/shared/components/SearchInput';
@@ -71,30 +78,13 @@ function Dashboard(): JSX.Element {
   );
 }
 
-function useContainersData() {
-  const [containers, setContainers] = React.useState<ContainerLite[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const refresh = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await browser.runtime.sendMessage({ type: 'GET_CONTAINERS' });
-      const data = Array.isArray(res?.data) ? (res.data as ContainerLite[]) : [];
-      setContainers(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-    return;
-  }, []);
-  React.useEffect(() => { void refresh(); }, [refresh]);
-  return { containers, loading, error, refresh };
-}
+// This hook is replaced by useContainers from Zustand stores
 
 function ContainersPage(): JSX.Element {
-  const { containers, loading, error, refresh } = useContainersData();
+  const containers = useContainers();
+  const { load: refresh, delete: deleteContainerAction, clearCookies } = useContainerActions();
+  const loading = useContainerLoading();
+  const error = useContainerError();
   const [query, setQuery] = React.useState<string>('');
   const [modalState, setModalState] = React.useState<{
     isOpen: boolean;
@@ -120,29 +110,22 @@ function ContainersPage(): JSX.Element {
     if (!confirm(`Delete container "${container.name}"?`)) return;
 
     try {
-      await browser.runtime.sendMessage({
-        type: 'DELETE_CONTAINER',
-        payload: { id: container.cookieStoreId },
-      });
-      await refresh();
+      await deleteContainerAction(container.cookieStoreId);
     } catch (e: unknown) {
       const msg = (e instanceof Error) ? e.message : String(e);
       alert(`Delete failed: ${msg}`);
     }
-  }, [refresh]);
+  }, [deleteContainerAction]);
 
   const clearContainerCookies = React.useCallback(async (container: ContainerLite) => {
     try {
-      await browser.runtime.sendMessage({
-        type: 'CLEAR_CONTAINER_COOKIES',
-        payload: { id: container.cookieStoreId },
-      });
+      await clearCookies(container.cookieStoreId);
       alert(`Cookies cleared for "${container.name}"`);
     } catch (e: unknown) {
       const msg = (e instanceof Error) ? e.message : String(e);
       alert(`Clear cookies failed: ${msg}`);
     }
-  }, []);
+  }, [clearCookies]);
 
 
   return (
@@ -191,9 +174,11 @@ function ContainersPage(): JSX.Element {
 }
 
 function RulesPage(): JSX.Element {
-  const { containers } = useContainersData();
-  const { data: rules = [], isLoading: rulesLoading, error: rulesError } = useRules();
-  const { updateRule, deleteRule } = useRuleActions();
+  const containers = useContainers();
+  const rules = useRules();
+  const rulesLoading = useRuleLoading();
+  const rulesError = useRuleError();
+  const { update: updateRule, delete: deleteRule } = useRuleActions();
   const [filter, setFilter] = React.useState('');
   const [sortBy, setSortBy] = React.useState<'pattern' | 'priority' | 'type' | 'container'>('priority');
   const [showDuplicates, setShowDuplicates] = React.useState(false);
@@ -282,7 +267,7 @@ function RulesPage(): JSX.Element {
     return (
       <div className="page">
         <PageHeader title="Rules" />
-        <div className="small">Error loading rules: {rulesError.message}</div>
+        <div className="small">Error loading rules: {rulesError}</div>
       </div>
     );
   }
@@ -417,7 +402,7 @@ function ImportExportPage(): JSX.Element {
 }
 
 function BookmarksPage(): JSX.Element {
-  const { containers } = useContainersData();
+  const containers = useContainers();
 
   return (
     <div className="page">
@@ -446,7 +431,7 @@ function SettingsPage(): JSX.Element {
   );
 }
 
-function App(): JSX.Element {
+function OptionsApp(): JSX.Element {
   const [page, setPage] = React.useState<string>('containers');
   return (
     <PageShell>
@@ -463,16 +448,51 @@ function App(): JSX.Element {
   );
 }
 
+function App(): JSX.Element {
+  const { isInitialized, initializationError, retry } = useAppInitialization();
+  
+  // Set up cross-store effects
+  useStoreEffects();
+  
+  if (initializationError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center min-h-screen">
+        <div className="text-red-600 dark:text-red-400 mb-4 text-lg">
+          Failed to initialize app
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+          {initializationError}
+        </div>
+        <button 
+          type="button"
+          onClick={retry}
+          className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+  
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-gray-600 dark:text-gray-400">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+  
+  return <OptionsApp />;
+}
+
 const mount = document.getElementById('root');
 if (mount) {
   const root = createRoot(mount);
   root.render(
     <React.StrictMode>
-      <ThemeProvider>
-        <QueryProvider>
-          <App />
-        </QueryProvider>
-      </ThemeProvider>
+      <App />
     </React.StrictMode>,
   );
 }

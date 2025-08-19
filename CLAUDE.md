@@ -17,9 +17,9 @@ Silo is a modern Firefox WebExtension that automatically opens websites in speci
 - **UI Framework:** React 18 with functional components and hooks
 - **Styling:** Tailwind CSS with PostCSS processing and custom design system (utility-first approach)
 - **State Management:** 
-  - React Query (@tanstack/react-query) for server state and caching
-  - Zustand for client state management
-  - React Context for theme management
+  - Zustand for comprehensive client state management
+  - Modular store architecture with domain-specific stores
+  - Optimistic updates and error handling
 - **Build Tools:** 
   - Extension CLI for development and packaging
   - Custom esbuild-based build scripts for components
@@ -90,14 +90,20 @@ src/
 │       │   ├── PatternTester.tsx     # Interactive rule testing
 │       │   ├── ThemeSwitcher.tsx     # Dark/light theme toggle
 │       │   └── [Additional components] # Card, ContainerCard, RuleCard, etc.
-│       ├── contexts/       # React context providers
-│       │   └── ThemeContext.tsx      # Theme state management
-│       ├── hooks/          # Custom React hooks
+│       ├── stores/         # Zustand state management stores
+│       │   ├── containerStore.ts     # Container state and actions
+│       │   ├── ruleStore.ts         # Rule state and actions
+│       │   ├── themeStore.ts        # Theme state management
+│       │   ├── preferencesStore.ts  # User preferences state
+│       │   ├── bookmarkStore.ts     # Bookmark associations state
+│       │   ├── appStore.ts          # App initialization and orchestration
+│       │   └── index.ts             # Store exports and convenience hooks
+│       ├── hooks/          # Custom React hooks (legacy - being replaced by stores)
 │       │   ├── useBookmarks.ts       # Bookmark operations
 │       │   ├── useContainers.ts      # Container data fetching
 │       │   └── useRules.ts          # Rule management
 │       └── providers/      # Application providers
-│           └── QueryProvider.tsx     # React Query configuration
+│           └── QueryProvider.tsx     # React Query configuration (legacy)
 │
 └── shared/                 # Shared types and utilities
     ├── types/              # TypeScript type definitions
@@ -218,13 +224,13 @@ Shared utilities provide cross-cutting functionality:
 ### 5. Theme System
 - **Multi-Theme Support** - Light, dark, and system preference detection
 - **Persistent Settings** - Theme preferences with cross-session storage
-- **React Context Integration** - Centralized theme state with efficient updates
+- **Zustand Integration** - Centralized theme state with efficient updates
 - **CSS Variable System** - Dynamic theme switching without page reload
 
 ### 6. Modern User Interface
 - **Responsive Design** - Optimized layouts for popup constraints and full-page contexts
 - **Interactive Components** - Modals, dropdowns, search, filtering with smooth animations
-- **Real-time Updates** - React Query for efficient data synchronization and caching
+- **Real-time Updates** - Zustand stores for efficient data synchronization and optimistic updates
 - **Accessibility** - ARIA compliance, keyboard navigation, and screen reader support
 
 ## Data Model
@@ -289,6 +295,50 @@ preferences: {
   [key: string]: unknown;
 }
 ```
+
+## State Management Architecture
+
+### Zustand Store Design
+
+The application uses a modular Zustand store architecture with domain-specific stores that manage their own state and actions:
+
+#### Store Structure
+- **containerStore.ts** - Container CRUD operations, loading states, and error handling
+- **ruleStore.ts** - Rule management with priority sorting and pattern testing
+- **themeStore.ts** - Theme state with system preference detection and CSS application
+- **preferencesStore.ts** - User preferences management and persistence
+- **bookmarkStore.ts** - Bookmark associations and Firefox bookmarks tree integration
+- **appStore.ts** - Application initialization orchestration and cross-store effects
+
+#### Key Features
+- **Optimistic Updates** - Immediate UI updates with error rollback for better UX
+- **Selective Subscriptions** - Components only re-render when their specific data changes
+- **Type Safety** - Full TypeScript integration with proper type inference
+- **Error Boundaries** - Per-store error handling with global error aggregation
+- **Cross-Store Communication** - Clean dependency management between related stores
+
+#### Usage Patterns
+```typescript
+// Individual store usage
+const containers = useContainers();
+const { create, update, delete } = useContainerActions();
+const loading = useContainerLoading();
+const error = useContainerError();
+
+// App initialization
+const { isInitialized, initializationError, retry } = useAppInitialization();
+
+// Global state monitoring
+const { errors, hasErrors, clearErrors } = useGlobalErrors();
+const loading = useGlobalLoading();
+```
+
+#### Migration from React Query
+The Zustand stores replace the previous React Query + Context pattern:
+- **useContainers()** replaces the old useContainers hook
+- **useRules()** replaces the old useRules hook  
+- **useTheme()** replaces ThemeContext
+- **Messaging Layer** remains unchanged - stores communicate with background services
 
 ## Service Layer Architecture
 
@@ -500,7 +550,7 @@ npm run test:coverage         # Coverage report generation
 
 ### UI Responsiveness
 - **Target:** <100ms interaction response time
-- **React Query:** Efficient data fetching with intelligent caching
+- **Zustand Stores:** Efficient state management with optimistic updates and selective re-renders
 - **Code Splitting:** Lazy loading of heavy components and features
 
 ## Security Considerations
@@ -584,8 +634,9 @@ Structured logging with environment-aware levels
 
 ### Debug Workflows
 1. **Rule Debugging** - Interactive pattern tester and interceptor test tools
-2. **UI State Issues** - React DevTools and Query DevTools integration  
+2. **UI State Issues** - React DevTools and Zustand DevTools integration  
 3. **Background Service Issues** - Browser console and structured logging
-4. **Performance Analysis** - Browser profiler and React Profiler integration
+4. **Store State Debugging** - Direct store state inspection and action tracing
+5. **Performance Analysis** - Browser profiler and React Profiler integration
 
 This documentation reflects the current state of the Silo codebase and should be updated as the architecture evolves.

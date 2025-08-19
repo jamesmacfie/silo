@@ -1,7 +1,7 @@
 import React from 'react';
 import { MatchType } from '@/shared/types';
 import { validatePattern, getPatternExamples, suggestMatchType } from '@/shared/utils/patternValidator';
-import { useRuleActions } from '../hooks/useRules';
+import { useRuleActions } from '../stores';
 
 interface Props {
   pattern: string;

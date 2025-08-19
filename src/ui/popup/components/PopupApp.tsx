@@ -1,7 +1,8 @@
 import React from 'react';
 import browser from 'webextension-polyfill';
 import type { Container } from '@/shared/types';
-import { useContainers } from '@/ui/shared/hooks/useContainers';
+import { MatchType, RuleType } from '@/shared/types';
+import { useContainers, useContainerActions, useContainerLoading, useRuleActions } from '@/ui/shared/stores';
 import { ThemeSwitcher } from '@/ui/shared/components/ThemeSwitcher';
 
 type Props = Record<string, never>;
@@ -28,7 +29,10 @@ async function getActiveTab(): Promise<browser.Tabs.Tab | null> {
 }
 
 export function PopupApp(_props: Props): JSX.Element {
-  const { data: containersData = [], refetch, isFetching } = useContainers();
+  const containersData = useContainers();
+  const { load: refetchContainers, create: createContainer } = useContainerActions();
+  const { create: createRule } = useRuleActions();
+  const isLoading = useContainerLoading();
   const containers: Container[] = React.useMemo(() => {
     return [NO_CONTAINER_OPTION, ...containersData];
   }, [containersData]);
@@ -76,11 +80,11 @@ export function PopupApp(_props: Props): JSX.Element {
 
   const onRefresh = React.useCallback(async () => {
     setStatus('Refreshing…');
-    await refetch();
+    await refetchContainers();
     await updateContextInfo();
     setStatus('');
     return;
-  }, [refetch, updateContextInfo]);
+  }, [refetchContainers, updateContextInfo]);
 
   const openInSelectedContainer = React.useCallback(async () => {
     try {
@@ -111,24 +115,18 @@ export function PopupApp(_props: Props): JSX.Element {
   const createTemporaryContainer = React.useCallback(async () => {
     try {
       const name = `Temp ${new Date().toLocaleTimeString()}`;
-      const response = await browser.runtime.sendMessage({ type: 'CREATE_CONTAINER', payload: { name, temporary: true } });
-      if (response?.success) {
-        await refetch();
-        const created = response.data as Container | undefined;
-        if (created?.cookieStoreId) {
-          setSelectedCookieStoreId(created.cookieStoreId);
-        }
-        setStatus('Temporary container created');
-      } else {
-        throw new Error(response?.error || 'Create failed');
+      const created = await createContainer({ name, temporary: true });
+      if (created?.cookieStoreId) {
+        setSelectedCookieStoreId(created.cookieStoreId);
       }
+      setStatus('Temporary container created');
       return;
     } catch (e: unknown) {
       const msg = (e instanceof Error) ? e.message : String(e);
       setStatus(`Failed to create temp: ${msg}`);
       return;
     }
-  }, [refetch]);
+  }, [createContainer]);
 
   const quickAddCurrentDomain = React.useCallback(async () => {
     try {
@@ -138,19 +136,15 @@ export function PopupApp(_props: Props): JSX.Element {
         return;
       }
       const { hostname } = new URL(tab.url as string);
-      const resp = await browser.runtime.sendMessage({
-        type: 'CREATE_RULE',
-        payload: {
-          containerId: selectedCookieStoreId,
-          pattern: hostname,
-          matchType: 'domain',
-          ruleType: 'include',
-          priority: 1,
-          enabled: true,
-          metadata: { source: 'user' },
-        },
+      await createRule({
+        containerId: selectedCookieStoreId,
+        pattern: hostname,
+        matchType: MatchType.DOMAIN,
+        ruleType: RuleType.INCLUDE,
+        priority: 1,
+        enabled: true,
+        metadata: { source: 'user' },
       });
-      if (!resp || !resp.success) { throw new Error(resp ? resp.error : 'No response'); }
       setStatus(`Added rule for ${hostname}`);
       return;
     } catch (e: unknown) {
@@ -158,7 +152,7 @@ export function PopupApp(_props: Props): JSX.Element {
       setStatus(`Failed to add rule: ${msg}`);
       return;
     }
-  }, [selectedCookieStoreId]);
+  }, [selectedCookieStoreId, createRule]);
 
   const bookmarkCurrentTab = React.useCallback(async () => {
     try {
@@ -202,7 +196,7 @@ export function PopupApp(_props: Props): JSX.Element {
         </div>
         <div className="header-actions">
           <ThemeSwitcher compact />
-          <button className="ghost" title="Refresh" type="button" onClick={() => { onRefresh(); return; }}>{isFetching ? 'Refreshing…' : 'Refresh'}</button>
+          <button className="ghost" title="Refresh" type="button" onClick={() => { onRefresh(); return; }}>{isLoading ? 'Refreshing…' : 'Refresh'}</button>
         </div>
       </div>
 

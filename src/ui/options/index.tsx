@@ -6,26 +6,19 @@ import { QueryProvider } from '@/ui/shared/providers/QueryProvider';
 import { ThemeProvider } from '@/ui/shared/contexts/ThemeContext';
 import { CSVImportExport } from '@/ui/shared/components/CSVImportExport';
 import { ThemeSwitcher } from '@/ui/shared/components/ThemeSwitcher';
-import { RuleItem } from '@/ui/shared/components/RuleItem';
 import { BookmarkManager } from '@/ui/shared/components/BookmarkManager';
-import { Card, CardHeader, CardContent, CardActions } from '@/ui/shared/components/Card';
 import { useRules, useRuleActions } from '@/ui/shared/hooks/useRules';
 import { ContainerModal } from '@/ui/options/ContainerModal';
 import { RuleModal } from '@/ui/options/RuleModal';
+import { SearchInput } from '@/ui/shared/components/SearchInput';
+import { ContainerCard, type ContainerLite } from '@/ui/shared/components/ContainerCard';
+import { RuleCard } from '@/ui/shared/components/RuleCard';
+import { PageHeader } from '@/ui/shared/components/PageHeader';
+import { InterceptorTest } from '@/ui/shared/components/InterceptorTest';
+import { StatusBar } from '@/ui/shared/components/StatusBar';
 import type { CSVImportResult } from '@/shared/utils/csv';
 import type { Rule } from '@/shared/types';
 
-interface ContainerLite {
-  id: string;
-  name: string;
-  cookieStoreId: string;
-  color?: string;
-  icon?: string;
-  created?: number;
-  modified?: number;
-  temporary?: boolean;
-  syncEnabled?: boolean;
-}
 
 function PageShell(props: { children: React.ReactNode; }): JSX.Element {
   return (
@@ -70,9 +63,7 @@ function Content(props: { children: React.ReactNode; }): JSX.Element {
 function Dashboard(): JSX.Element {
   return (
     <div className="page">
-      <div className="header">
-        <h2 className="title">Dashboard</h2>
-      </div>
+      <PageHeader title="Dashboard" />
       <div className="small">Statistics and overview coming soon.</div>
     </div>
   );
@@ -138,41 +129,10 @@ function ContainersPage(): JSX.Element {
     }
   }, [refresh]);
 
-  const iconToEmoji = React.useCallback((icon: string | undefined): string => {
-    switch ((icon || '').toLowerCase()) {
-      case 'briefcase': return '💼';
-      case 'dollar': return '💵';
-      case 'cart': return '🛒';
-      case 'fence': return '🚧';
-      case 'fruit': return '🍎';
-      case 'gift': return '🎁';
-      case 'vacation': return '🏖️';
-      case 'tree': return '🌳';
-      case 'chill': return '❄️';
-      case 'fingerprint': return '🆔';
-      default: return '🗂️';
-    }
-  }, []);
-
-  const colorToCss = React.useCallback((color: string | undefined): string => {
-    switch ((color || '').toLowerCase()) {
-      case 'blue': return '#4A90E2';
-      case 'turquoise': return '#30D5C8';
-      case 'green': return '#5CB85C';
-      case 'yellow': return '#F0AD4E';
-      case 'orange': return '#FF8C42';
-      case 'red': return '#D9534F';
-      case 'pink': return '#FF69B4';
-      case 'purple': return '#7B68EE';
-      case 'toolbar': return '#999';
-      default: return '#ccc';
-    }
-  }, []);
 
   return (
     <div className="page">
-      <div className="header">
-        <h2 className="title">Containers</h2>
+      <PageHeader title="Containers">
         <div className="flex gap-2">
           <button className="btn ghost" type="button" onClick={refresh}>
             Sync with Firefox
@@ -181,43 +141,27 @@ function ContainersPage(): JSX.Element {
             + New Container
           </button>
         </div>
-      </div>
+      </PageHeader>
       <div className="toolbar">
-        <input
-          className="input"
-          placeholder="Search containers..."
+        <SearchInput 
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
+          placeholder="Search containers..."
         />
       </div>
       {loading ? (<div className="small">Loading…</div>) : null}
       {error ? (<div className="small" role="alert">{error}</div>) : null}
       <div className="cards-grid">
         {filtered.map((c) => (
-          <Card key={c.id}>
-            <CardHeader>
-              <span className="swatch" style={{ background: colorToCss(c.color) }} />
-              <span className="mr-1.5 text-base">{iconToEmoji(c.icon)}</span>
-              <div className="name">{c.name}</div>
-            </CardHeader>
-            <CardContent>
-              <div className="small">{c.cookieStoreId}</div>
-            </CardContent>
-            <div className="row">
-              <div />
-              <CardActions>
-                <button className="btn ghost sm" type="button" onClick={() => openEditModal(c)}>
-                  Edit
-                </button>
-                <button className="btn danger sm" type="button" onClick={() => deleteContainer(c)}>
-                  Delete
-                </button>
-              </CardActions>
-            </div>
-          </Card>
+          <ContainerCard 
+            key={c.id} 
+            container={c} 
+            onEdit={openEditModal} 
+            onDelete={deleteContainer} 
+          />
         ))}
       </div>
-      <div className="status">{containers.length} container(s)</div>
+      <StatusBar message={`${containers.length} container(s)`} />
 
       <ContainerModal
         isOpen={modalState.isOpen}
@@ -255,41 +199,44 @@ function RulesPage(): JSX.Element {
   }, []);
 
   const filteredRules = React.useMemo(() => {
-    let filtered = rules;
+    try {
+      let filtered = rules;
 
-    if (filter) {
-      const lowerFilter = filter.toLowerCase();
-      filtered = rules.filter(rule =>
-        rule.pattern.toLowerCase().includes(lowerFilter) ||
-        rule.metadata.description?.toLowerCase().includes(lowerFilter) ||
-        containers.find(c => c.cookieStoreId === rule.containerId)?.name.toLowerCase().includes(lowerFilter),
-      );
-    }
-
-    return filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'pattern':
-          return a.pattern.localeCompare(b.pattern);
-        case 'priority':
-          return b.priority - a.priority; // Higher priority first
-        case 'type':
-          return a.ruleType.localeCompare(b.ruleType);
-        case 'container': {
-          const containerA = containers.find(c => c.cookieStoreId === a.containerId)?.name || '';
-          const containerB = containers.find(c => c.cookieStoreId === b.containerId)?.name || '';
-          return containerA.localeCompare(containerB);
-        }
-        default:
-          return 0;
+      if (filter) {
+        const lowerFilter = filter.toLowerCase();
+        filtered = rules.filter(rule =>
+          rule.pattern.toLowerCase().includes(lowerFilter) ||
+          rule.metadata.description?.toLowerCase().includes(lowerFilter) ||
+          containers.find(c => c.cookieStoreId === rule.containerId)?.name.toLowerCase().includes(lowerFilter),
+        );
       }
-    });
+
+      return filtered.sort((a, b) => {
+        switch (sortBy) {
+          case 'pattern':
+            return a.pattern.localeCompare(b.pattern);
+          case 'priority':
+            return b.priority - a.priority; // Higher priority first
+          case 'type':
+            return a.ruleType.localeCompare(b.ruleType);
+          case 'container': {
+            const containerA = containers.find(c => c.cookieStoreId === a.containerId)?.name || '';
+            const containerB = containers.find(c => c.cookieStoreId === b.containerId)?.name || '';
+            return containerA.localeCompare(containerB);
+          }
+          default:
+            return 0;
+        }
+      });
+    } catch (error) {
+      return [];
+    }
   }, [rules, containers, filter, sortBy]);
 
   const handleToggleEnabled = React.useCallback(async (rule: Rule) => {
     try {
       await updateRule(rule.id, { enabled: !rule.enabled });
     } catch (error) {
-      console.error('Failed to toggle rule:', error);
     }
   }, [updateRule]);
 
@@ -299,14 +246,13 @@ function RulesPage(): JSX.Element {
     try {
       await deleteRule(rule.id);
     } catch (error) {
-      console.error('Failed to delete rule:', error);
     }
   }, [deleteRule]);
 
   if (rulesLoading) {
     return (
       <div className="page">
-        <div className="header"><h2 className="title">Rules</h2></div>
+        <PageHeader title="Rules" />
         <div className="small">Loading rules...</div>
       </div>
     );
@@ -315,7 +261,7 @@ function RulesPage(): JSX.Element {
   if (rulesError) {
     return (
       <div className="page">
-        <div className="header"><h2 className="title">Rules</h2></div>
+        <PageHeader title="Rules" />
         <div className="small">Error loading rules: {rulesError.message}</div>
       </div>
     );
@@ -323,20 +269,17 @@ function RulesPage(): JSX.Element {
 
   return (
     <div className="page">
-      <div className="header">
-        <h2 className="title">Rules</h2>
+      <PageHeader title="Rules">
         <button className="btn" type="button" onClick={openCreateRuleModal}>
           + New Rule
         </button>
-      </div>
+      </PageHeader>
 
       <div className="toolbar">
-        <input
-          type="text"
-          className="input"
-          placeholder="Filter rules..."
+        <SearchInput
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={setFilter}
+          placeholder="Filter rules..."
         />
         <select
           className="input"
@@ -356,31 +299,30 @@ function RulesPage(): JSX.Element {
             {filter ? 'No rules match your filter.' : 'No rules configured. Add your first rule!'}
           </div>
         ) : (
-          filteredRules.map((rule) => (
-            <RuleItem
-              key={rule.id}
-              rule={rule}
-              containers={containers.map(c => ({
-                ...c,
-                icon: c.icon || 'fingerprint',
-                color: c.color || 'toolbar',
-                created: c.created || Date.now(),
-                modified: c.modified || Date.now(),
-                temporary: c.temporary || false,
-                syncEnabled: c.syncEnabled || false,
-              }))}
-              onToggleEnabled={handleToggleEnabled}
-              onDelete={handleDeleteRule}
-              onEdit={openEditRuleModal}
-            />
-          ))
+          filteredRules.map((rule) => {
+            try {
+              return (
+                <RuleCard
+                  key={rule.id}
+                  rule={rule}
+                  containers={containers}
+                  onToggleEnabled={handleToggleEnabled}
+                  onEdit={openEditRuleModal}
+                  onDelete={handleDeleteRule}
+                />
+              );
+            } catch (error) {
+              return (
+                <div key={rule.id} className="small">
+                  Error rendering rule: {rule.id || 'unknown'}
+                </div>
+              );
+            }
+          })
         )}
       </div>
 
-      <div className="status">
-        {filteredRules.length} of {rules.length} rule(s)
-        {filter && ` (filtered: "${filter}")`}
-      </div>
+      <StatusBar message={`${filteredRules.length} of ${rules.length} rule(s)${filter ? ` (filtered: "${filter}")` : ''}`} />
 
       <RuleModal
         isOpen={ruleModalState.isOpen}
@@ -423,10 +365,8 @@ function ImportExportPage(): JSX.Element {
 
   return (
     <div className="page">
-      <div className="header">
-        <h2 className="title">Import/Export</h2>
-      </div>
-      {status && <div className="status">{status}</div>}
+      <PageHeader title="Import/Export" />
+      {status && <StatusBar message={status} />}
       <CSVImportExport
         onImportComplete={handleImportComplete}
         onError={handleError}
@@ -440,9 +380,7 @@ function BookmarksPage(): JSX.Element {
 
   return (
     <div className="page">
-      <div className="header">
-        <h2 className="title">Bookmarks</h2>
-      </div>
+      <PageHeader title="Bookmarks" />
       <BookmarkManager containers={containers.map(c => ({
         ...c,
         icon: c.icon || 'fingerprint',
@@ -457,45 +395,11 @@ function BookmarksPage(): JSX.Element {
 }
 
 function SettingsPage(): JSX.Element {
-  const [testUrl, setTestUrl] = React.useState('https://github.com');
-  const [testResult, setTestResult] = React.useState<string>('');
-
-  const testInterceptor = React.useCallback(async () => {
-    try {
-      const response = await browser.runtime.sendMessage({
-        type: 'TEST_INTERCEPTOR',
-        payload: { url: testUrl },
-      });
-      setTestResult(JSON.stringify(response, null, 2));
-    } catch (error) {
-      setTestResult(`Error: ${error}`);
-    }
-  }, [testUrl]);
-
   return (
     <div className="page">
-      <div className="header"><h2 className="title">Settings</h2></div>
+      <PageHeader title="Settings" />
       <ThemeSwitcher />
-
-      <div className="mt-8 p-4 border border-gray-300 rounded">
-        <h3>Interceptor Test</h3>
-        <div className="mb-4">
-          <input
-            type="text"
-            value={testUrl}
-            onChange={(e) => setTestUrl(e.target.value)}
-            placeholder="Enter URL to test"
-            className="w-80 mr-2.5"
-          />
-          <button type="button" onClick={testInterceptor}>Test Rules Engine</button>
-        </div>
-        {testResult && (
-          <pre className="bg-gray-100 p-4 text-xs overflow-auto">
-            {testResult}
-          </pre>
-        )}
-      </div>
-
+      <InterceptorTest />
       <div className="small">More settings coming soon.</div>
     </div>
   );

@@ -11,11 +11,28 @@ export function useRules() {
         type: MESSAGE_TYPES.GET_RULES,
       });
 
+
       if (!response?.success) {
         throw new Error(response?.error || 'Failed to fetch rules');
       }
 
-      return response.data || [];
+      const rules = response.data || [];
+      
+      // Validate each rule
+      rules.forEach((rule: Rule, index: number) => {
+        
+        // Check for common issues
+        if (!rule.metadata) {
+        }
+        if (typeof rule.priority !== 'number') {
+        }
+        if (!rule.ruleType || !['include', 'exclude', 'restrict'].includes(rule.ruleType)) {
+        }
+        if (!rule.matchType || !['exact', 'domain', 'glob', 'regex'].includes(rule.matchType)) {
+        }
+      });
+
+      return rules;
     },
     staleTime: 30000, // 30 seconds
   });

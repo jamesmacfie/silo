@@ -263,7 +263,6 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
     };
   }
 
-  // console.log(`Pattern "${pattern}" passed all validations`);
   return { isValid: true };
 }
 

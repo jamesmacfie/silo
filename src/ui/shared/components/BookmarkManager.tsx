@@ -75,7 +75,6 @@ export function BookmarkManager({ containers = [] }: Props): JSX.Element {
     try {
       await addAssociation(bookmark.id, selectedContainer, bookmark.url, true);
     } catch (error) {
-      console.error('Failed to assign container:', error);
     }
   }, [selectedContainer, addAssociation]);
 
@@ -85,7 +84,6 @@ export function BookmarkManager({ containers = [] }: Props): JSX.Element {
     try {
       await removeAssociation(bookmark.id);
     } catch (error) {
-      console.error('Failed to remove association:', error);
     }
   }, [removeAssociation]);
 
@@ -102,7 +100,6 @@ export function BookmarkManager({ containers = [] }: Props): JSX.Element {
       try {
         await addAssociation(bookmark.id, selectedContainer, bookmark.url!, true);
       } catch (error) {
-        console.error('Failed to assign bookmark:', bookmark.title, error);
       }
     }
   }, [selectedContainer, filteredBookmarks, addAssociation]);

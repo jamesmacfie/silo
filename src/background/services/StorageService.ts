@@ -117,26 +117,20 @@ export class StorageService {
     try {
       const result = await browser.storage.sync.get(key);
       return result[key] || null;
-    } catch (error) {
-      console.warn('Sync storage not available:', error);
+    } catch {
       return null;
     }
   }
 
   async syncSet<T>(key: string, value: T): Promise<void> {
-    try {
-      await browser.storage.sync.set({ [key]: value });
-    } catch (error) {
-      console.warn('Sync storage not available:', error);
-      throw error;
-    }
+    await browser.storage.sync.set({ [key]: value });
   }
 
   async syncRemove(key: string): Promise<void> {
     try {
       await browser.storage.sync.remove(key);
-    } catch (error) {
-      console.warn('Sync storage not available:', error);
+    } catch {
+      // Ignore sync storage errors
     }
   }
 

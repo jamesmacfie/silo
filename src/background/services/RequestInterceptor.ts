@@ -33,13 +33,10 @@ export class RequestInterceptor {
             ['blocking'],
           );
           webRequestRegistered = true;
-          console.log('✅ webRequest listener registered');
         } catch (webRequestError) {
-          console.warn('⚠️ Failed to register webRequest listener:', webRequestError);
           this.log.warn('Failed to register webRequest listener', webRequestError);
         }
       } else {
-        console.warn('⚠️ webRequest API not available');
       }
 
       // Always register tab listeners as fallback
@@ -54,13 +51,8 @@ export class RequestInterceptor {
         tabListenersRegistered: true,
       });
 
-      console.log('✅ Request interceptor registered:', {
-        webRequestRegistered,
-        tabListenersRegistered: true,
-      });
 
     } catch (error) {
-      console.error('❌ Failed to register request interceptor:', error);
       this.log.error('Failed to register request interceptor', error);
       throw error;
     }
@@ -86,7 +78,6 @@ export class RequestInterceptor {
   private async handleRequest(details: browser.WebRequest.OnBeforeRequestDetailsType): Promise<browser.WebRequest.BlockingResponse> {
     const { url, tabId, frameId } = details;
 
-    console.log('🌍 Request intercepted:', url, 'tabId:', tabId, 'frameId:', frameId);
     this.log.debug('Request intercepted', { url, tabId, frameId });
 
     // Only process main frame requests (like the original implementation)
@@ -108,22 +99,16 @@ export class RequestInterceptor {
     }
 
     try {
-      console.log('🔍 Getting tab info for tabId:', tabId);
       // Get current tab info
       const tab = await browser.tabs.get(tabId);
       const currentContainer = tab?.cookieStoreId;
-      console.log('🔍 Tab info:', { cookieStoreId: currentContainer, url: tab.url });
 
       // Check for bookmark container hint in URL and clean it
-      console.log('🔍 Processing bookmark URL...');
       const processed = await bookmarkIntegration.processBookmarkUrl(url);
       const urlToEvaluate = processed.cleanUrl;
-      console.log('🔍 URL to evaluate:', urlToEvaluate);
 
       // Evaluate URL against rules
-      console.log('🔍 Starting rule evaluation for:', urlToEvaluate, 'current container:', currentContainer);
       const evaluation = await this.rulesEngine.evaluate(urlToEvaluate, currentContainer);
-      console.log('🔍 Rule evaluation result:', evaluation);
 
       this.log.debug('Request evaluation', {
         url: urlToEvaluate,
@@ -168,7 +153,6 @@ export class RequestInterceptor {
       }
 
     } catch (error) {
-      console.error('❌ Error handling request:', error, 'URL:', url, 'TabID:', tabId);
       this.log.error('Error handling request', { url, tabId, error });
       return {}; // Allow request to proceed on error
     }
@@ -347,11 +331,9 @@ export class RequestInterceptor {
     tab: browser.Tabs.Tab,
   ): Promise<void> {
 
-    console.log('🔄 Tab update:', tabId, changeInfo, tab.url);
 
     // Only process when URL changes
     if (!changeInfo.url || !tab.url) {
-      console.log('🔄 Tab update skipped - no URL change');
       return;
     }
 

@@ -16,7 +16,7 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
   const [csvContent, setCsvContent] = React.useState('');
   const [createMissing, setCreateMissing] = React.useState(true);
   const [exportOptions, setExportOptions] = React.useState<CSVExportOptions>({
-    includeComments: true,
+    includeComments: false,  // Changed to false - no comments by default
     includeHeaders: true,
     includeDisabled: true,
   });
@@ -325,6 +325,7 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
           padding: 1rem;
           border: 1px solid var(--border, #dee2e6);
           border-radius: 8px;
+          background: var(--background, #ffffff);
         }
 
         .section h3 {
@@ -396,7 +397,7 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
           padding: 1rem;
           border: 1px solid var(--border, #dee2e6);
           border-radius: 8px;
-          background: var(--surface, #f8f9fa);
+          background: var(--background-secondary, #f8f9fa);
         }
 
         .import-preview h3 {
@@ -412,19 +413,23 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
 
         .stat {
           padding: 0.5rem;
-          background: white;
+          background: var(--background, #ffffff);
+          border: 1px solid var(--border, #dee2e6);
           border-radius: 4px;
           font-size: 0.9rem;
+          color: var(--text, #000000);
         }
 
         .stat.error {
-          background: #fee;
-          color: #c33;
+          background: var(--error-bg, #fee);
+          color: var(--error-text, #c33);
+          border-color: var(--error-border, #c33);
         }
 
         .stat.warning {
-          background: #ffc;
-          color: #880;
+          background: var(--warning-bg, #ffc);
+          color: var(--warning-text, #880);
+          border-color: var(--warning-border, #880);
         }
 
         .preview-section {
@@ -449,13 +454,15 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
         }
 
         .message.error {
-          background: #fee;
-          border-left: 3px solid #c33;
+          background: var(--error-bg, #fee);
+          border-left: 3px solid var(--error-border, #c33);
+          color: var(--error-text, #c33);
         }
 
         .message.warning {
-          background: #ffc;
-          border-left: 3px solid #880;
+          background: var(--warning-bg, #ffc);
+          border-left: 3px solid var(--warning-border, #880);
+          color: var(--warning-text, #880);
         }
 
         .data {

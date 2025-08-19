@@ -47,7 +47,6 @@ export function PatternTester({
       const matches = await testPattern(testUrl, pattern, matchType);
       setTestResult({ matches, tested: true });
     } catch (error) {
-      console.error('Pattern test failed:', error);
       setTestResult({ matches: false, tested: true });
     } finally {
       setIsTesting(false);

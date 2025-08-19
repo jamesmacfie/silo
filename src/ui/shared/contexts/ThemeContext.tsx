@@ -43,7 +43,6 @@ export function ThemeProvider({ children }: Props): JSX.Element {
           setThemeState(preferences.theme || 'auto');
         }
       } catch (error) {
-        console.warn('Failed to load theme preference:', error);
       } finally {
         setLoading(false);
       }
@@ -114,7 +113,6 @@ export function ThemeProvider({ children }: Props): JSX.Element {
         });
       }
     } catch (error) {
-      console.warn('Failed to save theme preference:', error);
     }
   }, []);
 

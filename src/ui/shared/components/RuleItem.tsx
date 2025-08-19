@@ -12,6 +12,7 @@ import {
   Lock, 
   HelpCircle, 
 } from 'lucide-react';
+import './RuleItem.css';
 
 interface Props {
   rule: Rule;
@@ -47,7 +48,16 @@ function ExpandableDescription({ description }: { description: string }): JSX.El
 }
 
 export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }: Props): JSX.Element {
+
+  // Check for missing metadata
+  if (!rule.metadata) {
+    // Provide default metadata to prevent crash
+    rule.metadata = {};
+  }
+
   const container = containers.find(c => c.cookieStoreId === rule.containerId);
+  if (rule.containerId && !container) {
+  }
 
   const getContainerColor = (color: string | undefined): string => {
     switch ((color || '').toLowerCase()) {
@@ -95,21 +105,41 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
   const ruleTypeInfo = getRuleTypeInfo(rule.ruleType);
   const matchTypeInfo = getMatchTypeInfo(rule.matchType);
 
+  // Render icons based on type
+  const renderMatchIcon = () => {
+    switch (rule.matchType) {
+      case MatchType.EXACT:
+        return <Target className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+      case MatchType.DOMAIN:
+        return <Globe className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+      case MatchType.GLOB:
+        return <Sparkles className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+      case MatchType.REGEX:
+        return <Search className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+      default:
+        return <HelpCircle className="match-type-icon" size={16} title={matchTypeInfo.description} />;
+    }
+  };
+
+  const renderRuleIcon = () => {
+    switch (rule.ruleType) {
+      case RuleType.INCLUDE:
+        return <Plus className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+      case RuleType.EXCLUDE:
+        return <Minus className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+      case RuleType.RESTRICT:
+        return <Lock className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+      default:
+        return <HelpCircle className="rule-type-icon" size={16} style={{ color: ruleTypeInfo.color }} title={ruleTypeInfo.description} />;
+    }
+  };
+
   return (
     <Card className={!rule.enabled ? 'disabled' : ''}>
       <CardHeader>
         <div className="rule-left">
-          <matchTypeInfo.icon 
-            className="match-type-icon" 
-            size={16}
-            title={matchTypeInfo.description}
-          />
-          <ruleTypeInfo.icon 
-            className="rule-type-icon"
-            size={16}
-            style={{ color: ruleTypeInfo.color }}
-            title={ruleTypeInfo.description}
-          />
+          {renderMatchIcon()}
+          {renderRuleIcon()}
           <span className="pattern" title={rule.pattern}>{rule.pattern}</span>
         </div>
         <div className="rule-right">
@@ -130,9 +160,10 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
       </CardHeader>
 
       <CardContent>
-        {rule.metadata.description && (
+        {rule.metadata?.description && (
           <ExpandableDescription description={rule.metadata.description} />
         )}
+        {!rule.metadata?.description && <div className="description-spacer" />}
         {!rule.enabled && (
           <div className="status-indicator">
             <span className="status-badge disabled">Disabled</span>
@@ -144,6 +175,7 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
         <div />
         <CardActions>
           <button 
+            type="button"
             className={`btn ghost sm ${rule.enabled ? 'enabled' : 'disabled'}`}
             onClick={() => onToggleEnabled?.(rule)}
             title={rule.enabled ? 'Disable rule' : 'Enable rule'}
@@ -151,6 +183,7 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
             {rule.enabled ? 'Enabled' : 'Disabled'}
           </button>
           <button 
+            type="button"
             className="btn ghost sm"
             onClick={() => onEdit?.(rule)}
             title="Edit rule"
@@ -158,6 +191,7 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
             Edit
           </button>
           <button 
+            type="button"
             className="btn danger sm"
             onClick={() => onDelete?.(rule)}
             title="Delete rule"
@@ -166,167 +200,6 @@ export function RuleItem({ rule, containers, onEdit, onDelete, onToggleEnabled }
           </button>
         </CardActions>
       </div>
-
-      <style>{`
-        .card {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .card.disabled {
-          opacity: 0.7;
-        }
-
-        .cardHead {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 0.75rem;
-          min-height: 2.5rem;
-        }
-
-        .rule-left {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .rule-right {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          flex-shrink: 0;
-        }
-
-        .match-type-icon,
-        .rule-type-icon {
-          font-size: 1.1rem;
-          flex-shrink: 0;
-        }
-
-        .pattern {
-          font-family: monospace;
-          font-weight: 500;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .container-name {
-          font-size: 0.8rem;
-          font-weight: 500;
-          max-width: 120px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .no-container-note {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #6c757d);
-          font-style: italic;
-        }
-
-        .rule-priority {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #6c757d);
-          background: var(--background, #ffffff);
-          border: 1px solid var(--border, #dee2e6);
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-          white-space: nowrap;
-        }
-
-        .card-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          min-height: 3rem;
-        }
-
-        .rule-description {
-          font-size: 0.85rem;
-          color: var(--text-secondary, #6c757d);
-          font-style: italic;
-          line-height: 1.4;
-        }
-
-        .expand-btn {
-          background: none;
-          border: none;
-          color: #3b82f6;
-          cursor: pointer;
-          font-size: 0.8rem;
-          font-weight: 500;
-          margin-left: 0.5rem;
-          padding: 0;
-          text-decoration: underline;
-        }
-
-        .expand-btn:hover {
-          color: #1d4ed8;
-        }
-
-        .status-indicator {
-          margin-top: 0.5rem;
-        }
-
-        .status-badge {
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 500;
-          white-space: nowrap;
-        }
-
-        .status-badge.disabled {
-          background: #dc354520;
-          color: #dc3545;
-          border: 1px solid #dc354540;
-        }
-
-        .btn.enabled {
-          background: #10b981;
-          color: white;
-          border-color: #10b981;
-        }
-
-        .btn.enabled:hover {
-          background: #059669;
-          border-color: #059669;
-        }
-
-        .btn.disabled {
-          background: #6b7280;
-          color: white;
-          border-color: #6b7280;
-        }
-
-        .btn.disabled:hover {
-          background: #4b5563;
-          border-color: #4b5563;
-        }
-
-        /* Dark theme adjustments */
-        :root.dark .rule-priority {
-          background: #1e293b;
-          border-color: #334155;
-        }
-
-        :root.dark .expand-btn {
-          color: #60a5fa;
-        }
-
-        :root.dark .expand-btn:hover {
-          color: #93c5fd;
-        }
-      `}</style>
     </Card>
   );
 }

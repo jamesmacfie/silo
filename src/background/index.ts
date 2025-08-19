@@ -11,46 +11,30 @@ import * as matcher from './utils/matcher';
 import type { CreateContainerRequest, CreateRuleRequest, BackupData, Rule } from '@/shared/types';
 import { parseCSV, exportToCSV, generateCSVTemplate, type CSVExportOptions } from '@/shared/utils/csv';
 
-console.log('Silo v-next background script loaded');
-console.log('🔧 Browser APIs available:', {
-  webRequest: !!browser.webRequest,
-  contextualIdentities: !!browser.contextualIdentities,
-  tabs: !!browser.tabs,
-  storage: !!browser.storage,
-});
 
 async function initialize(): Promise<void> {
-  console.log('🚀 Silo v-next background initialization starting...');
 
   // Test if we can load rules
   try {
     const rules = await storageService.getRules();
-    console.log('📋 Current rules loaded:', rules.length, rules);
   } catch (error) {
-    console.error('❌ Failed to load rules:', error);
   }
 
   try {
     await storageService.migrate();
-    console.log('✅ Storage initialization completed');
   } catch (error: unknown) {
-    console.error('❌ Storage initialization failed', error);
     logger.error('Storage initialization failed', error);
   }
 
   try {
     await containerManager.syncWithFirefox();
-    console.log('✅ Container sync completed');
   } catch (error: unknown) {
-    console.warn('⚠️ Container sync failed (continuing)', error);
     logger.warn('Container sync failed (continuing)', error);
   }
 
   try {
     await requestInterceptor.register();
-    console.log('✅ Request interceptor registered');
   } catch (error: unknown) {
-    console.error('❌ Failed to register request interceptor', error);
     logger.error('Failed to register request interceptor', error);
   }
 
@@ -80,7 +64,6 @@ if (browser.runtime.onStartup) {
 }
 
 browser.runtime.onMessage.addListener(async (message: Message) => {
-  console.log('📨 Received message:', message?.type);
   logger.debug('Received message', { type: message?.type });
 
   try {
@@ -91,14 +74,11 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
 
       case 'TEST_INTERCEPTOR': {
         const { url } = (message.payload || {}) as { url: string };
-        console.log('🧪 Testing interceptor for URL:', url);
 
         try {
           const evaluation = await rulesEngine.evaluate(url);
-          console.log('🧪 Test evaluation result:', evaluation);
           return { success: true, data: evaluation };
         } catch (error) {
-          console.error('🧪 Test evaluation failed:', error);
           return { success: false, error: String(error) };
         }
       }

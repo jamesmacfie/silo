@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Variables for theming */
+:root {
+  --background: #ffffff;
+  --background-secondary: #f8fafc;
+  --border: #dee2e6;
+  --text: #000000;
+  --text-secondary: #6c757d;
+  --error-bg: #fef2f2;
+  --error-text: #dc2626;
+  --error-border: #fca5a5;
+  --warning-bg: #fffbeb;
+  --warning-text: #d97706;
+  --warning-border: #fed7aa;
+}
+
+/* Dark mode CSS variables */
+:root.dark {
+  --background: #0f172a;
+  --background-secondary: #1e293b;
+  --border: #334155;
+  --text: #ffffff;
+  --text-secondary: #cbd5e1;
+  --error-bg: #7f1d1d;
+  --error-text: #fca5a5;
+  --error-border: #dc2626;
+  --warning-bg: #78350f;
+  --warning-text: #fed7aa;
+  --warning-border: #d97706;
+}
+
 /* Light mode styles (default) */
 body { @apply bg-gray-50 text-gray-900; }
 .app { @apply grid grid-cols-[260px_1fr] min-h-screen; }

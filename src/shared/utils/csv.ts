@@ -1,6 +1,25 @@
 import type { Rule, Container, CreateRuleRequest } from '@/shared/types';
 import { MatchType, RuleType } from '@/shared/types';
 
+// Constants for CSV parsing
+const MATCH_TYPES = {
+  exact: MatchType.EXACT,
+  domain: MatchType.DOMAIN,
+  glob: MatchType.GLOB,
+  regex: MatchType.REGEX,
+} as const;
+
+const RULE_TYPES = {
+  include: RuleType.INCLUDE,
+  exclude: RuleType.EXCLUDE,
+  restrict: RuleType.RESTRICT,
+} as const;
+
+const VALID_ENABLED_VALUES = ['true', 'false', '1', '0', 'yes', 'no'] as const;
+const DEFAULT_PRIORITY = 1;
+const MIN_PRIORITY = 1;
+const MAX_PRIORITY = 100;
+
 export interface CSVRule {
   pattern: string;
   containerName: string;
@@ -17,6 +36,11 @@ export interface CSVImportResult {
   errors: CSVError[];
   warnings: CSVWarning[];
   skipped: number;
+}
+
+export interface CSVParseResult extends CSVImportResult {
+  comments?: string[];
+  containersToCreate?: string[];
 }
 
 export interface CSVError {
@@ -40,33 +64,40 @@ export interface CSVExportOptions {
 /**
  * Parse CSV content into rules
  */
-export function parseCSV(content: string, containers: Container[], options?: { createMissingContainers?: boolean, preserveMetadata?: boolean, source?: string }): CSVImportResult & { comments?: string[], containersToCreate?: string[] } {
+export function parseCSV(
+  content: string,
+  containers: Container[],
+  options?: {
+    createMissingContainers?: boolean;
+    preserveMetadata?: boolean;
+    source?: string;
+  },
+): CSVParseResult {
   const lines = content.split(/\r\n|\r|\n/).map(line => line.trim());
-  const rules: CreateRuleRequest[] = [];
-  const missingContainers = new Set<string>();
-  const errors: CSVError[] = [];
-  const warnings: CSVWarning[] = [];
-  const comments: string[] = [];
-  const containersToCreate: string[] = [];
-  let skipped = 0;
+  const result: CSVParseResult = {
+    rules: [],
+    missingContainers: [],
+    errors: [],
+    warnings: [],
+    skipped: 0,
+    comments: [],
+    containersToCreate: [],
+  };
 
-  const containerMap = new Map<string, Container>();
-  containers.forEach(c => {
-    containerMap.set(c.name.toLowerCase(), c);
-  });
+  const containerMap = createContainerMap(containers);
+
+  const missingContainers = new Set<string>();
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNum = i + 1;
 
-    // Skip empty lines and comments
-    if (!line) {
-      skipped++;
-      continue;
-    }
-    if (line.startsWith('#')) {
-      comments.push(line);
-      skipped++;
+    // Skip empty lines, comments, and headers
+    if (shouldSkipLine(line)) {
+      if (line.startsWith('#')) {
+        result.comments?.push(line);
+      }
+      result.skipped++;
       continue;
     }
 
@@ -81,21 +112,18 @@ export function parseCSV(content: string, containers: Container[], options?: { c
         continue;
       }
 
-      // Validate pattern
-      if (!parsed.pattern) {
-        errors.push({
-          line: lineNum,
-          message: 'Pattern is required',
-          data: line,
-        });
+      // Skip header-like rows
+      if (isHeaderRow(parsed)) {
+        result.skipped++;
         continue;
       }
 
       // Validate pattern format
-      if (parsed.pattern.includes('[') && !parsed.pattern.includes(']')) {
-        errors.push({
+      const patternError = validatePatternFormat(parsed.pattern);
+      if (patternError) {
+        result.errors.push({
           line: lineNum,
-          message: `Invalid domain pattern: ${parsed.pattern}`,
+          message: patternError,
           data: line,
         });
         continue;
@@ -113,12 +141,12 @@ export function parseCSV(content: string, containers: Container[], options?: { c
 
       // Check if container exists
       const container = containerMap.get(parsed.containerName.toLowerCase());
-      if (!container) {
+      if (!container && parsed.containerName) {
         missingContainers.add(parsed.containerName);
         if (options?.createMissingContainers) {
-          containersToCreate.push(parsed.containerName);
+          result.containersToCreate?.push(parsed.containerName);
         } else {
-          warnings.push({
+          result.warnings.push({
             line: lineNum,
             message: `Container "${parsed.containerName}" does not exist`,
             data: line,
@@ -126,57 +154,44 @@ export function parseCSV(content: string, containers: Container[], options?: { c
         }
       }
 
-      // Parse match type
-      let matchType = MatchType.DOMAIN;
-      if (parsed.matchType) {
-        const mt = parsed.matchType.toLowerCase();
-        if (mt === 'exact') matchType = MatchType.EXACT;
-        else if (mt === 'domain') matchType = MatchType.DOMAIN;
-        else if (mt === 'glob') matchType = MatchType.GLOB;
-        else if (mt === 'regex') matchType = MatchType.REGEX;
-        else {
-          warnings.push({
-            line: lineNum,
-            message: `Unknown match type "${parsed.matchType}", using domain`,
-            data: line,
-          });
-        }
+      // Parse match type and rule type
+      const matchType = parseMatchType(parsed.matchType);
+      if (parsed.matchType && !matchType) {
+        result.warnings.push({
+          line: lineNum,
+          message: `Unknown match type "${parsed.matchType}", using domain`,
+          data: line,
+        });
       }
 
-      // Parse rule type
-      let ruleType = RuleType.INCLUDE;
-      if (parsed.ruleType) {
-        const rt = parsed.ruleType.toLowerCase();
-        if (rt === 'include') ruleType = RuleType.INCLUDE;
-        else if (rt === 'exclude') ruleType = RuleType.EXCLUDE;
-        else if (rt === 'restrict') ruleType = RuleType.RESTRICT;
-        else {
-          warnings.push({
-            line: lineNum,
-            message: `Unknown rule type "${parsed.ruleType}", using include`,
-            data: line,
-          });
-        }
+      const ruleType = parseRuleType(parsed.ruleType);
+      if (parsed.ruleType && !ruleType) {
+        result.warnings.push({
+          line: lineNum,
+          message: `Unknown rule type "${parsed.ruleType}", using include`,
+          data: line,
+        });
       }
 
       // Create rule
       const rule: CreateRuleRequest = {
         pattern: parsed.pattern,
-        matchType,
-        ruleType,
+        matchType: matchType || MatchType.DOMAIN,
+        ruleType: ruleType || RuleType.INCLUDE,
         containerId: container?.cookieStoreId,
-        priority: parsed.priority || 1,
+        priority: parsed.priority || DEFAULT_PRIORITY,
         enabled: parsed.enabled !== false,
         metadata: {
           description: parsed.description,
           source: (options?.source as 'user' | 'bookmark' | 'import') || 'import',
+          tags: [],
         },
       };
 
-      rules.push(rule);
+      result.rules.push(rule);
 
     } catch (error) {
-      errors.push({
+      result.errors.push({
         line: lineNum,
         message: error instanceof Error ? error.message : 'Parse error',
         data: line,
@@ -184,31 +199,110 @@ export function parseCSV(content: string, containers: Container[], options?: { c
     }
   }
 
-  return {
-    rules,
-    missingContainers: Array.from(missingContainers),
-    errors,
-    warnings,
-    skipped,
-    comments,
-    containersToCreate,
-  };
+  result.missingContainers = Array.from(missingContainers);
+  return result;
+}
+
+/**
+ * Create a case-insensitive container lookup map
+ */
+function createContainerMap(containers: Container[]): Map<string, Container> {
+  const map = new Map<string, Container>();
+  containers.forEach(c => {
+    map.set(c.name.toLowerCase(), c);
+  });
+  return map;
+}
+
+/**
+ * Check if a line should be skipped during parsing
+ */
+function shouldSkipLine(line: string): boolean {
+  if (!line || line.startsWith('#')) {
+    return true;
+  }
+
+  // Skip header row if it matches expected column names
+  const lowerLine = line.toLowerCase().replace(/"/g, '');
+  return (
+    (lowerLine.startsWith('pattern') && lowerLine.includes('container')) ||
+    (lowerLine.includes('pattern,container') && lowerLine.includes('match_type'))
+  );
+}
+
+/**
+ * Check if parsed CSV data looks like a header row
+ */
+function isHeaderRow(parsed: CSVRule): boolean {
+  return (
+    !parsed.pattern ||
+    parsed.pattern.toLowerCase() === 'pattern' ||
+    (parsed.containerName && parsed.containerName.toLowerCase() === 'container_name')
+  );
+}
+
+/**
+ * Validate pattern format
+ */
+function validatePatternFormat(pattern: string): string | null {
+  if (pattern.includes('[') && !pattern.includes(']')) {
+    return `Invalid domain pattern: ${pattern}`;
+  }
+  return null;
+}
+
+/**
+ * Parse match type from string
+ */
+function parseMatchType(matchType?: string): MatchType | null {
+  if (!matchType) return null;
+  const mt = matchType.toLowerCase();
+  return MATCH_TYPES[mt as keyof typeof MATCH_TYPES] || null;
+}
+
+/**
+ * Parse rule type from string
+ */
+function parseRuleType(ruleType?: string): RuleType | null {
+  if (!ruleType) return null;
+  const rt = ruleType.toLowerCase();
+  return RULE_TYPES[rt as keyof typeof RULE_TYPES] || null;
+}
+
+/**
+ * Get container name for a rule
+ */
+function getContainerName(
+  rule: Rule,
+  containerMap: Map<string, Container>,
+): string {
+  if (rule.ruleType === RuleType.EXCLUDE) return '';
+  const container = containerMap.get(rule.containerId || '');
+  return container?.name || 'No Container';
 }
 
 /**
  * Parse a single CSV line
  */
 function parseCSVLine(line: string): CSVRule | null {
+  // First check if the entire line is wrapped in quotes (malformed CSV)
+  let cleanLine = line.trim();
+  if (cleanLine.startsWith('"') && cleanLine.endsWith('"') && 
+      !cleanLine.includes('","')) {
+    // The entire line is wrapped in quotes - remove them
+    cleanLine = cleanLine.slice(1, -1);
+  }
+  
   // Simple CSV parsing - handles quoted fields
   const fields: string[] = [];
   let current = '';
   let inQuotes = false;
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+  for (let i = 0; i < cleanLine.length; i++) {
+    const char = cleanLine[i];
 
     if (char === '"') {
-      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+      if (inQuotes && i + 1 < cleanLine.length && cleanLine[i + 1] === '"') {
         // Escaped quote - add single quote to current field
         current += '"';
         i++; // Skip the next quote
@@ -251,21 +345,27 @@ function parseCSVLine(line: string): CSVRule | null {
 /**
  * Export rules to CSV format
  */
-export function exportToCSV(rules: Rule[], containers: Container[], options: CSVExportOptions = {}): string {
+export function exportToCSV(
+  rules: Rule[],
+  containers: Container[],
+  options: CSVExportOptions = {},
+): string {
   const {
-    includeComments = true,
+    includeComments = false,
     includeHeaders = true,
     includeDisabled = true,
   } = options;
 
   const lines: string[] = [];
 
-  // Add header comment
+  // Add header comments if requested
   if (includeComments) {
-    lines.push('# Silo Rules Export');
-    lines.push(`# Generated on ${new Date().toISOString()}`);
-    lines.push('# Format: pattern, container_name, match_type, rule_type, priority, enabled, description');
-    lines.push('#');
+    lines.push(
+      '# Silo Rules Export',
+      `# Generated on ${new Date().toISOString()}`,
+      '# Format: pattern, container_name, match_type, rule_type, priority, enabled, description',
+      '#',
+    );
   }
 
   // Add CSV header
@@ -273,19 +373,47 @@ export function exportToCSV(rules: Rule[], containers: Container[], options: CSV
     lines.push('pattern,container_name,match_type,rule_type,priority,enabled,description');
   }
 
-  // Create container lookup
+  // Create container lookup by cookieStoreId
   const containerMap = new Map<string, Container>();
   containers.forEach(c => {
     containerMap.set(c.cookieStoreId, c);
   });
 
   // Filter and sort rules
-  const filteredRules = rules
+  const filteredRules = filterAndSortRules(rules, containerMap, includeDisabled);
+
+  // Add rules
+  for (const rule of filteredRules) {
+    const containerName = getContainerName(rule, containerMap);
+    const fields = [
+      escapeCSVField(rule.pattern),
+      escapeCSVField(containerName),
+      rule.matchType,
+      rule.ruleType,
+      rule.priority.toString(),
+      rule.enabled.toString(),
+      escapeCSVField(rule.metadata.description || ''),
+    ];
+    lines.push(fields.join(','));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Filter and sort rules for export
+ */
+function filterAndSortRules(
+  rules: Rule[],
+  containerMap: Map<string, Container>,
+  includeDisabled: boolean,
+): Rule[] {
+  return rules
     .filter(rule => includeDisabled || rule.enabled)
     .sort((a, b) => {
       // Sort by container name, then priority, then pattern
-      const containerA = a.ruleType === RuleType.EXCLUDE ? '' : (containerMap.get(a.containerId || '')?.name || 'No Container');
-      const containerB = b.ruleType === RuleType.EXCLUDE ? '' : (containerMap.get(b.containerId || '')?.name || 'No Container');
+      const containerA = getContainerName(a, containerMap);
+      const containerB = getContainerName(b, containerMap);
 
       if (containerA !== containerB) {
         return containerA.localeCompare(containerB);
@@ -297,26 +425,6 @@ export function exportToCSV(rules: Rule[], containers: Container[], options: CSV
 
       return a.pattern.localeCompare(b.pattern);
     });
-
-  // Add rules
-  for (const rule of filteredRules) {
-    const container = containerMap.get(rule.containerId || '');
-    const containerName = rule.ruleType === RuleType.EXCLUDE ? '' : (container?.name || 'No Container');
-
-    const fields = [
-      escapeCSVField(rule.pattern),
-      escapeCSVField(containerName),
-      rule.matchType,
-      rule.ruleType,
-      rule.priority.toString(),
-      rule.enabled.toString(),
-      escapeCSVField(rule.metadata.description || ''),
-    ];
-
-    lines.push(fields.join(','));
-  }
-
-  return lines.join('\n');
 }
 
 /**
@@ -348,7 +456,10 @@ export interface CSVValidationResult {
 /**
  * Validate a single CSV row
  */
-export function validateCSVRow(fields: string[], containers: Container[]): CSVValidationResult {
+export function validateCSVRow(
+  fields: string[],
+  containers: Container[],
+): CSVValidationResult {
   if (fields.length < 2) {
     return { isValid: false, error: 'Minimum 2 fields required (pattern, container)' };
   }
@@ -360,13 +471,15 @@ export function validateCSVRow(fields: string[], containers: Container[]): CSVVa
     return { isValid: false, error: 'Domain cannot be empty' };
   }
 
-  // Validate pattern format for domain patterns  
+  // Validate pattern format for domain patterns
   if (matchType === 'domain') {
-    if (pattern.startsWith('http://') || pattern.startsWith('https://') || pattern.startsWith('ftp://') || pattern.startsWith('javascript:')) {
+    const invalidPrefixes = ['http://', 'https://', 'ftp://', 'javascript:'];
+    if (invalidPrefixes.some(prefix => pattern.startsWith(prefix))) {
       return { isValid: false, error: 'Invalid domain pattern' };
     }
-    if (pattern.includes('[') && !pattern.includes(']')) {
-      return { isValid: false, error: 'Invalid domain pattern' };
+    const patternError = validatePatternFormat(pattern);
+    if (patternError) {
+      return { isValid: false, error: patternError };
     }
   }
 
@@ -377,30 +490,42 @@ export function validateCSVRow(fields: string[], containers: Container[]): CSVVa
   }
 
   // Validate match type
-  const validMatchTypes = ['exact', 'domain', 'glob', 'regex'];
+  const validMatchTypes = Object.keys(MATCH_TYPES);
   if (!validMatchTypes.includes(matchType.toLowerCase())) {
-    return { isValid: false, error: `Invalid match type "${matchType}". Must be one of: ${validMatchTypes.join(', ')}` };
+    return {
+      isValid: false,
+      error: `Invalid match type "${matchType}". Must be one of: ${validMatchTypes.join(', ')}`,
+    };
   }
 
   // Validate rule type
-  const validRuleTypes = ['include', 'exclude', 'restrict'];
+  const validRuleTypes = Object.keys(RULE_TYPES);
   if (!validRuleTypes.includes(ruleType.toLowerCase())) {
-    return { isValid: false, error: `Invalid rule type "${ruleType}". Must be one of: ${validRuleTypes.join(', ')}` };
+    return {
+      isValid: false,
+      error: `Invalid rule type "${ruleType}". Must be one of: ${validRuleTypes.join(', ')}`,
+    };
   }
 
   // Validate priority
   const priority = parseInt(priorityStr, 10);
-  if (Number.isNaN(priority) || priority < 1 || priority > 100) {
-    return { isValid: false, error: `Priority must be a number between 1 and 100, got "${priorityStr}"` };
+  if (Number.isNaN(priority) || priority < MIN_PRIORITY || priority > MAX_PRIORITY) {
+    return {
+      isValid: false,
+      error: `Priority must be a number between ${MIN_PRIORITY} and ${MAX_PRIORITY}, got "${priorityStr}"`,
+    };
   }
 
   // Validate enabled flag
   const enabledLower = enabledStr.toLowerCase();
-  if (!['true', 'false', '1', '0', 'yes', 'no'].includes(enabledLower)) {
-    return { isValid: false, error: `Enabled flag must be true/false, 1/0, or yes/no, got "${enabledStr}"` };
+  if (!VALID_ENABLED_VALUES.some(v => v === enabledLower)) {
+    return {
+      isValid: false,
+      error: `Enabled flag must be true/false, 1/0, or yes/no, got "${enabledStr}"`,
+    };
   }
 
-  const enabled = enabledLower === 'true' || enabledLower === '1' || enabledLower === 'yes';
+  const enabled = ['true', '1', 'yes'].includes(enabledLower);
 
   const rule: CreateRuleRequest = {
     pattern: pattern.trim(),

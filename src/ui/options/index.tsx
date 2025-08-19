@@ -131,6 +131,19 @@ function ContainersPage(): JSX.Element {
     }
   }, [refresh]);
 
+  const clearContainerCookies = React.useCallback(async (container: ContainerLite) => {
+    try {
+      await browser.runtime.sendMessage({
+        type: 'CLEAR_CONTAINER_COOKIES',
+        payload: { id: container.cookieStoreId },
+      });
+      alert(`Cookies cleared for "${container.name}"`);
+    } catch (e: unknown) {
+      const msg = (e instanceof Error) ? e.message : String(e);
+      alert(`Clear cookies failed: ${msg}`);
+    }
+  }, []);
+
 
   return (
     <div className="page">
@@ -159,7 +172,8 @@ function ContainersPage(): JSX.Element {
             key={c.id} 
             container={c} 
             onEdit={openEditModal} 
-            onDelete={deleteContainer} 
+            onDelete={deleteContainer}
+            onClearCookies={clearContainerCookies}
           />
         ))}
       </div>

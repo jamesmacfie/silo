@@ -23,7 +23,8 @@
       "Bash(npm run lint)",
       "Bash(npm run lint)",
       "Bash(npm run lint:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:developer.mozilla.org)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

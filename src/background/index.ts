@@ -105,6 +105,10 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
         await containerManager.syncWithFirefox();
         return { success: true };
       }
+      case MESSAGE_TYPES.CLEAR_CONTAINER_COOKIES: {
+        await containerManager.clearContainerCookies((message.payload as { id: string }).id);
+        return { success: true };
+      }
 
       case MESSAGE_TYPES.OPEN_IN_CONTAINER: {
         const { url, cookieStoreId, index, closeTabId } = (message.payload || {}) as { url: string; cookieStoreId?: string; index?: number; closeTabId?: number };

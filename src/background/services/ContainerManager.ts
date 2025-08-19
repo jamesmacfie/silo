@@ -286,6 +286,35 @@ export class ContainerManager {
     return this.cleanupTemporaryContainers();
   }
 
+  async clearContainerCookies(id: string): Promise<void> {
+    this.log.info('Clearing cookies for container', { id });
+
+    const containers = await this.storage.getContainers();
+    // Try to find by internal ID first, then by cookieStoreId for backwards compatibility
+    const container = containers.find((c: Container) => c.id === id) ||
+      containers.find((c: Container) => c.cookieStoreId === id);
+
+    if (!container) {
+      throw new Error(`Container not found: ${id}`);
+    }
+
+    try {
+      // Clear cookies for this specific container
+      await browser.browsingData.removeCookies({
+        cookieStoreId: container.cookieStoreId
+      });
+
+      this.log.info('Successfully cleared cookies for container', {
+        id: container.id,
+        cookieStoreId: container.cookieStoreId,
+        name: container.name
+      });
+    } catch (error) {
+      this.log.error('Failed to clear cookies for container', { container, error });
+      throw new Error(`Failed to clear cookies for container: ${error}`);
+    }
+  }
+
   private generateId(): string {
     return `container_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }

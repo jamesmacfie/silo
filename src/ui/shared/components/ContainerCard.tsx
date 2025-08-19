@@ -18,9 +18,10 @@ interface ContainerCardProps {
   container: ContainerLite;
   onEdit: (container: ContainerLite) => void;
   onDelete: (container: ContainerLite) => void;
+  onClearCookies?: (container: ContainerLite) => void;
 }
 
-export function ContainerCard({ container, onEdit, onDelete }: ContainerCardProps): JSX.Element {
+export function ContainerCard({ container, onEdit, onDelete, onClearCookies }: ContainerCardProps): JSX.Element {
   return (
     <Card>
       <CardHeader>
@@ -37,6 +38,11 @@ export function ContainerCard({ container, onEdit, onDelete }: ContainerCardProp
           <button className="btn ghost sm" type="button" onClick={() => onEdit(container)}>
             Edit
           </button>
+          {onClearCookies && (
+            <button className="btn ghost sm" type="button" onClick={() => onClearCookies(container)}>
+              Clear Cookies
+            </button>
+          )}
           <button className="btn danger sm" type="button" onClick={() => onDelete(container)}>
             Delete
           </button>

@@ -5,6 +5,7 @@ export * from './themeStore';
 export * from './preferencesStore';
 export * from './bookmarkStore';
 export * from './appStore';
+export * from './statsStore';
 
 // Re-export common hooks for convenience
 export {
@@ -50,3 +51,15 @@ export {
   useGlobalErrors,
   useGlobalLoading,
 } from './appStore';
+
+export {
+  useStats,
+  useGlobalStats,
+  useActiveTabs,
+  useRecentActivity,
+  useDailyStats,
+  useTrends,
+  useStatsLoading,
+  useStatsError,
+  useStatsActions,
+} from './statsStore';

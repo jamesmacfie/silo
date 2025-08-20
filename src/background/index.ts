@@ -4,6 +4,7 @@ import storageService from './services/StorageService';
 import rulesEngine from './services/RulesEngine';
 import containerManager from './services/ContainerManager';
 import requestInterceptor from './services/RequestInterceptor';
+import statsService from './services/StatsService';
 import { logger } from '@/shared/utils/logger';
 import bookmarkIntegration from './services/BookmarkIntegration';
 import type { Message } from '@/shared/utils/messaging';
@@ -47,6 +48,73 @@ async function initialize(): Promise<void> {
     logger.warn('Failed to sync bookmark associations (continuing)', error);
   }
 }
+
+// Enhanced tab event listeners for stats tracking
+// Keep track of tab containers for cleanup
+const tabContainerMap = new Map<number, string>();
+
+browser.tabs.onCreated.addListener(async (tab) => {
+  if (tab.cookieStoreId && tab.cookieStoreId !== 'firefox-default' && tab.id) {
+    try {
+      // Track for cleanup
+      tabContainerMap.set(tab.id, tab.cookieStoreId);
+      
+      // Record stats
+      await statsService.recordEvent(tab.cookieStoreId, 'tab-created', { 
+        tabId: tab.id, 
+        url: tab.url?.split('?')[0], // Remove query params for privacy
+      });
+      await statsService.trackTabSession(tab.cookieStoreId, tab.id, 'start');
+    } catch (error) {
+      logger.error('Failed to record tab created event', error);
+    }
+  }
+});
+
+browser.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+  try {
+    const cookieStoreId = tabContainerMap.get(tabId);
+    if (cookieStoreId) {
+      await statsService.recordEvent(cookieStoreId, 'tab-closed', { 
+        tabId,
+        windowClosing: removeInfo.isWindowClosing,
+      });
+      await statsService.trackTabSession(cookieStoreId, tabId, 'end');
+      tabContainerMap.delete(tabId);
+    }
+  } catch (error) {
+    logger.error('Failed to record tab removed event', error);
+  }
+});
+
+browser.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await browser.tabs.get(activeInfo.tabId);
+    if (tab.cookieStoreId && tab.cookieStoreId !== 'firefox-default') {
+      await statsService.recordEvent(tab.cookieStoreId, 'tab-activated', { 
+        tabId: tab.id,
+        previousTabId: activeInfo.previousTabId 
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to record tab activated event', error);
+  }
+});
+
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.url && tab.cookieStoreId && tab.cookieStoreId !== 'firefox-default') {
+    try {
+      const domain = new URL(changeInfo.url).hostname;
+      await statsService.recordEvent(tab.cookieStoreId, 'navigation', { 
+        tabId, 
+        domain,
+        url: changeInfo.url.split('?')[0], // Remove query params for privacy
+      });
+    } catch (error) {
+      logger.error('Failed to record navigation event', error);
+    }
+  }
+});
 
 browser.runtime.onInstalled.addListener((_details) => {
   logger.info('Extension installed/updated');
@@ -236,7 +304,38 @@ browser.runtime.onMessage.addListener(async (message: Message) => {
         return { success: true, data: stats };
       }
       case MESSAGE_TYPES.RESET_STATS: {
-        await storageService.resetStats();
+        await statsService.resetStats();
+        return { success: true };
+      }
+      case MESSAGE_TYPES.GET_GLOBAL_STATS: {
+        const globalStats = await statsService.getGlobalStats();
+        return { success: true, data: globalStats };
+      }
+      case MESSAGE_TYPES.GET_DAILY_STATS: {
+        const { days } = (message.payload || {}) as { days?: number };
+        const dailyStats = await statsService.getDailyStats(days);
+        return { success: true, data: dailyStats };
+      }
+      case MESSAGE_TYPES.GET_ACTIVE_TABS: {
+        const activeTabs = await statsService.getCurrentActiveTabs();
+        return { success: true, data: activeTabs };
+      }
+      case MESSAGE_TYPES.GET_RECENT_ACTIVITY: {
+        const activity = await statsService.getRecentActivity();
+        return { success: true, data: activity };
+      }
+      case MESSAGE_TYPES.GET_CONTAINER_TRENDS: {
+        const { days } = (message.payload || {}) as { days?: number };
+        const trends = await statsService.getContainerTrends(days);
+        return { success: true, data: trends };
+      }
+      case MESSAGE_TYPES.RECORD_STAT_EVENT: {
+        const { containerId, event, metadata } = (message.payload || {}) as { 
+          containerId: string; 
+          event: string; 
+          metadata?: Record<string, unknown> 
+        };
+        await statsService.recordEvent(containerId, event as any, metadata);
         return { success: true };
       }
 

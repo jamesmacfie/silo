@@ -8,6 +8,10 @@ export const STORAGE_KEYS = {
   CATEGORIES: 'categories',
   STATS: 'stats',
   TEMPLATES: 'templates',
+  DAILY_STATS: 'dailyStats',
+  GLOBAL_STATS: 'globalStats',
+  ACTIVE_SESSIONS: 'activeSessions',
+  RECENT_ACTIVITY: 'recentActivity',
 } as const;
 
 export const DEFAULT_PREFERENCES = {
@@ -83,6 +87,12 @@ export const MESSAGE_TYPES = {
   // Stats
   GET_STATS: 'GET_STATS',
   RESET_STATS: 'RESET_STATS',
+  GET_GLOBAL_STATS: 'GET_GLOBAL_STATS',
+  GET_DAILY_STATS: 'GET_DAILY_STATS',
+  GET_ACTIVE_TABS: 'GET_ACTIVE_TABS',
+  GET_RECENT_ACTIVITY: 'GET_RECENT_ACTIVITY',
+  GET_CONTAINER_TRENDS: 'GET_CONTAINER_TRENDS',
+  RECORD_STAT_EVENT: 'RECORD_STAT_EVENT',
 
   // Templates
   GET_TEMPLATES: 'GET_TEMPLATES',

@@ -104,7 +104,7 @@ export function parseCSV(
     try {
       const parsed = parseCSVLine(line);
       if (!parsed) {
-        errors.push({
+        result.errors.push({
           line: lineNum,
           message: `Minimum 2 fields required (pattern, container), got: ${line}`,
           data: line,
@@ -131,7 +131,7 @@ export function parseCSV(
 
       // Validate container name (unless exclude rule)
       if (!parsed.containerName && (!parsed.ruleType || parsed.ruleType.toLowerCase() !== 'exclude')) {
-        errors.push({
+        result.errors.push({
           line: lineNum,
           message: 'Container name is required',
           data: line,
@@ -287,12 +287,12 @@ function getContainerName(
 function parseCSVLine(line: string): CSVRule | null {
   // First check if the entire line is wrapped in quotes (malformed CSV)
   let cleanLine = line.trim();
-  if (cleanLine.startsWith('"') && cleanLine.endsWith('"') && 
-      !cleanLine.includes('","')) {
+  if (cleanLine.startsWith('"') && cleanLine.endsWith('"') &&
+    !cleanLine.includes('","')) {
     // The entire line is wrapped in quotes - remove them
     cleanLine = cleanLine.slice(1, -1);
   }
-  
+
   // Simple CSV parsing - handles quoted fields
   const fields: string[] = [];
   let current = '';

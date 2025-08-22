@@ -123,7 +123,7 @@ if (browser.runtime.onStartup) {
 // Export for debugging/testing (if needed)
 declare const process: { env: { NODE_ENV?: string } }
 if (typeof process !== "undefined" && process.env?.NODE_ENV === "development") {
-  // @ts-ignore - Expose for debugging
+  // @ts-expect-error - Expose for debugging
   globalThis.siloBackground = {
     router,
     initializer,

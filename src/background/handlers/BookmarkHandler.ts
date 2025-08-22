@@ -46,6 +46,10 @@ export class BookmarkHandler implements MessageHandler {
     // Bookmark folders
     MESSAGE_TYPES.DELETE_BOOKMARK_FOLDERS,
 
+    // Bookmark reordering
+    MESSAGE_TYPES.REORDER_BOOKMARKS,
+    MESSAGE_TYPES.MOVE_BOOKMARK,
+
     // Bookmark migration
     MESSAGE_TYPES.MIGRATE_BOOKMARKS,
   ]
@@ -107,6 +111,12 @@ export class BookmarkHandler implements MessageHandler {
       // Bookmark folders
       case MESSAGE_TYPES.DELETE_BOOKMARK_FOLDERS:
         return this.deleteBookmarkFolders(message)
+
+      // Bookmark reordering
+      case MESSAGE_TYPES.REORDER_BOOKMARKS:
+        return this.reorderBookmarks(message)
+      case MESSAGE_TYPES.MOVE_BOOKMARK:
+        return this.moveBookmark(message)
 
       // Migration
       case MESSAGE_TYPES.MIGRATE_BOOKMARKS:
@@ -687,6 +697,68 @@ export class BookmarkHandler implements MessageHandler {
           error instanceof Error
             ? error.message
             : "Failed to delete bookmark folders",
+      }
+    }
+  }
+
+  // Bookmark reordering
+  private async reorderBookmarks(message: Message): Promise<MessageResponse> {
+    try {
+      const { parentId, bookmarkIds } = message.payload as {
+        parentId: string
+        bookmarkIds: string[]
+      }
+
+      if (!parentId || !bookmarkIds || !Array.isArray(bookmarkIds)) {
+        return {
+          success: false,
+          error: "Parent ID and bookmark IDs array are required",
+        }
+      }
+
+      await bookmarkService.reorderBookmarks(parentId, bookmarkIds)
+      this.log.info("Bookmarks reordered", {
+        parentId,
+        bookmarkCount: bookmarkIds.length,
+      })
+      return { success: true, data: null }
+    } catch (error) {
+      this.log.error("Failed to reorder bookmarks", error)
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to reorder bookmarks",
+      }
+    }
+  }
+
+  private async moveBookmark(message: Message): Promise<MessageResponse> {
+    try {
+      const { bookmarkId, parentId, index } = message.payload as {
+        bookmarkId: string
+        parentId?: string
+        index?: number
+      }
+
+      if (!bookmarkId) {
+        return { success: false, error: "Bookmark ID is required" }
+      }
+
+      await bookmarkService.moveBookmark(bookmarkId, parentId, index)
+      this.log.info("Bookmark moved", {
+        bookmarkId,
+        parentId,
+        index,
+      })
+      return { success: true, data: null }
+    } catch (error) {
+      this.log.error("Failed to move bookmark", error)
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to move bookmark",
       }
     }
   }

@@ -32,6 +32,7 @@ interface BookmarkState {
     bookmarks: boolean
     tags: boolean
     bulkOperation: boolean
+    dragOperation: boolean
   }
   error?: string
 
@@ -91,6 +92,14 @@ interface BookmarkState {
 
     // Rule matching
     checkRuleMatch: (url: string) => Promise<string | null>
+
+    // Drag and drop reordering
+    reorderBookmarks: (parentId: string, bookmarkIds: string[]) => Promise<void>
+    moveBookmark: (
+      bookmarkId: string,
+      parentId?: string,
+      index?: number,
+    ) => Promise<void>
 
     // Error handling
     clearError: () => void
@@ -192,6 +201,7 @@ export const useBookmarkStore = create<BookmarkState>()(
       bookmarks: false,
       tags: false,
       bulkOperation: false,
+      dragOperation: false,
     },
     error: undefined,
     searchIndex: undefined,
@@ -732,6 +742,66 @@ export const useBookmarkStore = create<BookmarkState>()(
           return response?.success ? response.data?.containerId || null : null
         } catch (_error) {
           return null
+        }
+      },
+
+      reorderBookmarks: async (parentId, bookmarkIds) => {
+        set((state) => ({
+          loading: { ...state.loading, dragOperation: true },
+          error: undefined,
+        }))
+
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.REORDER_BOOKMARKS,
+            payload: { parentId, bookmarkIds },
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to reorder bookmarks")
+          }
+
+          // Refresh bookmarks to show updated order
+          await get().actions.loadBookmarks()
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        } finally {
+          set((state) => ({
+            loading: { ...state.loading, dragOperation: false },
+          }))
+        }
+      },
+
+      moveBookmark: async (bookmarkId, parentId, index) => {
+        set((state) => ({
+          loading: { ...state.loading, dragOperation: true },
+          error: undefined,
+        }))
+
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.MOVE_BOOKMARK,
+            payload: { bookmarkId, parentId, index },
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to move bookmark")
+          }
+
+          // Refresh bookmarks to show updated position
+          await get().actions.loadBookmarks()
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        } finally {
+          set((state) => ({
+            loading: { ...state.loading, dragOperation: false },
+          }))
         }
       },
 

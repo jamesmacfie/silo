@@ -388,6 +388,71 @@ export class BookmarkService {
     return folderMetadata.find((fm) => fm.folderId === folderId) || null
   }
 
+  // Bookmark reordering operations
+  async reorderBookmarks(
+    parentId: string,
+    bookmarkIds: string[],
+  ): Promise<void> {
+    try {
+      // Reorder bookmarks using Firefox API by moving each to its new position
+      for (let i = 0; i < bookmarkIds.length; i++) {
+        const bookmarkId = bookmarkIds[i]
+        await browser.bookmarks.move(bookmarkId, {
+          parentId,
+          index: i,
+        })
+      }
+
+      this.log.info("Bookmarks reordered successfully", {
+        parentId,
+        count: bookmarkIds.length,
+      })
+    } catch (error) {
+      this.log.error("Failed to reorder bookmarks", { parentId, error })
+      throw new Error(
+        `Failed to reorder bookmarks: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  async moveBookmark(
+    bookmarkId: string,
+    parentId?: string,
+    index?: number,
+  ): Promise<void> {
+    try {
+      const moveDetails: {
+        parentId?: string
+        index?: number
+      } = {}
+
+      if (parentId !== undefined) {
+        moveDetails.parentId = parentId
+      }
+      if (index !== undefined) {
+        moveDetails.index = index
+      }
+
+      await browser.bookmarks.move(bookmarkId, moveDetails)
+
+      this.log.info("Bookmark moved successfully", {
+        bookmarkId,
+        parentId,
+        index,
+      })
+    } catch (error) {
+      this.log.error("Failed to move bookmark", {
+        bookmarkId,
+        parentId,
+        index,
+        error,
+      })
+      throw new Error(
+        `Failed to move bookmark: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
   // Migration from legacy bookmark associations
   async migrateLegacyBookmarks(): Promise<void> {
     try {

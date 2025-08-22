@@ -1,17 +1,17 @@
-import React from "react"
-import type { Rule, Container } from "@/shared/types"
-import { RuleType, MatchType } from "@/shared/types"
-import { Card, CardHeader, CardContent, CardActions } from "./Card"
 import {
-  Target,
   Globe,
-  Sparkles,
-  Search,
-  Plus,
-  Minus,
-  Lock,
   HelpCircle,
+  Lock,
+  Minus,
+  Plus,
+  Search,
+  Sparkles,
+  Target,
 } from "lucide-react"
+import React from "react"
+import type { Container, Rule } from "@/shared/types"
+import { MatchType, RuleType } from "@/shared/types"
+import { Card, CardActions, CardContent, CardHeader } from "./Card"
 
 interface Props {
   rule: Rule
@@ -32,7 +32,7 @@ function ExpandableDescription({
 
   const displayText =
     needsTruncation && !isExpanded
-      ? description.substring(0, maxLength) + "..."
+      ? `${description.substring(0, maxLength)}...`
       : description
 
   return (

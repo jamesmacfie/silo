@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from "react"
-import { Search, X, ChevronDown, Filter } from "lucide-react"
+import { ChevronDown, Filter, X } from "lucide-react"
+import type React from "react"
+import { useCallback, useState } from "react"
 import { SearchInput } from "../SearchInput"
 
 export interface SortOption {

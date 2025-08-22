@@ -1,9 +1,9 @@
+import { MatchType, type Rule, RuleType } from "@/shared/types/rule"
 import {
   findDuplicateRules,
   getDuplicateCount,
   suggestRulesToKeep,
 } from "@/shared/utils/duplicateRules"
-import { RuleType, MatchType, type Rule } from "@/shared/types/rule"
 
 // Mock rules for testing
 const createMockRule = (overrides: Partial<Rule> = {}): Rule => ({

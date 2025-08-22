@@ -1,7 +1,6 @@
-import React from "react"
+import { getContainerColor } from "@/shared/utils/containerColors"
 import { useContainers } from "@/ui/shared/stores"
 import useStatsStore from "@/ui/shared/stores/statsStore"
-import { getContainerColor } from "@/shared/utils/containerColors"
 
 export function RecentActivityCard(): JSX.Element {
   const recentActivity = useStatsStore((state) => state.recentActivity)

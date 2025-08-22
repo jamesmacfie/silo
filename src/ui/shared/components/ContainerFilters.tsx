@@ -1,9 +1,8 @@
-import React from "react"
-import { X, Package } from "lucide-react"
+import { Package, X } from "lucide-react"
 import { Card } from "./Card"
-import { containerColorToCss, CONTAINER_COLORS } from "./ColorSelector"
-import { FilterButton } from "./FilterButton"
 import { ColorFilterSelector } from "./ColorFilterSelector"
+import { CONTAINER_COLORS, containerColorToCss } from "./ColorSelector"
+import { FilterButton } from "./FilterButton"
 
 interface ContainerFiltersProps {
   className?: string

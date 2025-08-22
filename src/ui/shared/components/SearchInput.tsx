@@ -1,5 +1,3 @@
-import React from "react"
-
 interface SearchInputProps {
   value: string
   onChange: (value: string) => void

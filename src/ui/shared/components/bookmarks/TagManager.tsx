@@ -1,7 +1,7 @@
+import { Edit3, Plus, Trash2, X } from "lucide-react"
 import React from "react"
-import { Plus, Edit3, Trash2, X, Palette } from "lucide-react"
-import { useBookmarkTags, useBookmarkActions } from "../../stores/bookmarkStore"
 import type { BookmarkTag } from "@/shared/types"
+import { useBookmarkActions, useBookmarkTags } from "../../stores/bookmarkStore"
 import { Card } from "../Card"
 import { TAG_COLORS } from "../ColorSelector"
 
@@ -226,7 +226,6 @@ export function TagManager({
                     }
                   }}
                   className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  autoFocus
                 />
               ) : (
                 <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">

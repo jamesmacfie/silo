@@ -24,7 +24,9 @@
       "Bash(npm run lint)",
       "Bash(npm run lint:*)",
       "Bash(npx eslint:*)",
-      "WebFetch(domain:developer.mozilla.org)"
+      "WebFetch(domain:developer.mozilla.org)",
+      "Bash(yarn fmt)",
+      "Bash(yarn biome check:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

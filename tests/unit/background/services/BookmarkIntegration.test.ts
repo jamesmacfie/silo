@@ -1,7 +1,7 @@
-import { BookmarkIntegration } from "@/background/services/BookmarkIntegration"
-import storageService from "@/background/services/StorageService"
-import containerManager from "@/background/services/ContainerManager"
 import browser from "webextension-polyfill"
+import { BookmarkIntegration } from "@/background/services/BookmarkIntegration"
+import containerManager from "@/background/services/ContainerManager"
+import storageService from "@/background/services/StorageService"
 import type { BookmarkAssociation, Container } from "@/shared/types"
 
 jest.mock("@/background/services/StorageService")

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import { mkdirSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import * as esbuild from "esbuild"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
-import { mkdirSync } from "fs"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

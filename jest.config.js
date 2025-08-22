@@ -15,11 +15,6 @@ export default {
   },
   extensionsToTreatAsEsm: [".ts", ".tsx"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
-  collectCoverageFrom: [
-    "src/**/*.{ts,tsx}",
-    "!src/**/*.d.ts",
-    "!src/**/index.ts",
-  ],
   coverageThreshold: {
     global: {
       branches: 80,

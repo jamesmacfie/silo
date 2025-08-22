@@ -1,34 +1,34 @@
 import browser from "webextension-polyfill"
 import { MESSAGE_TYPES } from "@/shared/constants"
-import storageService from "./services/StorageService"
-import rulesEngine from "./services/RulesEngine"
-import containerManager from "./services/ContainerManager"
-import requestInterceptor from "./services/RequestInterceptor"
-import statsService from "./services/StatsService"
-import { logger } from "@/shared/utils/logger"
-import bookmarkIntegration from "./services/BookmarkIntegration"
-import bookmarkService from "./services/BookmarkService"
-import tagService from "./services/TagService"
-import type { Message } from "@/shared/utils/messaging"
-import * as matcher from "./utils/matcher"
 import type {
+  BackupData,
   CreateContainerRequest,
   CreateRuleRequest,
-  BackupData,
   Rule,
 } from "@/shared/types"
 import {
-  parseCSV,
+  type CSVExportOptions,
   exportToCSV,
   generateCSVTemplate,
-  type CSVExportOptions,
+  parseCSV,
 } from "@/shared/utils/csv"
+import { logger } from "@/shared/utils/logger"
+import type { Message } from "@/shared/utils/messaging"
+import bookmarkIntegration from "./services/BookmarkIntegration"
+import bookmarkService from "./services/BookmarkService"
+import containerManager from "./services/ContainerManager"
+import requestInterceptor from "./services/RequestInterceptor"
+import rulesEngine from "./services/RulesEngine"
+import statsService from "./services/StatsService"
+import storageService from "./services/StorageService"
+import tagService from "./services/TagService"
+import * as matcher from "./utils/matcher"
 
 async function initialize(): Promise<void> {
   // Test if we can load rules
   try {
-    const rules = await storageService.getRules()
-  } catch (error) {}
+    const _rules = await storageService.getRules()
+  } catch (_error) {}
 
   try {
     await storageService.migrate()

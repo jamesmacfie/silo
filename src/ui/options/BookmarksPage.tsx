@@ -1,29 +1,29 @@
-import React, { useMemo, useEffect } from "react"
 import { Bookmark } from "lucide-react"
-import {
-  PageLayout,
-  PageHeader,
-  ViewToggle,
-  ViewMode,
-  EmptyState,
-  StatusBar,
-} from "../shared/components/layout"
-import { Card } from "../shared/components/Card"
+import { useEffect, useMemo } from "react"
+import { BookmarkFilters } from "../shared/components/bookmarks/BookmarkFilters"
+import { BookmarkSearchBar } from "../shared/components/bookmarks/BookmarkSearchBar"
 import { BookmarkTableView } from "../shared/components/bookmarks/BookmarkTableView"
 import { BookmarkTreeView } from "../shared/components/bookmarks/BookmarkTreeView"
-import { BookmarkSearchBar } from "../shared/components/bookmarks/BookmarkSearchBar"
-import { BookmarkFilters } from "../shared/components/bookmarks/BookmarkFilters"
 import { BulkActionsBar } from "../shared/components/bookmarks/BulkActionsBar"
+import { Card } from "../shared/components/Card"
 import {
-  useBookmarkView,
+  EmptyState,
+  PageHeader,
+  PageLayout,
+  StatusBar,
+  type ViewMode,
+  ViewToggle,
+} from "../shared/components/layout"
+import { useBookmarksPageState, useContainers } from "../shared/stores"
+import {
   useBookmarkActions,
-  useBookmarkLoading,
   useBookmarkError,
-  useSelectedBookmarks,
+  useBookmarkLoading,
   useBookmarkSearchState,
+  useBookmarkView,
   useFilteredBookmarks,
+  useSelectedBookmarks,
 } from "../shared/stores/bookmarkStore"
-import { useContainers, useBookmarksPageState } from "../shared/stores"
 
 const PAGE_DESCRIPTION =
   "Manage your bookmarks with tags, containers, and advanced search. Organize bookmarks across different containers and apply tags for easy categorization."

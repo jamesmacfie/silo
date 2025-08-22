@@ -1,18 +1,18 @@
 import React from "react"
-import { MatchType, RuleType, type Rule } from "@/shared/types"
+import { MatchType, type Rule, RuleType } from "@/shared/types"
 import { validatePattern } from "@/shared/utils/patternValidator"
-import { PatternTester } from "@/ui/shared/components/PatternTester"
-import { useRuleActions } from "@/ui/shared/stores"
 import {
   Modal,
-  ModalFormRow,
-  ModalLabel,
-  ModalInput,
-  ModalSelect,
   ModalError,
-  ModalWarning,
+  ModalFormRow,
   ModalInfo,
+  ModalInput,
+  ModalLabel,
+  ModalSelect,
+  ModalWarning,
 } from "@/ui/shared/components/Modal"
+import { PatternTester } from "@/ui/shared/components/PatternTester"
+import { useRuleActions } from "@/ui/shared/stores"
 
 interface Container {
   id: string

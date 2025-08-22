@@ -1,4 +1,4 @@
-import type { Rule, Container, CreateRuleRequest } from "@/shared/types"
+import type { Container, CreateRuleRequest, Rule } from "@/shared/types"
 import { MatchType, RuleType } from "@/shared/types"
 
 // Constants for CSV parsing

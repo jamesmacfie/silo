@@ -1,11 +1,11 @@
 import browser from "webextension-polyfill"
-import type { Container, CreateContainerRequest } from "@/shared/types"
 import {
-  DEFAULT_CONTAINER_ICONS,
   DEFAULT_CONTAINER_COLORS,
+  DEFAULT_CONTAINER_ICONS,
 } from "@/shared/constants"
-import StorageService from "./StorageService"
+import type { Container, CreateContainerRequest } from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
+import StorageService from "./StorageService"
 
 export class ContainerManager {
   private storage = StorageService

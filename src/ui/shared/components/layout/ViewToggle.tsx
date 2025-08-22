@@ -1,6 +1,5 @@
-import React from "react"
-import { List, Grid3X3, FolderTree, LayoutGrid } from "lucide-react"
-import { ViewMode } from "./DataView"
+import { FolderTree, LayoutGrid, List } from "lucide-react"
+import type { ViewMode } from "./DataView"
 
 export type { ViewMode }
 

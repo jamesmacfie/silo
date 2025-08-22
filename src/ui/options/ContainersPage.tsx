@@ -1,37 +1,28 @@
-import React, { useMemo, useCallback } from "react"
-import {
-  Plus,
-  RefreshCw,
-  Cookie,
-  Calendar,
-  Package,
-  Edit3,
-  Trash2,
-} from "lucide-react"
-import {
-  PageLayout,
-  PageHeader,
-  ToolBar,
-  ToolBarSortOption,
-  DataView,
-  ViewMode,
-  FilterPanel,
-  FilterConfig,
-  EmptyState,
-  Button,
-  StatusBar,
-} from "../shared/components/layout"
+import { Cookie, Edit3, Package, Plus, Trash2 } from "lucide-react"
+import React, { useCallback, useMemo } from "react"
+import type { Container } from "../../shared/types/container"
+import { containerColorToCss } from "../shared/components/ColorSelector"
 import { ContainerCard } from "../shared/components/ContainerCard"
 import { ContainerFilters } from "../shared/components/ContainerFilters"
-import { ContainerModal } from "./ContainerModal"
 import {
-  useContainers,
+  Button,
+  DataView,
+  EmptyState,
+  type FilterConfig,
+  PageHeader,
+  PageLayout,
+  StatusBar,
+  ToolBar,
+  type ToolBarSortOption,
+  type ViewMode,
+} from "../shared/components/layout"
+import {
   useContainerActions,
+  useContainers,
   useContainersPageState,
+  useRules,
 } from "../shared/stores"
-import { useRules } from "../shared/stores"
-import { containerColorToCss } from "../shared/components/ColorSelector"
-import type { Container } from "../../shared/types/container"
+import { ContainerModal } from "./ContainerModal"
 
 const SORT_OPTIONS: ToolBarSortOption[] = [
   { value: "name", label: "Name" },
@@ -48,7 +39,7 @@ export function ContainersPage() {
   const rules = useRules()
   const {
     load: syncContainers,
-    update: updateContainer,
+    update: _updateContainer,
     delete: deleteContainer,
     clearCookies: clearContainerData,
   } = useContainerActions()
@@ -76,7 +67,7 @@ export function ContainersPage() {
     container?: Container
   }>({ isOpen: false, mode: "create" })
 
-  const filterConfigs: FilterConfig[] = useMemo(
+  const _filterConfigs: FilterConfig[] = useMemo(
     () => [
       {
         key: "hasRules",

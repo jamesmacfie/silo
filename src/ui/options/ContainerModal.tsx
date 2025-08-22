@@ -1,15 +1,15 @@
 import React from "react"
-import { useContainerActions } from "@/ui/shared/stores"
+import {
+  CONTAINER_COLORS,
+  ColorSelector,
+} from "@/ui/shared/components/ColorSelector"
 import {
   Modal,
   ModalFormRow,
-  ModalLabel,
   ModalInput,
+  ModalLabel,
 } from "@/ui/shared/components/Modal"
-import {
-  ColorSelector,
-  CONTAINER_COLORS,
-} from "@/ui/shared/components/ColorSelector"
+import { useContainerActions } from "@/ui/shared/stores"
 
 interface Props {
   isOpen: boolean

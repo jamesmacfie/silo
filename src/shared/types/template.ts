@@ -1,5 +1,5 @@
-import type { Rule } from "./rule"
 import type { Container } from "./container"
+import type { Rule } from "./rule"
 
 export interface ContainerTemplateMetadata
   extends NonNullable<Container["metadata"]> {}

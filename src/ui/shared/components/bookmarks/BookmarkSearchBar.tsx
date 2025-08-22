@@ -1,10 +1,10 @@
+import { ArrowUpDown, Search, X } from "lucide-react"
 import React from "react"
-import { Search, X, ArrowUpDown } from "lucide-react"
+import type { BookmarkSortOptions } from "@/shared/types"
 import {
   useBookmarkActions,
   useBookmarkSearchState,
 } from "../../stores/bookmarkStore"
-import type { BookmarkSortOptions } from "@/shared/types"
 
 interface BookmarkSearchBarProps {
   className?: string

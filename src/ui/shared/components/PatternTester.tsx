@@ -1,9 +1,9 @@
 import React from "react"
-import { MatchType } from "@/shared/types"
+import type { MatchType } from "@/shared/types"
 import {
-  validatePattern,
   getPatternExamples,
   suggestMatchType,
+  validatePattern,
 } from "@/shared/utils/patternValidator"
 import { useRuleActions } from "../stores"
 
@@ -56,7 +56,7 @@ export function PatternTester({
     try {
       const matches = await testPattern(testUrl, pattern, matchType)
       setTestResult({ matches, tested: true })
-    } catch (error) {
+    } catch (_error) {
       setTestResult({ matches: false, tested: true })
     } finally {
       setIsTesting(false)

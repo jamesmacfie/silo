@@ -1,13 +1,11 @@
 import { StorageService } from "@/background/services/StorageService"
-import {
-  Container,
-  Rule,
-  Preferences,
+import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/shared/constants"
+import type {
   BookmarkAssociation,
+  Container,
   ContainerStats,
+  Rule,
 } from "@/shared/types"
-import { STORAGE_KEYS, DEFAULT_PREFERENCES } from "@/shared/constants"
-import { z } from "zod"
 
 jest.mock("@/shared/utils/logger")
 

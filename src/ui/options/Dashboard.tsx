@@ -1,13 +1,13 @@
-import React, { useEffect } from "react"
-import { PageLayout, PageHeader, Button } from "../shared/components/layout"
-import { StatsOverviewCard } from "../shared/components/StatsOverviewCard"
+import { useEffect } from "react"
 import { ActiveContainersCard } from "../shared/components/ActiveContainersCard"
-import { RecentActivityCard } from "../shared/components/RecentActivityCard"
 import { ContainerStatsTable } from "../shared/components/ContainerStatsTable"
+import { PageHeader, PageLayout } from "../shared/components/layout"
+import { RecentActivityCard } from "../shared/components/RecentActivityCard"
+import { StatsOverviewCard } from "../shared/components/StatsOverviewCard"
 import {
   useStatsActions,
-  useStatsLoading,
   useStatsError,
+  useStatsLoading,
 } from "../shared/stores/statsStore"
 
 const PAGE_DESCRIPTION =

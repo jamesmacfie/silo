@@ -168,7 +168,7 @@ function matchDomain(url: string, pattern: string): boolean {
     // 1. Any subdomain of example.com (www.example.com, api.example.com)
     // 2. The base domain itself (example.com) - NEW BEHAVIOR
     const isBaseDomainMatch = urlDomainLc === baseDomain
-    const isSubdomainMatch = urlDomainLc.endsWith("." + baseDomain)
+    const isSubdomainMatch = urlDomainLc.endsWith(`.${baseDomain}`)
 
     if (!(isBaseDomainMatch || isSubdomainMatch)) {
       return false
@@ -177,7 +177,7 @@ function matchDomain(url: string, pattern: string): boolean {
     // For bare domains, support both exact match and subdomain match
     // So "example.com" matches both "example.com" and "www.example.com"
     const isExactMatch = urlDomainLc === patternHostname
-    const isSubdomainMatch = urlDomainLc.endsWith("." + patternHostname)
+    const isSubdomainMatch = urlDomainLc.endsWith(`.${patternHostname}`)
 
     if (!(isExactMatch || isSubdomainMatch)) {
       return false

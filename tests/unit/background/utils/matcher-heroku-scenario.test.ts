@@ -305,12 +305,12 @@ describe("URLMatcher - Heroku Wildcard Scenario", () => {
       // First call
       const start1 = Date.now()
       const result1 = matcher.match(url, pattern, MatchType.DOMAIN)
-      const duration1 = Date.now() - start1
+      const _duration1 = Date.now() - start1
 
       // Second call (should be faster due to internal optimizations)
       const start2 = Date.now()
       const result2 = matcher.match(url, pattern, MatchType.DOMAIN)
-      const duration2 = Date.now() - start2
+      const _duration2 = Date.now() - start2
 
       expect(result1).toBe(true)
       expect(result2).toBe(true)

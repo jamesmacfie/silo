@@ -1,8 +1,8 @@
 import browser from "webextension-polyfill"
-import storageService from "./StorageService"
-import containerManager from "./ContainerManager"
 import type { BookmarkAssociation, Container } from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
+import containerManager from "./ContainerManager"
+import storageService from "./StorageService"
 
 export interface ProcessedBookmarkUrlResult {
   cleanUrl: string

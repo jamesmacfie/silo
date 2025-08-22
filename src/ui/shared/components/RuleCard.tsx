@@ -1,4 +1,3 @@
-import React from "react"
 import type { Rule } from "@/shared/types"
 import { getContainerColors } from "@/shared/utils/containerHelpers"
 import type { ContainerLite } from "./ContainerCard"

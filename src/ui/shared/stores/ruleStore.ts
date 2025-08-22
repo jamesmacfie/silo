@@ -1,8 +1,8 @@
+import browser from "webextension-polyfill"
 import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
-import browser from "webextension-polyfill"
-import type { Rule } from "@/shared/types"
 import { MESSAGE_TYPES } from "@/shared/constants"
+import type { Rule } from "@/shared/types"
 
 interface RuleState {
   rules: Rule[]
@@ -45,7 +45,7 @@ export const useRuleStore = create<RuleState>()(
           const rules = response.data || []
 
           // Validate each rule (similar to existing useRules hook)
-          rules.forEach((rule: Rule, index: number) => {
+          rules.forEach((rule: Rule, _index: number) => {
             if (!rule.metadata) {
               // Could add warning handling here
             }
@@ -115,7 +115,7 @@ export const useRuleStore = create<RuleState>()(
 
           // Optimistic update with re-sorting if priority changed
           set((state) => {
-            let updatedRules = state.rules.map((r) =>
+            const updatedRules = state.rules.map((r) =>
               r.id === id ? { ...r, ...updates, modified: Date.now() } : r,
             )
 
@@ -159,20 +159,16 @@ export const useRuleStore = create<RuleState>()(
       },
 
       testPattern: async (url, pattern, matchType) => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.TEST_PATTERN,
-            payload: { url, pattern, matchType },
-          })
+        const response = await browser.runtime.sendMessage({
+          type: MESSAGE_TYPES.TEST_PATTERN,
+          payload: { url, pattern, matchType },
+        })
 
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to test pattern")
-          }
-
-          return response.data?.matches || false
-        } catch (error) {
-          throw error
+        if (!response?.success) {
+          throw new Error(response?.error || "Failed to test pattern")
         }
+
+        return response.data?.matches || false
       },
 
       clearError: () => set({ error: undefined }),

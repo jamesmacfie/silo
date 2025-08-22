@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from "react"
-import { Search, X, ArrowUpDown, Filter } from "lucide-react"
-import { ViewToggle, ViewMode } from "./ViewToggle"
+import { ArrowUpDown, Filter, Search, X } from "lucide-react"
+import React, { useCallback, useState } from "react"
+import { type ViewMode, ViewToggle } from "./ViewToggle"
 
 export interface ToolBarSortOption {
   value: string

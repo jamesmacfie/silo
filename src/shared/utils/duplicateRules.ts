@@ -22,7 +22,7 @@ export function findDuplicateRules(rules: Rule[]): DuplicateGroup[] {
     if (!groups.has(key)) {
       groups.set(key, [])
     }
-    groups.get(key)!.push(rule)
+    groups.get(key)?.push(rule)
   }
 
   // Filter to only groups with duplicates (2+ rules)

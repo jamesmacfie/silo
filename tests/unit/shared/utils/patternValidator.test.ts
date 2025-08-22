@@ -1,12 +1,11 @@
+import { MatchType } from "@/shared/types"
 import {
+  isValidDomain,
+  sanitizePattern,
+  validateGlobPattern,
   validatePattern,
   validateRegexPattern,
-  validateGlobPattern,
-  sanitizePattern,
-  isValidDomain,
-  PatternValidationResult,
 } from "@/shared/utils/patternValidator"
-import { MatchType } from "@/shared/types"
 
 describe("Pattern Validator", () => {
   describe("validatePattern", () => {
@@ -324,11 +323,11 @@ describe("Pattern Validator", () => {
 
     it("should validate domain length limits", () => {
       // Domain longer than 253 characters should be invalid
-      const longDomain = "a".repeat(250) + ".com"
+      const longDomain = `${"a".repeat(250)}.com`
       expect(isValidDomain(longDomain)).toBe(false)
 
       // Label longer than 63 characters should be invalid
-      const longLabel = "a".repeat(64) + ".com"
+      const longLabel = `${"a".repeat(64)}.com`
       expect(isValidDomain(longLabel)).toBe(false)
     })
   })
@@ -396,7 +395,7 @@ describe("Pattern Validator", () => {
     })
 
     it("should handle very long patterns", () => {
-      const longPattern = "a".repeat(10000) + ".com"
+      const longPattern = `${"a".repeat(10000)}.com`
       const result = validatePattern(longPattern, MatchType.DOMAIN)
 
       expect(result.isValid).toBe(false)
@@ -436,8 +435,8 @@ describe("Pattern Validator", () => {
 
       // Should complete quickly even for complex patterns
       validatePattern("(a+)+", MatchType.REGEX)
-      validatePattern("*.".repeat(100) + "com", MatchType.GLOB)
-      validatePattern("example.com/" + "a".repeat(1000), MatchType.DOMAIN)
+      validatePattern(`${"*.".repeat(100)}com`, MatchType.GLOB)
+      validatePattern(`example.com/${"a".repeat(1000)}`, MatchType.DOMAIN)
 
       const elapsed = Date.now() - start
       expect(elapsed).toBeLessThan(1000) // Should complete within 1 second

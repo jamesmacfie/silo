@@ -1,12 +1,12 @@
 import React from "react"
 import type { Rule } from "@/shared/types/rule"
-import type { ContainerLite } from "@/ui/shared/components/ContainerCard"
 import {
-  findDuplicateRules,
-  suggestRulesToKeep,
-  getDuplicateCount,
   type DuplicateGroup,
+  findDuplicateRules,
+  getDuplicateCount,
+  suggestRulesToKeep,
 } from "@/shared/utils/duplicateRules"
+import type { ContainerLite } from "@/ui/shared/components/ContainerCard"
 
 interface DuplicateRuleManagerProps {
   rules: Rule[]
@@ -199,6 +199,7 @@ export function DuplicateRuleManager({
     return (
       <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
         <div className="flex items-center">
+          {/** biome-ignore lint/a11y/noSvgWithoutTitle: SVG is ok */}
           <svg
             className="w-5 h-5 text-green-600 dark:text-green-400 mr-2"
             fill="currentColor"
@@ -223,6 +224,7 @@ export function DuplicateRuleManager({
       <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: SVG is ok */}
             <svg
               className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-2"
               fill="currentColor"

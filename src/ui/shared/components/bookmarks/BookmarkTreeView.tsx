@@ -1,17 +1,16 @@
-import React from "react"
 import {
+  CheckSquare,
+  ExternalLink,
   Folder,
   FolderOpen,
-  ExternalLink,
-  CheckSquare,
   Square,
 } from "lucide-react"
+import type { Bookmark } from "@/shared/types"
 import {
-  useBookmarkStore,
   useBookmarkActions,
+  useBookmarkStore,
   useSelectedBookmarks,
 } from "../../stores/bookmarkStore"
-import type { Bookmark } from "@/shared/types"
 import { Card } from "../Card"
 
 interface BookmarkTreeViewProps {

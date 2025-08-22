@@ -1,36 +1,35 @@
-import React, { useMemo, useCallback } from "react"
 import {
+  Bookmark as BookmarkIcon,
+  Edit3,
+  Eye,
   Plus,
   Tag,
-  Edit3,
   Trash2,
-  Eye,
-  Bookmark as BookmarkIcon,
 } from "lucide-react"
-import {
-  PageLayout,
-  PageHeader,
-  ToolBar,
-  ToolBarSortOption,
-  DataView,
-  ViewMode,
-  FilterPanel,
-  FilterConfig,
-  EmptyState,
-  Button,
-  StatusBar,
-} from "../shared/components/layout"
+import React, { useCallback, useMemo } from "react"
+import type { BookmarkTag } from "../../shared/types"
 import { Card } from "../shared/components/Card"
 import { ColorSelector, TAG_COLORS } from "../shared/components/ColorSelector"
-import { TagFilters } from "../shared/components/TagFilters"
-import { TagModal } from "./TagModal"
 import {
-  useBookmarkTags,
+  Button,
+  DataView,
+  EmptyState,
+  type FilterConfig,
+  PageHeader,
+  PageLayout,
+  StatusBar,
+  ToolBar,
+  type ToolBarSortOption,
+  type ViewMode,
+} from "../shared/components/layout"
+import { TagFilters } from "../shared/components/TagFilters"
+import { useTagsPageState } from "../shared/stores"
+import {
   useBookmarkActions,
+  useBookmarkTags,
   useFilteredBookmarks,
 } from "../shared/stores/bookmarkStore"
-import { useTagsPageState } from "../shared/stores"
-import type { BookmarkTag, Bookmark } from "../../shared/types"
+import { TagModal } from "./TagModal"
 
 interface TagWithUsage extends BookmarkTag {
   usageCount: number
@@ -50,7 +49,7 @@ export function TagsPage() {
   const tags = useBookmarkTags()
   const allBookmarks = useFilteredBookmarks()
   const {
-    createTag,
+    createTag: _createTag,
     updateTag,
     deleteTag,
     loadBookmarks,
@@ -97,14 +96,14 @@ export function TagsPage() {
   // Calculate tag usage statistics
   const tagsWithUsage = useMemo((): TagWithUsage[] => {
     return tags.map((tag) => {
-      const usageCount = allBookmarks.filter(
-        (bookmark) => bookmark.tags && bookmark.tags.includes(tag.id),
+      const usageCount = allBookmarks.filter((bookmark) =>
+        bookmark.tags?.includes(tag.id),
       ).length
       return { ...tag, usageCount }
     })
   }, [tags, allBookmarks])
 
-  const filterConfigs: FilterConfig[] = useMemo(
+  const _filterConfigs: FilterConfig[] = useMemo(
     () => [
       {
         key: "hasBookmarks",
@@ -243,6 +242,7 @@ export function TagsPage() {
     updateSort(sortBy)
   }, [updateSort, sortBy])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Hook changes
   const tableColumns = useMemo(
     () => [
       {
@@ -348,15 +348,10 @@ export function TagsPage() {
         width: "w-32",
       },
     ],
-    [
-      showColorPicker,
-      openEditModal,
-      handleDeleteTag,
-      handleViewBookmarks,
-      handleUpdateTag,
-    ],
+    [showColorPicker, openEditModal],
   )
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: hooks changin
   const renderTagCard = useCallback(
     (tag: TagWithUsage) => (
       <Card>
@@ -406,7 +401,7 @@ export function TagsPage() {
         </div>
       </Card>
     ),
-    [openEditModal, handleDeleteTag, handleViewBookmarks],
+    [openEditModal],
   )
 
   const hasActiveFilters = Object.values(filters).some(

@@ -272,7 +272,7 @@ function validateDomainPattern(pattern: string): PatternValidationResult {
 
   // Basic domain validation (with optional paths)
   const domainRegex =
-    /^(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*([\/\?\#].*)?$/
+    /^(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*([/?#].*)?$/
 
   if (!domainRegex.test(pattern)) {
     return {
@@ -343,7 +343,7 @@ export function validateRegexPattern(pattern: string): boolean {
 
   try {
     new RegExp(cleanPattern)
-  } catch (error) {
+  } catch (_error) {
     return false
   }
 

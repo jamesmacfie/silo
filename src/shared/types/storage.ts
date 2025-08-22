@@ -35,15 +35,15 @@ export interface BookmarkAssociation {
 
 // Import bookmark types
 export type {
-  BookmarkTag,
-  BookmarkMetadata,
-  FolderMetadata,
   Bookmark,
   BookmarkBulkAction,
-  BookmarkImportData,
   BookmarkExportOptions,
+  BookmarkImportData,
+  BookmarkMetadata,
   BookmarkSearchFilters,
   BookmarkSortOptions,
+  BookmarkTag,
+  FolderMetadata,
 } from "./bookmark"
 
 import type { Container } from "./container"

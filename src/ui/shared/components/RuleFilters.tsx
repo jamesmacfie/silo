@@ -1,5 +1,4 @@
-import React from "react"
-import { X, Tag, Shield } from "lucide-react"
+import { Shield, Tag, X } from "lucide-react"
 import type { Container } from "@/shared/types"
 import { Card } from "./Card"
 import { ContainerSelector } from "./ContainerSelector"

@@ -1,7 +1,12 @@
 import { RulesEngine } from "@/background/services/RulesEngine"
 import storageService from "@/background/services/StorageService"
 import urlMatcher from "@/background/utils/matcher"
-import { Rule, MatchType, RuleType, CreateRuleRequest } from "@/shared/types"
+import {
+  type CreateRuleRequest,
+  MatchType,
+  type Rule,
+  RuleType,
+} from "@/shared/types"
 
 jest.mock("@/background/services/StorageService")
 jest.mock("@/background/utils/matcher")

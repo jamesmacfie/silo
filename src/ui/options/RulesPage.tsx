@@ -1,27 +1,29 @@
-import React, { useMemo, useCallback } from "react"
-import { Plus, Edit3, Trash2 } from "lucide-react"
+import { Edit3, Plus, Trash2 } from "lucide-react"
+import React, { useCallback, useMemo } from "react"
+import type { Rule } from "../../shared/types/rule"
+import { containerColorToCss } from "../shared/components/ColorSelector"
+import { DuplicateRuleManager } from "../shared/components/DuplicateRuleManager"
 import {
-  PageLayout,
-  PageHeader,
-  ToolBar,
-  ToolBarSortOption,
-  DataView,
-  ViewMode,
-  FilterPanel,
-  FilterConfig,
-  EmptyState,
   Button,
+  DataView,
+  EmptyState,
+  type FilterConfig,
+  PageHeader,
+  PageLayout,
   StatusBar,
+  ToolBar,
+  type ToolBarSortOption,
+  type ViewMode,
 } from "../shared/components/layout"
 import { RuleCard } from "../shared/components/RuleCard"
-import { DuplicateRuleManager } from "../shared/components/DuplicateRuleManager"
 import { RuleFilters } from "../shared/components/RuleFilters"
+import {
+  useContainers,
+  useRuleActions,
+  useRules,
+  useRulesPageState,
+} from "../shared/stores"
 import { RuleModal } from "./RuleModal"
-import { useRules, useRuleActions, useRulesPageState } from "../shared/stores"
-import { useContainers } from "../shared/stores"
-import { containerColorToCss } from "../shared/components/ColorSelector"
-import type { Rule } from "../../shared/types/rule"
-import type { Container } from "../../shared/types/container"
 
 const SORT_OPTIONS: ToolBarSortOption[] = [
   { value: "priority", label: "Priority" },
@@ -35,13 +37,13 @@ const SORT_OPTIONS: ToolBarSortOption[] = [
 const PAGE_DESCRIPTION =
   "Create and manage rules that automatically open websites in specific containers based on URL patterns. Rules can include sites in containers, exclude them, or restrict access."
 
-interface RulesPageProps {}
+type RulesPageProps = {}
 
 export function RulesPage({}: RulesPageProps) {
   const rules = useRules()
   const containers = useContainers()
   const {
-    create: createRule,
+    create: _createRule,
     update: updateRule,
     delete: deleteRule,
   } = useRuleActions()
@@ -80,7 +82,7 @@ export function RulesPage({}: RulesPageProps) {
       .length
   }, [rules])
 
-  const filterConfigs: FilterConfig[] = useMemo(
+  const _filterConfigs: FilterConfig[] = useMemo(
     () => [
       {
         key: "container",

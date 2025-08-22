@@ -1,4 +1,3 @@
-import React from "react"
 import { useContainers } from "@/ui/shared/stores"
 import useStatsStore from "@/ui/shared/stores/statsStore"
 

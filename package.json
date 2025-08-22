@@ -24,8 +24,8 @@
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
     "type-check": "tsc --noEmit",
-    "fmt": "biome format --write",
-    "fmt:check": "biome format"
+    "fmt": "biome check --write",
+    "fmt:check": "biome check"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

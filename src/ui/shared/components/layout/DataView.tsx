@@ -1,4 +1,4 @@
-import React from "react"
+import type React from "react"
 import { EmptyState } from "./EmptyState"
 
 export type ViewMode = "table" | "cards" | "tree"

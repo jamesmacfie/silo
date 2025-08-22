@@ -1,11 +1,9 @@
+import { type Container, MatchType, type Rule, RuleType } from "@/shared/types"
 import {
-  parseCSV,
   exportToCSV as generateCSV,
+  parseCSV,
   validateCSVRow,
-  type CSVValidationResult,
 } from "@/shared/utils/csv"
-import { Rule, Container } from "@/shared/types"
-import { MatchType, RuleType } from "@/shared/types"
 
 describe("CSV Utilities", () => {
   const mockContainers: Container[] = [

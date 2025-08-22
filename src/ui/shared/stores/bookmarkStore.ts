@@ -1,16 +1,16 @@
+import Fuse from "fuse.js"
+import browser from "webextension-polyfill"
 import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
-import browser from "webextension-polyfill"
-import Fuse from "fuse.js"
+import { MESSAGE_TYPES } from "@/shared/constants"
 import type {
   Bookmark,
-  BookmarkTag,
-  BookmarkMetadata,
   BookmarkBulkAction,
+  BookmarkMetadata,
   BookmarkSearchFilters,
   BookmarkSortOptions,
+  BookmarkTag,
 } from "@/shared/types"
-import { MESSAGE_TYPES } from "@/shared/constants"
 
 interface BookmarkState {
   // Data
@@ -565,7 +565,7 @@ export const useBookmarkStore = create<BookmarkState>()(
           })
 
           return response?.success ? response.data?.containerId || null : null
-        } catch (error) {
+        } catch (_error) {
           return null
         }
       },
@@ -592,7 +592,7 @@ export const useFilteredBookmarks = () => {
     // Apply filters
     if (filters.tags && filters.tags.length > 0) {
       filtered = filtered.filter((bookmark) =>
-        filters.tags!.some((tagId) => bookmark.tags.includes(tagId)),
+        filters.tags?.some((tagId) => bookmark.tags.includes(tagId)),
       )
     }
 
@@ -600,7 +600,7 @@ export const useFilteredBookmarks = () => {
       filtered = filtered.filter(
         (bookmark) =>
           bookmark.containerId &&
-          filters.containers!.includes(bookmark.containerId),
+          filters.containers?.includes(bookmark.containerId),
       )
     }
 

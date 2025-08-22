@@ -1,13 +1,12 @@
 import browser from "webextension-polyfill"
 import { STORAGE_KEYS } from "@/shared/constants"
 import type {
-  ContainerStatsDetailed,
-  SessionData,
+  ActivityEvent,
   DailyStats,
   GlobalStats,
-  ActivityEvent,
-  TrendData,
+  SessionData,
   StatEvent,
+  TrendData,
 } from "@/shared/types/storage"
 import { logger } from "@/shared/utils/logger"
 import storageService from "./StorageService"
@@ -58,7 +57,7 @@ class StatsService {
       if (!eventsByContainer.has(event.containerId)) {
         eventsByContainer.set(event.containerId, [])
       }
-      eventsByContainer.get(event.containerId)!.push(event)
+      eventsByContainer.get(event.containerId)?.push(event)
     }
 
     // Process each container's events

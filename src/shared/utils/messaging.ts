@@ -1,13 +1,13 @@
 import browser from "webextension-polyfill"
 import { MESSAGE_TYPES } from "@/shared/constants"
 import type {
+  BackupData,
   Container,
-  Rule,
-  Preferences,
-  EvaluationResult,
   CreateContainerRequest,
   CreateRuleRequest,
-  BackupData,
+  EvaluationResult,
+  Preferences,
+  Rule,
 } from "@/shared/types"
 import { logger } from "./logger"
 

@@ -1,10 +1,10 @@
-import { RequestInterceptor } from "@/background/services/RequestInterceptor"
 import browser from "webextension-polyfill"
-import rulesEngine from "@/background/services/RulesEngine"
-import containerManager from "@/background/services/ContainerManager"
-import storageService from "@/background/services/StorageService"
 import bookmarkIntegration from "@/background/services/BookmarkIntegration"
-import { EvaluationResult, RuleType } from "@/shared/types"
+import containerManager from "@/background/services/ContainerManager"
+import { RequestInterceptor } from "@/background/services/RequestInterceptor"
+import rulesEngine from "@/background/services/RulesEngine"
+import storageService from "@/background/services/StorageService"
+import { type EvaluationResult, RuleType } from "@/shared/types"
 
 jest.mock("@/background/services/RulesEngine")
 jest.mock("@/background/services/ContainerManager")

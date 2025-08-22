@@ -1,22 +1,19 @@
-import React from "react"
 import {
-  ExternalLink,
-  Edit3,
-  Trash2,
-  Container as ContainerIcon,
-  Tag,
-  CheckSquare,
-  Square,
   AlertCircle,
+  CheckSquare,
+  Edit3,
+  ExternalLink,
+  Square,
+  Tag,
 } from "lucide-react"
-import {
-  useFilteredBookmarks,
-  useBookmarkActions,
-  useSelectedBookmarks,
-  useBookmarkTags,
-} from "../../stores/bookmarkStore"
+import React from "react"
 import { useContainers } from "../../stores"
-import type { Bookmark } from "@/shared/types"
+import {
+  useBookmarkActions,
+  useBookmarkTags,
+  useFilteredBookmarks,
+  useSelectedBookmarks,
+} from "../../stores/bookmarkStore"
 import { Card } from "../Card"
 
 interface BookmarkTableViewProps {
@@ -32,7 +29,7 @@ export function BookmarkTableView({
   const containers = useContainers()
   const { selectBookmark, checkRuleMatch } = useBookmarkActions()
 
-  const [editingBookmark, setEditingBookmark] = React.useState<string | null>(
+  const [_editingBookmark, setEditingBookmark] = React.useState<string | null>(
     null,
   )
   const [ruleMatches, setRuleMatches] = React.useState<Map<string, string>>(
@@ -51,7 +48,7 @@ export function BookmarkTableView({
             if (matchedContainer) {
               matches.set(bookmark.id, matchedContainer)
             }
-          } catch (error) {
+          } catch (_error) {
             // Ignore rule check errors
           }
         }

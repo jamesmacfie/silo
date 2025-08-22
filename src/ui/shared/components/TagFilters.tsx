@@ -1,9 +1,8 @@
-import React from "react"
-import { X, Bookmark } from "lucide-react"
+import { Bookmark, X } from "lucide-react"
 import { Card } from "./Card"
+import { ColorFilterSelector } from "./ColorFilterSelector"
 import { TAG_COLORS } from "./ColorSelector"
 import { FilterButton } from "./FilterButton"
-import { ColorFilterSelector } from "./ColorFilterSelector"
 
 interface TagFiltersProps {
   className?: string

@@ -1,4 +1,3 @@
-import React from "react"
 import { Palette } from "lucide-react"
 
 interface ColorOption {

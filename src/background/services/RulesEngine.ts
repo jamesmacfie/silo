@@ -1,13 +1,13 @@
 import type {
-  Rule,
   CreateRuleRequest,
   EvaluationResult,
+  Rule,
   ValidationResult,
 } from "@/shared/types"
-import { RuleType, MatchType } from "@/shared/types"
-import storageService from "./StorageService"
-import * as matcher from "../utils/matcher"
+import { MatchType, RuleType } from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
+import * as matcher from "../utils/matcher"
+import storageService from "./StorageService"
 
 export class RulesEngine {
   private storage = storageService

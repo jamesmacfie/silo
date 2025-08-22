@@ -1,15 +1,16 @@
 // Generate UUID using browser crypto
 const uuidv4 = (): string => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
-    const v = c == "x" ? r : (r & 0x3) | 0x8
+    const v = c === "x" ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
 }
-import storageService from "./StorageService"
-import type { BookmarkTag, BookmarkMetadata } from "@/shared/types"
+
 import { STORAGE_KEYS } from "@/shared/constants"
+import type { BookmarkMetadata, BookmarkTag } from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
+import storageService from "./StorageService"
 
 export class TagService {
   private storage = storageService
@@ -39,7 +40,7 @@ export class TagService {
     // Check for duplicate names
     if (
       data.name &&
-      tags.some((tag) => tag.name.toLowerCase() === data.name!.toLowerCase())
+      tags.some((tag) => tag.name.toLowerCase() === data.name?.toLowerCase())
     ) {
       throw new Error(`Tag with name "${data.name}" already exists`)
     }
@@ -75,7 +76,7 @@ export class TagService {
       updates.name &&
       tags.some(
         (tag, i) =>
-          i !== index && tag.name.toLowerCase() === updates.name!.toLowerCase(),
+          i !== index && tag.name.toLowerCase() === updates.name?.toLowerCase(),
       )
     ) {
       throw new Error(`Tag with name "${updates.name}" already exists`)

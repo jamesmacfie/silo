@@ -1,21 +1,20 @@
+import { Filter, Grid3X3, List } from "lucide-react"
 import React from "react"
-import { Search, Grid3X3, List, Plus, Filter } from "lucide-react"
-import {
-  useBookmarkStore,
-  useBookmarkView,
-  useBookmarkActions,
-  useBookmarkLoading,
-  useBookmarkError,
-  useSelectedBookmarks,
-  useBookmarkSearchState,
-} from "../../stores/bookmarkStore"
 import { useContainers } from "../../stores"
+import {
+  useBookmarkActions,
+  useBookmarkError,
+  useBookmarkLoading,
+  useBookmarkSearchState,
+  useBookmarkView,
+  useSelectedBookmarks,
+} from "../../stores/bookmarkStore"
+import { Card } from "../Card"
+import { BookmarkFilters } from "./BookmarkFilters"
+import { BookmarkSearchBar } from "./BookmarkSearchBar"
 import { BookmarkTableView } from "./BookmarkTableView"
 import { BookmarkTreeView } from "./BookmarkTreeView"
-import { BookmarkSearchBar } from "./BookmarkSearchBar"
-import { BookmarkFilters } from "./BookmarkFilters"
 import { BulkActionsBar } from "./BulkActionsBar"
-import { Card } from "../Card"
 
 interface BookmarkManagerProps {
   className?: string

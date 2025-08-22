@@ -1,8 +1,8 @@
+import browser from "webextension-polyfill"
 import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
-import browser from "webextension-polyfill"
+import { DEFAULT_PREFERENCES, MESSAGE_TYPES } from "@/shared/constants"
 import type { Preferences } from "@/shared/types"
-import { MESSAGE_TYPES, DEFAULT_PREFERENCES } from "@/shared/constants"
 
 interface PreferencesState {
   preferences: Preferences

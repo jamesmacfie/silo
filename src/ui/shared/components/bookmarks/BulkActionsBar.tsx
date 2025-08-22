@@ -1,18 +1,18 @@
-import React from "react"
 import {
-  Trash2,
-  Tag,
+  Check,
   Container as ContainerIcon,
   ExternalLink,
+  Tag,
+  Trash2,
   X,
-  Check,
 } from "lucide-react"
+import React from "react"
+import type { BookmarkBulkAction, Container } from "@/shared/types"
 import {
   useBookmarkActions,
-  useSelectedBookmarks,
   useBookmarkTags,
+  useSelectedBookmarks,
 } from "../../stores/bookmarkStore"
-import type { Container, BookmarkBulkAction } from "@/shared/types"
 
 interface BulkActionsBarProps {
   selectedCount: number
@@ -72,7 +72,7 @@ export function BulkActionsBar({
     setShowTagMenu(false)
   }
 
-  const handleRemoveTag = async (tagId: string) => {
+  const _handleRemoveTag = async (tagId: string) => {
     await handleBulkAction({
       type: "removeTag",
       bookmarkIds: selectedIds,
@@ -106,7 +106,7 @@ export function BulkActionsBar({
     setShowContainerMenu(false)
   }
 
-  if (selectedCount === 0) return <></>
+  if (selectedCount === 0) return null
 
   return (
     <div className={`bulk-actions-bar ${className}`}>

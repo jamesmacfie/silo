@@ -1,5 +1,5 @@
 import type { Container } from "@/shared/types"
-import { useContainers, useContainerLoading } from "@/ui/shared/stores"
+import { useContainerLoading, useContainers } from "@/ui/shared/stores"
 
 type Props = { onSelect(container: Container): void }
 

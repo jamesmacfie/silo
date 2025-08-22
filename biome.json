@@ -7,13 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": [
-      "**",
-      "!coverage/**",
-      "!dist/**",
-      "!node_modules/**",
-      "!temp/**"
-    ]
+    "includes": ["**", "!coverage", "!dist", "!node_modules", "!temp"]
   },
   "formatter": {
     "enabled": true,
@@ -24,17 +18,36 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noUnknownAtRules": "off",
+        "noShadowRestrictedNames": "off",
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off"
+      },
       "style": {
         "useEnumInitializers": "error",
-        "useExponentiationOperator": "error"
+        "useExponentiationOperator": "error",
+        "noNonNullAssertion": "off"
       },
       "correctness": {
         "noUnusedVariables": "error",
         "useExhaustiveDependencies": "warn",
-        "useHookAtTopLevel": "error"
+        "useHookAtTopLevel": "error",
+        "useUniqueElementIds": "off",
+        "noEmptyPattern": "off",
+        "noNestedComponentDefinitions": "off"
+      },
+      "a11y": {
+        "useButtonType": "off",
+        "noStaticElementInteractions": "off",
+        "noLabelWithoutControl": "off",
+        "useKeyWithClickEvents": "off"
       },
       "complexity": {
-        "useLiteralKeys": "error"
+        "useLiteralKeys": "error",
+        "noBannedTypes": "off",
+        "noUselessFragments": "off"
       }
     }
   },

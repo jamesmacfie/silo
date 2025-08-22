@@ -1,13 +1,13 @@
 import React from "react"
-import { useBookmarkActions } from "@/ui/shared/stores/bookmarkStore"
 import type { BookmarkTag } from "@/shared/types"
+import { ColorSelector, TAG_COLORS } from "@/ui/shared/components/ColorSelector"
 import {
   Modal,
   ModalFormRow,
-  ModalLabel,
   ModalInput,
+  ModalLabel,
 } from "@/ui/shared/components/Modal"
-import { ColorSelector, TAG_COLORS } from "@/ui/shared/components/ColorSelector"
+import { useBookmarkActions } from "@/ui/shared/stores/bookmarkStore"
 
 interface Props {
   isOpen: boolean

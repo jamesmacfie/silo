@@ -1,7 +1,6 @@
-import React from "react"
 import { Container as ContainerIcon } from "lucide-react"
-import { containerColorToCss } from "./ColorSelector"
 import type { Container } from "@/shared/types"
+import { containerColorToCss } from "./ColorSelector"
 
 interface ContainerSelectorProps {
   containers: Container[]

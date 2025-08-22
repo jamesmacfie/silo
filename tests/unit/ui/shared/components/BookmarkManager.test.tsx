@@ -1,10 +1,10 @@
 /** @jest-environment jsdom */
-import React from "react"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import browser from "webextension-polyfill"
 import { BookmarkManager } from "@/ui/shared/components/BookmarkManager"
 import { QueryProvider } from "@/ui/shared/providers/QueryProvider"
-import browser from "webextension-polyfill"
 
 // Mock the hooks
 jest.mock("@/ui/shared/hooks/useBookmarks", () => ({
@@ -14,9 +14,9 @@ jest.mock("@/ui/shared/hooks/useBookmarks", () => ({
 }))
 
 import {
+  useBookmarkActions,
   useBookmarkAssociations,
   useBookmarksTree,
-  useBookmarkActions,
 } from "@/ui/shared/hooks/useBookmarks"
 
 const mockUseBookmarkAssociations =

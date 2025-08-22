@@ -1,9 +1,9 @@
 /** @jest-environment jsdom */
-import React from "react"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import browser from "webextension-polyfill"
-import { QueryProvider } from "@/ui/shared/providers/QueryProvider"
 import { ContainerSelector } from "@/ui/popup/components/ContainerSelector"
+import { QueryProvider } from "@/ui/shared/providers/QueryProvider"
 
 describe("ContainerSelector", () => {
   beforeEach(() => {

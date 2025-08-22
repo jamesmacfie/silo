@@ -1,11 +1,10 @@
-import React from "react"
-import { X, Tag } from "lucide-react"
+import { Tag, X } from "lucide-react"
+import type { Container } from "@/shared/types"
 import {
   useBookmarkActions,
   useBookmarkSearchState,
   useBookmarkTags,
 } from "../../stores/bookmarkStore"
-import type { Container } from "@/shared/types"
 import { Card } from "../Card"
 import { ContainerSelector } from "../ContainerSelector"
 

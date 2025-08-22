@@ -1,46 +1,40 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import "@/ui/options/index.css"
-import { useAppInitialization, useStoreEffects } from "@/ui/shared/stores"
-import { CSVImportExport } from "@/ui/shared/components/CSVImportExport"
-import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
+import type { Rule } from "@/shared/types"
+import type { CSVImportResult } from "@/shared/utils/csv"
+import { getDuplicateCount } from "@/shared/utils/duplicateRules"
 import { BookmarksPage } from "@/ui/options/BookmarksPage"
-import { TagsPage } from "@/ui/options/TagsPage"
-import { RulesPage } from "@/ui/options/RulesPage"
+import { ContainerModal } from "@/ui/options/ContainerModal"
 import { ContainersPage } from "@/ui/options/ContainersPage"
 import { Dashboard } from "@/ui/options/Dashboard"
-import {
-  useRules,
-  useRuleActions,
-  useRuleLoading,
-  useRuleError,
-  useContainers,
-  useContainerActions,
-  useContainerLoading,
-  useContainerError,
-  useStatsActions,
-  useStatsLoading,
-  useStatsError,
-} from "@/ui/shared/stores"
-import { ContainerModal } from "@/ui/options/ContainerModal"
 import { RuleModal } from "@/ui/options/RuleModal"
-import { SearchInput } from "@/ui/shared/components/SearchInput"
+import { RulesPage } from "@/ui/options/RulesPage"
+import { TagsPage } from "@/ui/options/TagsPage"
 import {
   ContainerCard,
   type ContainerLite,
 } from "@/ui/shared/components/ContainerCard"
-import { RuleCard } from "@/ui/shared/components/RuleCard"
-import { PageHeader } from "@/ui/shared/components/PageHeader"
-import { InterceptorTest } from "@/ui/shared/components/InterceptorTest"
-import { StatusBar } from "@/ui/shared/components/StatusBar"
+import { CSVImportExport } from "@/ui/shared/components/CSVImportExport"
 import { DuplicateRuleManager } from "@/ui/shared/components/DuplicateRuleManager"
-import { StatsOverviewCard } from "@/ui/shared/components/StatsOverviewCard"
-import { ActiveContainersCard } from "@/ui/shared/components/ActiveContainersCard"
-import { RecentActivityCard } from "@/ui/shared/components/RecentActivityCard"
-import { ContainerStatsTable } from "@/ui/shared/components/ContainerStatsTable"
-import type { CSVImportResult } from "@/shared/utils/csv"
-import type { Rule } from "@/shared/types"
-import { getDuplicateCount } from "@/shared/utils/duplicateRules"
+import { InterceptorTest } from "@/ui/shared/components/InterceptorTest"
+import { PageHeader } from "@/ui/shared/components/PageHeader"
+import { RuleCard } from "@/ui/shared/components/RuleCard"
+import { SearchInput } from "@/ui/shared/components/SearchInput"
+import { StatusBar } from "@/ui/shared/components/StatusBar"
+import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
+import {
+  useAppInitialization,
+  useContainerActions,
+  useContainerError,
+  useContainerLoading,
+  useContainers,
+  useRuleActions,
+  useRuleError,
+  useRuleLoading,
+  useRules,
+  useStoreEffects,
+} from "@/ui/shared/stores"
 
 function PageShell(props: { children: React.ReactNode }): JSX.Element {
   return <div className="app">{props.children}</div>
@@ -158,7 +152,7 @@ function Content(props: { children: React.ReactNode }): JSX.Element {
 
 // This hook is replaced by useContainers from Zustand stores
 
-function OldContainersPage(): JSX.Element {
+function _OldContainersPage(): JSX.Element {
   const containers = useContainers()
   const {
     load: refresh,
@@ -274,7 +268,7 @@ function OldContainersPage(): JSX.Element {
   )
 }
 
-function OldRulesPage(): JSX.Element {
+function _OldRulesPage(): JSX.Element {
   const containers = useContainers()
   const rules = useRules()
   const rulesLoading = useRuleLoading()
@@ -343,7 +337,7 @@ function OldRulesPage(): JSX.Element {
             return 0
         }
       })
-    } catch (error) {
+    } catch (_error) {
       return []
     }
   }, [rules, containers, filter, sortBy])
@@ -352,7 +346,7 @@ function OldRulesPage(): JSX.Element {
     async (rule: Rule) => {
       try {
         await updateRule(rule.id, { enabled: !rule.enabled })
-      } catch (error) {}
+      } catch (_error) {}
     },
     [updateRule],
   )
@@ -363,7 +357,7 @@ function OldRulesPage(): JSX.Element {
 
       try {
         await deleteRule(rule.id)
-      } catch (error) {}
+      } catch (_error) {}
     },
     [deleteRule],
   )

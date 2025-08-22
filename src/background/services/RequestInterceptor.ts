@@ -1,13 +1,12 @@
 import browser from "webextension-polyfill"
-import rulesEngine from "./RulesEngine"
-import containerManager from "./ContainerManager"
-import storageService from "./StorageService"
 import type { EvaluationResult } from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
 import bookmarkIntegration from "./BookmarkIntegration"
+import containerManager from "./ContainerManager"
+import rulesEngine from "./RulesEngine"
+import storageService from "./StorageService"
 
 export class RequestInterceptor {
-  private static instance: RequestInterceptor | null = null
   private rulesEngine = rulesEngine
   private containerManager = containerManager
   private storage = storageService
@@ -145,8 +144,6 @@ export class RequestInterceptor {
 
         case "block":
           return await this.handleBlock(urlToEvaluate, tabId, evaluation)
-
-        case "open":
         default:
           // If silo param specified, open in that container even if rules say open
           if (

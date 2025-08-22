@@ -2,13 +2,13 @@ import React from "react"
 import browser from "webextension-polyfill"
 import type { Container } from "@/shared/types"
 import { MatchType, RuleType } from "@/shared/types"
+import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
 import {
-  useContainers,
   useContainerActions,
   useContainerLoading,
+  useContainers,
   useRuleActions,
 } from "@/ui/shared/stores"
-import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
 
 type Props = Record<string, never>
 

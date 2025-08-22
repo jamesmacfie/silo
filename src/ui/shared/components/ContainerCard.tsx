@@ -1,11 +1,10 @@
-import React from "react"
+import { colorToCss, iconToEmoji } from "@/shared/utils/containerHelpers"
 import {
   Card,
-  CardHeader,
-  CardContent,
   CardActions,
+  CardContent,
+  CardHeader,
 } from "@/ui/shared/components/Card"
-import { iconToEmoji, colorToCss } from "@/shared/utils/containerHelpers"
 
 export interface ContainerLite {
   id: string

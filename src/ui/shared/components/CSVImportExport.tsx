@@ -1,8 +1,8 @@
 import React from "react"
 import browser from "webextension-polyfill"
 import { MESSAGE_TYPES } from "@/shared/constants"
+import type { CSVExportOptions, CSVImportResult } from "@/shared/utils/csv"
 import { Button } from "./layout/Button"
-import type { CSVImportResult, CSVExportOptions } from "@/shared/utils/csv"
 
 interface Props {
   onImportComplete?: (result: CSVImportResult) => void

@@ -1,10 +1,10 @@
 import React from "react"
 import { create } from "zustand"
-import { useContainerStore } from "./containerStore"
-import { useRuleStore } from "./ruleStore"
-import { useThemeStore, useThemeEffects } from "./themeStore"
-import { usePreferencesStore } from "./preferencesStore"
 import { useBookmarkStore } from "./bookmarkStore"
+import { useContainerStore } from "./containerStore"
+import { usePreferencesStore } from "./preferencesStore"
+import { useRuleStore } from "./ruleStore"
+import { useThemeEffects, useThemeStore } from "./themeStore"
 
 interface AppState {
   isInitialized: boolean
@@ -16,7 +16,7 @@ interface AppState {
   }
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set, _get) => ({
   isInitialized: false,
   initializationError: undefined,
 

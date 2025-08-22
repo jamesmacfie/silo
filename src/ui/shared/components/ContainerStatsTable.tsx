@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useCallback } from "react"
 import { BarChart3 } from "lucide-react"
-import { DataView, SortOption, EmptyState } from "./layout"
-import { Card } from "./Card"
+import { useCallback, useMemo, useState } from "react"
 import { useContainers } from "../stores"
 import useStatsStore from "../stores/statsStore"
+import { Card } from "./Card"
 import { containerColorToCss } from "./ColorSelector"
+import { DataView, EmptyState, type SortOption } from "./layout"
 
 interface ContainerStatsData {
   id: string

@@ -1,7 +1,6 @@
-import React from "react"
+import { getContainerColor } from "@/shared/utils/containerColors"
 import { useContainers } from "@/ui/shared/stores"
 import useStatsStore from "@/ui/shared/stores/statsStore"
-import { getContainerColor } from "@/shared/utils/containerColors"
 
 export function ActiveContainersCard(): JSX.Element {
   const activeTabs = useStatsStore((state) => state.activeTabs)

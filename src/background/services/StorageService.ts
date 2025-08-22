@@ -1,15 +1,16 @@
 import browser from "webextension-polyfill"
 import { z } from "zod"
+import { DEFAULT_PREFERENCES, STORAGE_KEYS } from "@/shared/constants"
 import type {
-  Container,
-  Rule,
-  Preferences,
   BackupData,
-  ValidationResult,
   BookmarkAssociation,
+  Container,
+  ContainerStats,
+  ContainerTemplate,
+  Preferences,
+  Rule,
+  ValidationResult,
 } from "@/shared/types"
-import { STORAGE_KEYS, DEFAULT_PREFERENCES } from "@/shared/constants"
-import type { ContainerStats, ContainerTemplate } from "@/shared/types"
 
 const ContainerSchema = z.object({
   id: z.string(),

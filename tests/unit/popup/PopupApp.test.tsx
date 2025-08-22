@@ -1,11 +1,11 @@
 /** @jest-environment jsdom */
-import React from "react"
-import { render, screen, waitFor, act } from "@testing-library/react"
+
+import { act, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { PopupApp } from "@/ui/popup/components/PopupApp"
-import { QueryProvider } from "@/ui/shared/providers/QueryProvider"
-import { ThemeProvider } from "@/ui/shared/contexts/ThemeContext"
 import browser from "webextension-polyfill"
+import { PopupApp } from "@/ui/popup/components/PopupApp"
+import { ThemeProvider } from "@/ui/shared/contexts/ThemeContext"
+import { QueryProvider } from "@/ui/shared/providers/QueryProvider"
 
 // Setup JSDOM environment
 beforeAll(() => {

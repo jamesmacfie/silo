@@ -1,11 +1,11 @@
-import { ContainerManager } from "@/background/services/ContainerManager"
-import { Container, CreateContainerRequest } from "@/shared/types"
 import browser from "webextension-polyfill"
+import { ContainerManager } from "@/background/services/ContainerManager"
 import StorageService from "@/background/services/StorageService"
 import {
-  DEFAULT_CONTAINER_ICONS,
   DEFAULT_CONTAINER_COLORS,
+  DEFAULT_CONTAINER_ICONS,
 } from "@/shared/constants"
+import type { Container, CreateContainerRequest } from "@/shared/types"
 
 jest.mock("@/background/services/StorageService")
 jest.mock("@/shared/utils/logger")

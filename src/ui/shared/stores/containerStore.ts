@@ -1,8 +1,8 @@
+import browser from "webextension-polyfill"
 import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
-import browser from "webextension-polyfill"
-import type { Container } from "@/shared/types"
 import { MESSAGE_TYPES } from "@/shared/constants"
+import type { Container } from "@/shared/types"
 
 interface ContainerState {
   containers: Container[]

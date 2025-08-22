@@ -1,7 +1,7 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
-import { useAppInitialization, useStoreEffects } from "@/ui/shared/stores"
 import { PopupApp } from "@/ui/popup/components/PopupApp"
+import { useAppInitialization, useStoreEffects } from "@/ui/shared/stores"
 import "@/ui/popup/index.css"
 
 function App() {

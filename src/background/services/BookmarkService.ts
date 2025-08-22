@@ -1,16 +1,15 @@
 import browser from "webextension-polyfill"
-import storageService from "./StorageService"
-import tagService from "./TagService"
-import rulesEngine from "./RulesEngine"
+import { STORAGE_KEYS } from "@/shared/constants"
 import type {
+  Bookmark,
+  BookmarkBulkAction,
   BookmarkMetadata,
   FolderMetadata,
-  Bookmark,
-  BookmarkTag,
-  BookmarkBulkAction,
 } from "@/shared/types"
-import { STORAGE_KEYS } from "@/shared/constants"
 import { logger } from "@/shared/utils/logger"
+import rulesEngine from "./RulesEngine"
+import storageService from "./StorageService"
+import tagService from "./TagService"
 
 export class BookmarkService {
   private storage = storageService
@@ -182,7 +181,7 @@ export class BookmarkService {
   async removeContainer(bookmarkId: string): Promise<void> {
     const metadata = await this.getBookmarkMetadata(bookmarkId)
     if (metadata) {
-      const { containerId, ...rest } = metadata
+      const { containerId: _, ...rest } = metadata
       await this.tags.setBookmarkMetadata(bookmarkId, rest)
     }
   }

@@ -1,14 +1,14 @@
 import { create } from "zustand"
-import messagingService from "@/shared/utils/messaging"
 import { MESSAGE_TYPES } from "@/shared/constants"
 import type {
-  ContainerStats,
-  GlobalStats,
-  DailyStats,
   ActivityEvent,
+  ContainerStats,
+  DailyStats,
+  GlobalStats,
   TrendData,
 } from "@/shared/types/storage"
 import { logger } from "@/shared/utils/logger"
+import messagingService from "@/shared/utils/messaging"
 
 interface StatsState {
   // Data

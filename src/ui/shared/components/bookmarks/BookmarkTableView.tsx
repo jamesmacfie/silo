@@ -5,8 +5,11 @@ import {
   ExternalLink,
   Square,
   Tag,
+  Trash2,
 } from "lucide-react"
 import React from "react"
+import type { Bookmark } from "@/shared/types"
+import { BookmarkModal } from "../../../options/BookmarkModal"
 import { useContainers } from "../../stores"
 import {
   useBookmarkActions,
@@ -27,11 +30,16 @@ export function BookmarkTableView({
   const selectedBookmarks = useSelectedBookmarks()
   const tags = useBookmarkTags()
   const containers = useContainers()
-  const { selectBookmark, checkRuleMatch } = useBookmarkActions()
+  const { selectBookmark, checkRuleMatch, loadBookmarks } = useBookmarkActions()
 
-  const [_editingBookmark, setEditingBookmark] = React.useState<string | null>(
-    null,
-  )
+  const [modalState, setModalState] = React.useState<{
+    isOpen: boolean
+    mode: "edit" | "delete"
+    bookmark?: Bookmark
+  }>({
+    isOpen: false,
+    mode: "edit",
+  })
   const [ruleMatches, setRuleMatches] = React.useState<Map<string, string>>(
     new Map(),
   )
@@ -80,6 +88,33 @@ export function BookmarkTableView({
   const handleSelectBookmark = (id: string, event: React.MouseEvent) => {
     event.preventDefault()
     selectBookmark(id, event.ctrlKey || event.metaKey || event.shiftKey)
+  }
+
+  const handleEditBookmark = (bookmark: Bookmark) => {
+    setModalState({
+      isOpen: true,
+      mode: "edit",
+      bookmark,
+    })
+  }
+
+  const handleDeleteBookmark = (bookmark: Bookmark) => {
+    setModalState({
+      isOpen: true,
+      mode: "delete",
+      bookmark,
+    })
+  }
+
+  const handleCloseModal = () => {
+    setModalState({
+      isOpen: false,
+      mode: "edit",
+    })
+  }
+
+  const handleModalSuccess = () => {
+    loadBookmarks()
   }
 
   const getTag = (tagId: string) => tags.find((tag) => tag.id === tagId)
@@ -314,11 +349,18 @@ export function BookmarkTableView({
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setEditingBookmark(bookmark.id)}
+                        onClick={() => handleEditBookmark(bookmark)}
                         className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
                         title="Edit bookmark"
                       >
                         <Edit3 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBookmark(bookmark)}
+                        className="p-1 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 rounded"
+                        title="Delete bookmark"
+                      >
+                        <Trash2 className="w-3 h-3" />
                       </button>
                       {bookmark.url && (
                         <a
@@ -339,6 +381,15 @@ export function BookmarkTableView({
           </tbody>
         </table>
       </div>
+
+      <BookmarkModal
+        isOpen={modalState.isOpen}
+        mode={modalState.mode}
+        bookmark={modalState.bookmark}
+        containers={containers}
+        onClose={handleCloseModal}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

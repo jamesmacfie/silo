@@ -2,760 +2,512 @@
 
 ## Project Overview
 
-Silo is a modern Firefox WebExtension that automatically opens websites in specific Firefox containers based on configurable rules. The extension features a sophisticated TypeScript/React architecture with comprehensive rule management, container integration, and modern development tooling.
+Silo is a modern Firefox WebExtension that automatically opens websites in specific Firefox containers based on configurable rules. The extension features a React-based UI with comprehensive bookmark management, statistical analysis, and advanced rule-based container routing.
 
-**Version:** 2.0.0 (manifest) / 0.0.1 (development)  
+**Version:** 2.0.0 (production) / 0.0.1 (development)  
 **License:** MIT  
 **Minimum Firefox Version:** 91.0  
-**Framework:** TypeScript + React + Tailwind CSS  
+**Framework:** TypeScript + React + Tailwind CSS + Zustand  
 **Build System:** Extension CLI + Custom esbuild scripts
 
 ## Technology Stack
 
 - **Runtime:** Firefox WebExtension APIs (browser.*) with webextension-polyfill
-- **Language:** TypeScript with strict mode configuration
-- **UI Framework:** React 18 with functional components and hooks
-- **Styling:** Tailwind CSS with PostCSS processing and custom design system (utility-first approach)
-- **State Management:** 
-  - Zustand for comprehensive client state management
-  - Modular store architecture with domain-specific stores
-  - Optimistic updates and error handling
-- **Build Tools:** 
-  - Extension CLI for development and packaging
-  - Custom esbuild-based build scripts for components
-  - Tailwind CSS compilation with PostCSS
-- **Testing:** 
-  - Jest with jsdom environment for unit tests
-  - React Testing Library for component testing
-  - Playwright for end-to-end testing
-- **Package Manager:** npm with lockfile
+- **Language:** TypeScript (non-strict mode with ES2020 target)
+- **UI Framework:** React 18 with hooks-first architecture
+- **Styling:** Tailwind CSS utility-first approach
+- **State Management:** Zustand with modular store architecture
+- **Build Tools:** Extension CLI + custom esbuild scripts + Tailwind CSS compilation
+- **Testing:** Jest + React Testing Library + jsdom environment + Playwright for e2e
+- **Code Quality:** Biome for formatting and linting (replaces ESLint/Prettier)
 
 ## Architecture Overview
 
 ### Core Principles
-1. **Type Safety First** - Comprehensive TypeScript coverage with strict mode
-2. **Reactive UI** - React-based components with modern hooks patterns  
-3. **Service-Oriented Backend** - Modular background services with clear responsibilities
-4. **Rule-Based Engine** - Sophisticated pattern matching with priority-based resolution
-5. **Container Integration** - Deep Firefox contextual identities API integration
-6. **Developer Experience** - Hot reloading, comprehensive testing, and modern tooling
+1. **Type-Safe Messaging** - Comprehensive type system for browser extension message passing
+2. **Zustand State Management** - Modular, reactive stores with optimistic updates
+3. **Service-Oriented Background** - Separate services for different concerns (rules, containers, bookmarks, stats)
+4. **Rule-Based Engine** - Priority-based pattern matching for URL interception
+5. **Comprehensive Bookmark Integration** - Full bookmark management with container associations and tagging
+6. **Statistics & Analytics** - Detailed usage tracking and trend analysis
 
-### Extension Structure
-
-The extension follows a dual-entry architecture with separate HTML entry points for different contexts:
-
-#### Entry Points
-- **Popup Interface** (`src/popup/index.html`) - Loads the compiled popup React application
-- **Options Page** (`src/options/index.html`) - Loads the compiled options React application  
-- **Background Script** (`src/background/index.ts`) - Main service worker entry point
-
-#### Project Structure
+### Project Structure
 
 ```
 src/
-├── background/              # Background service worker
-│   ├── index.ts            # Main background script entry point
-│   ├── services/           # Core business logic services
-│   │   ├── BookmarkIntegration.ts   # Bookmark-container associations
-│   │   ├── ContainerManager.ts      # Firefox container CRUD operations
-│   │   ├── RequestInterceptor.ts    # URL interception and redirection
-│   │   ├── RulesEngine.ts          # Rule evaluation and management
-│   │   └── StorageService.ts       # Data persistence
+├── background/                     # Background service worker
+│   ├── index.ts                   # Main background script with message routing
+│   ├── services/                  # Core business logic services
+│   │   ├── BookmarkIntegration.ts  # Legacy bookmark-container associations
+│   │   ├── BookmarkService.ts      # Full bookmark CRUD operations
+│   │   ├── ContainerManager.ts     # Firefox container lifecycle management
+│   │   ├── RequestInterceptor.ts   # URL interception and redirection
+│   │   ├── RulesEngine.ts         # Rule evaluation and management
+│   │   ├── StatsService.ts        # Usage statistics and analytics
+│   │   ├── StorageService.ts      # Data persistence and migration
+│   │   └── TagService.ts          # Bookmark tag management
 │   └── utils/
-│       └── matcher.ts              # URL pattern matching algorithms
+│       └── matcher.ts             # URL pattern matching algorithms
 │
-├── popup/                   # Popup HTML entry point
-│   ├── index.html          # Popup HTML shell
-│   └── index.ts            # Popup JavaScript entry point
+├── popup/                         # Popup HTML entry point
+│   ├── index.html                # Popup HTML shell
+│   └── index.ts                  # Popup JavaScript entry point
 │
-├── options/                 # Options HTML entry point
-│   └── index.html          # Options page HTML shell
+├── options/
+│   └── index.html                # Options page HTML shell
 │
-├── ui/                     # React-based user interfaces
-│   ├── popup/              # Extension popup (React components)
-│   │   ├── index.tsx       # Popup React application entry
-│   │   ├── index.css       # Popup-specific styles
-│   │   └── components/     # Popup-specific components
+├── ui/                           # React-based user interfaces
+│   ├── popup/                    # Extension popup (React app)
+│   │   ├── index.tsx             # Popup React app entry point
+│   │   ├── index.css             # Popup-specific Tailwind styles
+│   │   └── components/           # Popup-specific React components
+│   │       ├── ContainerSelector.tsx  # Container selection interface
+│   │       └── PopupApp.tsx      # Main popup application
 │   │
-│   ├── options/            # Settings/options page (React components)
-│   │   ├── index.tsx       # Options page React application entry
-│   │   ├── index.css       # Options-specific styles
-│   │   ├── ContainerModal.tsx      # Container creation/editing modal
-│   │   └── RuleModal.tsx          # Rule creation/editing modal
+│   ├── options/                  # Settings/options page (React app)
+│   │   ├── index.tsx             # Options page React app entry point
+│   │   ├── index.css             # Options-specific Tailwind styles
+│   │   ├── BookmarksPage.tsx     # Comprehensive bookmark management
+│   │   ├── ContainerModal.tsx    # Container creation/editing modal
+│   │   ├── ContainersPage.tsx    # Container management interface
+│   │   ├── Dashboard.tsx         # Statistics dashboard
+│   │   ├── RuleModal.tsx         # Rule creation/editing with pattern testing
+│   │   ├── RulesPage.tsx         # Rule management interface
+│   │   ├── TagModal.tsx          # Tag creation/editing modal
+│   │   └── TagsPage.tsx          # Tag management interface
 │   │
-│   └── shared/             # Shared UI components and utilities
-│       ├── components/     # Reusable React components
-│       │   ├── BookmarkManager.tsx    # Bookmark-container management
-│       │   ├── CSVImportExport.tsx   # Bulk rule import/export
-│       │   ├── PatternTester.tsx     # Interactive rule testing
-│       │   ├── ThemeSwitcher.tsx     # Dark/light theme toggle
-│       │   └── [Additional components] # Card, ContainerCard, RuleCard, etc.
-│       ├── stores/         # Zustand state management stores
-│       │   ├── containerStore.ts     # Container state and actions
-│       │   ├── ruleStore.ts         # Rule state and actions
-│       │   ├── themeStore.ts        # Theme state management
-│       │   ├── preferencesStore.ts  # User preferences state
-│       │   ├── bookmarkStore.ts     # Bookmark associations state
-│       │   ├── appStore.ts          # App initialization and orchestration
-│       │   └── index.ts             # Store exports and convenience hooks
-│       ├── hooks/          # Custom React hooks (legacy - being replaced by stores)
-│       │   ├── useBookmarks.ts       # Bookmark operations
-│       │   ├── useContainers.ts      # Container data fetching
-│       │   └── useRules.ts          # Rule management
-│       └── providers/      # Application providers
-│           └── QueryProvider.tsx     # React Query configuration (legacy)
+│   └── shared/                   # Shared UI components and utilities
+│       ├── components/           # Reusable React components
+│       │   ├── bookmarks/        # Bookmark-specific components
+│       │   │   ├── BookmarkTreeView.tsx    # Hierarchical bookmark display
+│       │   │   ├── BookmarkTableView.tsx   # Tabular bookmark display
+│       │   │   ├── BookmarkFilters.tsx     # Bookmark filtering interface
+│       │   │   ├── BulkActionsBar.tsx      # Bulk bookmark operations
+│       │   │   └── TagManager.tsx          # Tag assignment interface
+│       │   ├── layout/           # Layout and structure components
+│       │   │   ├── PageLayout.tsx          # Standard page layout
+│       │   │   ├── Modal.tsx               # Reusable modal system
+│       │   │   ├── Button.tsx              # Button component system
+│       │   │   └── DataView.tsx            # Data display components
+│       │   ├── ColorSelector.tsx           # Color picker for containers/tags
+│       │   ├── ContainerCard.tsx           # Container display cards
+│       │   ├── RuleCard.tsx               # Rule display cards
+│       │   ├── PatternTester.tsx          # Interactive rule testing
+│       │   ├── InterceptorTest.tsx        # URL interception testing
+│       │   ├── CSVImportExport.tsx        # Bulk import/export functionality
+│       │   ├── DuplicateRuleManager.tsx   # Duplicate rule detection/resolution
+│       │   └── StatsOverviewCard.tsx      # Statistics display
+│       ├── stores/               # Zustand state management
+│       │   ├── appStore.ts       # App initialization orchestration
+│       │   ├── containerStore.ts # Container state management
+│       │   ├── ruleStore.ts      # Rule state management
+│       │   ├── bookmarkStore.ts  # Bookmark and tag state management
+│       │   ├── statsStore.ts     # Statistics state management
+│       │   ├── themeStore.ts     # Theme and appearance state
+│       │   ├── preferencesStore.ts # User preferences state
+│       │   ├── uiStateStore.ts   # UI-specific state (filters, search, etc.)
+│       │   └── index.ts          # Store exports and convenience hooks
+│       └── providers/            # React providers (legacy)
+│           └── QueryProvider.tsx # React Query (being phased out)
 │
-└── shared/                 # Shared types and utilities
-    ├── types/              # TypeScript type definitions
-    │   ├── container.ts    # Container-related types
-    │   ├── rule.ts         # Rule system types
-    │   ├── storage.ts      # Storage interface types
-    │   ├── template.ts     # Container template types
-    │   └── index.ts        # Type exports
-    ├── constants/
-    │   └── index.ts        # Message types and constants
-    └── utils/              # Shared utility functions
-        ├── csv.ts          # CSV parsing and generation
-        ├── logger.ts       # Logging utilities
-        ├── messaging.ts    # Message passing abstractions
-        ├── patternValidator.ts # URL pattern validation
-        ├── containerHelpers.ts # Container utility functions
-        └── __mocks__/      # Test mocks
+└── shared/                       # Shared utilities and types
+    ├── types/                    # TypeScript type definitions
+    │   ├── container.ts          # Container types and interfaces
+    │   ├── rule.ts              # Rule system types (RuleType, MatchType, etc.)
+    │   ├── bookmark.ts          # Bookmark and tag types
+    │   ├── storage.ts           # Storage and data persistence types
+    │   ├── template.ts          # Container template types
+    │   └── index.ts             # Consolidated type exports
+    ├── constants/               # Application constants
+    │   └── index.ts             # Message types, storage keys, defaults
+    └── utils/                   # Shared utility functions
+        ├── messaging.ts         # Type-safe message passing service
+        ├── logger.ts            # Structured logging system
+        ├── csv.ts               # CSV import/export functionality
+        ├── patternValidator.ts  # URL pattern validation
+        ├── containerHelpers.ts  # Container utility functions
+        ├── containerColors.ts   # Container color definitions
+        └── duplicateRules.ts    # Duplicate rule detection utilities
 ```
-
-### UI Component Philosophy
-
-The shared UI components follow a design system approach:
-- **Atomic Design** - Small, reusable components that compose into larger features
-- **Consistent Styling** - Tailwind CSS with shared design tokens
-- **Accessibility First** - ARIA compliance and keyboard navigation
-- **Performance Optimized** - React.memo and efficient re-renders
-- **Type Safe** - Full TypeScript coverage with prop validation
-
-Examples of component categories:
-- **Layout Components** - Cards, headers, navigation elements
-- **Form Components** - Inputs, selectors, modals
-- **Data Components** - Rule displays, container management
-- **Utility Components** - Theme switchers, search inputs, status indicators
-
-#### Modal Component System
-
-The application uses a centralized modal system with a reusable `Modal` component that provides consistent styling and behavior across all modal dialogs:
-
-**Location:** `/src/ui/shared/components/Modal.tsx`
-
-**Features:**
-- **Accessibility First** - Full ARIA compliance, keyboard navigation (ESC to close), focus management
-- **Responsive Design** - Multiple size options (small, default, large) with mobile-friendly layouts
-- **Dark Theme Support** - Automatic dark/light theme integration with CSS variables
-- **Backdrop Behavior** - Configurable backdrop click-to-close functionality
-- **Animation Support** - Smooth fade-in/fade-out transitions with backdrop blur
-- **Body Scroll Prevention** - Prevents background scrolling when modal is open
-- **TypeScript Integration** - Full type safety with comprehensive prop interfaces
-
-**Core Components:**
-- `Modal` - Main modal wrapper with header, body, and footer
-- `ModalFormRow` - Standardized form row layout component
-- `ModalLabel` - Consistent label styling with required field indicators
-- `ModalInput` - Styled input fields with error state support
-- `ModalSelect` - Styled select dropdowns with error state support
-- `ModalTextarea` - Styled textarea fields with error state support
-- `ModalError` - Error message display component
-- `ModalWarning` - Warning message display component
-- `ModalInfo` - Informational message display component
-
-**Usage Example:**
-```tsx
-<Modal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  title="Create Container"
-  size="default"
-  footer={
-    <>
-      <button className="btn ghost" onClick={onCancel}>Cancel</button>
-      <button className="btn" onClick={onSave}>Save</button>
-    </>
-  }
->
-  <ModalFormRow>
-    <ModalLabel htmlFor="name" required>Name</ModalLabel>
-    <ModalInput
-      id="name"
-      type="text"
-      placeholder="Container name"
-      value={name}
-      onChange={(e) => setName(e.target.value)}
-      error={!name.trim()}
-    />
-    {!name.trim() && <ModalError>Name is required</ModalError>}
-  </ModalFormRow>
-</Modal>
-```
-
-**Modal Implementations:**
-- `ContainerModal` - Container creation and editing (`/src/ui/options/ContainerModal.tsx`)
-- `RuleModal` - Rule creation and editing with pattern testing (`/src/ui/options/RuleModal.tsx`)  
-- `TagModal` - Tag creation and editing with color picker (`/src/ui/options/TagModal.tsx`)
-
-**Design Principles:**
-- **Consistent UX** - All modals follow the same interaction patterns and visual design
-- **Form Validation** - Integrated error/warning/info messaging system
-- **Performance** - Efficient rendering with conditional mounting and cleanup
-- **Maintainability** - Single source of truth for modal styling and behavior
-
-#### ColorSelector Component System
-
-The application uses a centralized color selection system with a reusable `ColorSelector` component that provides consistent color picking across containers and tags:
-
-**Location:** `/src/ui/shared/components/ColorSelector.tsx`
-
-**Features:**
-- **Flexible Layouts** - List layout (with labels) for modals, grid layout (circles only) for inline pickers
-- **Multiple Color Sets** - Predefined color palettes for containers (named colors) and tags (hex values)
-- **Responsive Sizing** - Small, medium, and large size options with configurable grid columns
-- **Consistent Styling** - Shared visual design with hover states and selection indicators
-- **TypeScript Integration** - Full type safety with ColorOption interface
-
-**Core Components:**
-- `ColorSelector` - Main color picker component with layout and size options
-- `CONTAINER_COLORS` - Predefined color set for Firefox container colors (named values)
-- `TAG_COLORS` - Predefined color set for bookmark tags (hex values)
-- `containerColorToCss()` - Helper function to convert container color names to CSS values
-- `getColorDisplayName()` - Helper function to get display names for colors
-
-**Usage Examples:**
-```tsx
-// List layout for modals (like ContainerModal)
-<ColorSelector
-  selectedColor={color}
-  onColorChange={setColor}
-  colors={CONTAINER_COLORS}
-  layout="list"
-  columns={3}
-  size="small"
-/>
-
-// Grid layout for inline pickers (like TagsPage)
-<ColorSelector
-  selectedColor={tag.color}
-  onColorChange={(color) => handleUpdateTag(tag.id, { color })}
-  colors={TAG_COLORS}
-  layout="grid"
-  columns={5}
-  size="small"
-/>
-```
-
-**ColorSelector Implementations:**
-- `ContainerModal` - Container color selection with list layout and named colors
-- `TagModal` - Tag color selection with list layout and hex colors  
-- `TagsPage` - Inline tag color editing with grid layout popup
-
-**Color System:**
-- **Container Colors** - Use Firefox-compatible named colors ('blue', 'red', etc.) with corresponding hex values
-- **Tag Colors** - Use direct hex color values ('#4A90E2', '#D9534F', etc.) for maximum flexibility
-- **Conversion Utilities** - Helper functions bridge between named and hex color systems
-
-### Styling Guidelines
-
-The project strictly follows Tailwind CSS utility-first methodology:
-
-- **Tailwind CSS First** - All styling should use Tailwind utility classes (`className="flex items-center gap-2"`)
-- **Avoid Custom CSS** - Custom CSS files should only be used for component-specific styles that cannot be achieved with Tailwind
-- **No Inline Styles** - Never use `style={{}}` props; use Tailwind classes instead
-- **Design Tokens** - Leverage Tailwind's built-in spacing, colors, and typography scales for consistency
-- **Responsive Design** - Use Tailwind's responsive prefixes (`sm:`, `md:`, `lg:`) for adaptive layouts
-- **Theme Integration** - Utilize CSS variables and Tailwind's dark mode support for theme switching
-
-**Preferred Approach:**
-```tsx
-// ✅ Good - Tailwind utility classes
-<div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Rule Name</span>
-  <button className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded">
-    Edit
-  </button>
-</div>
-
-// ❌ Avoid - Inline styles
-<div style={{ display: 'flex', padding: '16px', backgroundColor: '#fff' }}>
-  <span style={{ fontSize: '14px', fontWeight: '500' }}>Rule Name</span>
-</div>
-
-// ❌ Avoid - Custom CSS classes (unless absolutely necessary)
-<div className="custom-rule-container">
-  <span className="rule-name">Rule Name</span>
-</div>
-```
-
-**Tailwind Configuration:**
-- Content paths include all TypeScript/TSX files and HTML templates
-- Custom theme extensions should be minimal and well-documented
-- PostCSS processes Tailwind directives and optimizes for production builds
-
-### Utility Functions
-
-Shared utilities provide cross-cutting functionality:
-- **Pattern Matching** (`patternValidator.ts`) - URL pattern validation and testing
-- **Data Processing** (`csv.ts`) - Import/export functionality with error handling
-- **Browser Communication** (`messaging.ts`) - Type-safe message passing between contexts
-- **Container Operations** (`containerHelpers.ts`) - Firefox container API abstractions
-- **Logging** (`logger.ts`) - Structured logging with environment-aware levels
-
-## Core Features Implemented
-
-### 1. Advanced Rule System
-- **Rule Types:**
-  - `INCLUDE` - Open URLs in specified container (if not already in a container)
-  - `EXCLUDE` - Break out of container for specific patterns
-  - `RESTRICT` - Force URLs into specific container regardless of current context
-
-- **Match Types:**
-  - `EXACT` - Exact URL matching
-  - `DOMAIN` - Domain-only matching  
-  - `GLOB` - Glob pattern matching with wildcards
-  - `REGEX` - Regular expression matching
-
-- **Priority System:** Higher priority rules take precedence with sophisticated resolution
-- **Interactive Testing** - Real-time pattern testing and validation
-- **Rule Management** - Full CRUD operations with optimistic updates
-
-### 2. Container Management
-- **Firefox Integration** - Direct contextual identities API integration
-- **CRUD Operations** - Create, read, update, delete containers with full lifecycle management
-- **Temporary Containers** - Auto-cleanup when no tabs remain
-- **Container Metadata** - Extended properties, categorization, and user-defined fields
-- **Visual Customization** - Icons, colors, and naming with Firefox container API
-
-### 3. Bookmark Integration
-- **Query Parameter Support** - `?silo=container-id` URL parameters for container routing
-- **Association Storage** - Persistent bookmark-container mappings
-- **Bulk Management** - Folder-level container assignments
-- **URL Processing** - Automatic parameter cleanup after container routing
-
-### 4. CSV Import/Export
-- **Flexible Export** - Multiple export formats with configurable field selection
-- **Import Validation** - Comprehensive error reporting with line-by-line feedback
-- **Missing Container Handling** - Option to create containers during import process
-- **Template Generation** - CSV templates for bulk rule editing
-
-### 5. Theme System
-- **Multi-Theme Support** - Light, dark, and system preference detection
-- **Persistent Settings** - Theme preferences with cross-session storage
-- **Zustand Integration** - Centralized theme state with efficient updates
-- **CSS Variable System** - Dynamic theme switching without page reload
-
-### 6. Modern User Interface
-- **Responsive Design** - Optimized layouts for popup constraints and full-page contexts
-- **Interactive Components** - Modals, dropdowns, search, filtering with smooth animations
-- **Real-time Updates** - Zustand stores for efficient data synchronization and optimistic updates
-- **Accessibility** - ARIA compliance, keyboard navigation, and screen reader support
 
 ## Data Model
 
-### Container Type
+### Core Entity Types
+
+#### Container
 ```typescript
 interface Container {
-  id: string;                    // Unique identifier
-  name: string;                  // Display name
-  icon: string;                  // Icon identifier
-  color: string;                 // Color identifier  
-  cookieStoreId: string;         // Firefox container ID
-  created: number;               // Creation timestamp
-  modified: number;              // Last modification timestamp
-  temporary: boolean;            // Auto-delete when empty
-  syncEnabled: boolean;          // Include in sync (future feature)
+  id: string                    // Unique identifier
+  name: string                  // Display name
+  icon: string                  // Icon identifier (fingerprint, briefcase, etc.)
+  color: string                 // Color identifier (blue, red, etc.)
+  cookieStoreId: string         // Firefox container ID
+  created: number               // Creation timestamp
+  modified: number              // Last modification timestamp
+  temporary: boolean            // Auto-delete when empty
+  syncEnabled: boolean          // Include in sync (future feature)
   metadata?: {
-    description?: string;
-    category?: string;
-    [key: string]: unknown;
-  };
+    description?: string
+    customIcon?: string
+    lifetime?: "permanent" | "untilLastTab"
+    categories?: string[]
+    notes?: string
+  }
 }
 ```
 
-### Rule Type
+#### Rule System
 ```typescript
+enum RuleType {
+  INCLUDE = "include",    // Open URLs in specified container
+  EXCLUDE = "exclude",    // Break out of container for specific patterns
+  RESTRICT = "restrict",  // Force URLs into specific container
+}
+
+enum MatchType {
+  EXACT = "exact",        // Exact URL matching
+  DOMAIN = "domain",      // Domain-only matching
+  GLOB = "glob",         // Glob pattern matching
+  REGEX = "regex",       // Regular expression matching
+}
+
 interface Rule {
-  id: string;                    // Unique identifier
-  containerId?: string;          // Target container (optional for EXCLUDE)
-  pattern: string;               // URL pattern to match
-  matchType: MatchType;          // How to interpret pattern
-  ruleType: RuleType;           // Action to take when matched
-  priority: number;              // Resolution order (higher = first)
-  enabled: boolean;              // Active/inactive toggle
-  created: number;               // Creation timestamp
-  modified: number;              // Last modification timestamp
+  id: string
+  containerId?: string    // Optional for EXCLUDE rules
+  pattern: string         // URL pattern to match
+  matchType: MatchType    // Pattern interpretation method
+  ruleType: RuleType      // Action to take when matched
+  priority: number        // Resolution order (higher = first)
+  enabled: boolean        // Active/inactive toggle
+  created: number
+  modified: number
   metadata: {
-    description?: string;
-    source?: 'user' | 'bookmark' | 'import';
-    tags?: string[];
-    [key: string]: unknown;
-  };
+    description?: string
+    source?: "user" | "bookmark" | "import"
+    tags?: string[]
+  }
 }
 ```
 
-### Storage Schema
-```typescript
-// Rules storage
-rules: Rule[]
-
-// Containers storage (synced from Firefox)
-containers: Container[]
-
-// Bookmark associations
-bookmarkAssociations: BookmarkAssociation[]
-
-// User preferences
-preferences: {
-  theme: 'light' | 'dark' | 'auto';
-  keepOldTabs: boolean;
-  defaultContainer?: string;
-  [key: string]: unknown;
-}
-```
+#### Bookmark System
+- **Native Firefox Bookmarks** - Uses Firefox's bookmark API for core bookmark data
+- **Metadata Layer** - Additional container associations, tags, and custom properties
+- **Tag System** - Custom tagging with color-coded organization
+- **Bulk Operations** - Mass container assignment, tag management, opening operations
 
 ## State Management Architecture
 
 ### Zustand Store Design
 
-The application uses a modular Zustand store architecture with domain-specific stores that manage their own state and actions:
+The application uses a modular Zustand architecture with domain-specific stores:
 
-#### Store Structure
-- **containerStore.ts** - Container CRUD operations, loading states, and error handling
-- **ruleStore.ts** - Rule management with priority sorting and pattern testing
-- **themeStore.ts** - Theme state with system preference detection and CSS application
-- **preferencesStore.ts** - User preferences management and persistence
-- **bookmarkStore.ts** - Bookmark associations and Firefox bookmarks tree integration
-- **appStore.ts** - Application initialization orchestration and cross-store effects
+#### Store Responsibilities
+- **appStore.ts** - Application initialization, cross-store orchestration, global error/loading aggregation
+- **containerStore.ts** - Container CRUD operations with optimistic updates
+- **ruleStore.ts** - Rule management with priority-based sorting and pattern testing
+- **bookmarkStore.ts** - Firefox bookmark integration with metadata layer and tag management
+- **statsStore.ts** - Usage statistics, trend analysis, activity tracking
+- **themeStore.ts** - Theme management with system preference detection
+- **preferencesStore.ts** - User preferences and settings persistence
+- **uiStateStore.ts** - UI-specific state (search, filters, pagination, view modes)
 
 #### Key Features
-- **Optimistic Updates** - Immediate UI updates with error rollback for better UX
-- **Selective Subscriptions** - Components only re-render when their specific data changes
-- **Type Safety** - Full TypeScript integration with proper type inference
-- **Error Boundaries** - Per-store error handling with global error aggregation
-- **Cross-Store Communication** - Clean dependency management between related stores
+- **Optimistic Updates** - Immediate UI feedback with error rollback
+- **Selective Subscriptions** - Fine-grained reactivity to minimize re-renders
+- **Cross-Store Effects** - Automated cleanup (e.g., deleting container removes related rules)
+- **Global State Monitoring** - Centralized error and loading state aggregation
+- **Type Safety** - Full TypeScript integration with proper inference
 
-#### Usage Patterns
+#### Store Usage Patterns
 ```typescript
-// Individual store usage
-const containers = useContainers();
-const { create, update, delete } = useContainerActions();
-const loading = useContainerLoading();
-const error = useContainerError();
+// Individual store access
+const containers = useContainers()                    // containers array
+const { create, update, delete: deleteContainer } = useContainerActions()  // actions
+const loading = useContainerLoading()                 // loading state
+const error = useContainerError()                     // error state
 
-// App initialization
-const { isInitialized, initializationError, retry } = useAppInitialization();
-
-// Global state monitoring
-const { errors, hasErrors, clearErrors } = useGlobalErrors();
-const loading = useGlobalLoading();
+// App-level state
+const { isInitialized, initializationError, retry } = useAppInitialization()
+const { errors, hasErrors, clearErrors } = useGlobalErrors()
+const { isLoading, containers: containerLoading } = useGlobalLoading()
 ```
 
-#### Migration from React Query
-The Zustand stores replace the previous React Query + Context pattern:
-- **useContainers()** replaces the old useContainers hook
-- **useRules()** replaces the old useRules hook  
-- **useTheme()** replaces ThemeContext
-- **Messaging Layer** remains unchanged - stores communicate with background services
+## Background Services Architecture
 
-## Service Layer Architecture
+### Service Layer Responsibilities
 
-### Background Services
+#### StorageService (src/background/services/StorageService.ts)
+- **Primary Storage Interface** - All data persistence through browser.storage.local
+- **Data Migration** - Version-based schema migrations for compatibility
+- **Backup/Restore** - Complete data export/import functionality
+- **Preference Management** - User settings with type-safe defaults
 
-#### StorageService
-- **Responsibility:** All data persistence operations with browser.storage API
-- **Features:** Data persistence, backup/restore, preference management, migration support
-- **Storage Strategy:** Local storage for performance, sync preparation for future cross-device support
+#### RulesEngine (src/background/services/RulesEngine.ts)
+- **Pattern Matching** - URL evaluation against rules with caching
+- **Priority Resolution** - RESTRICT > EXCLUDE > INCLUDE priority hierarchy
+- **Rule Management** - CRUD operations with validation and conflict detection
+- **Performance Optimization** - Memoized evaluation for repeated URLs
 
-#### RulesEngine  
-- **Responsibility:** Rule evaluation and URL matching with caching
-- **Features:** Pattern matching, priority resolution, memoized evaluation
-- **Performance:** Sub-millisecond evaluation for large rule sets with efficient algorithms
+#### ContainerManager (src/background/services/ContainerManager.ts)
+- **Firefox Integration** - Direct contextual identities API usage
+- **Lifecycle Management** - Container creation, updates, deletion, cleanup
+- **Synchronization** - Regular sync with Firefox container state
+- **Cookie Management** - Container-specific cookie clearing operations
 
-#### ContainerManager
-- **Responsibility:** Firefox container lifecycle management
-- **Features:** CRUD operations, API integration, temporary container cleanup, metadata management
+#### RequestInterceptor (src/background/services/RequestInterceptor.ts)
+- **URL Interception** - webRequest API integration for navigation events
+- **Container Routing** - Automatic tab creation/redirection based on rules
+- **Tab Management** - Efficient tab handling and cleanup
+- **Bookmark Parameter Processing** - ?silo=container-id URL parameter handling
 
-#### RequestInterceptor
-- **Responsibility:** URL interception and redirection handling
-- **Features:** webRequest API integration, tab management, container routing, bookmark parameter processing
+#### BookmarkService (src/background/services/BookmarkService.ts)
+- **Full Bookmark CRUD** - Complete bookmark management through Firefox API
+- **Metadata Layer** - Additional properties (tags, container associations)
+- **Bulk Operations** - Mass operations (tag assignment, container routing, deletion)
+- **Migration Support** - Legacy bookmark association migration
 
-#### BookmarkIntegration
-- **Responsibility:** Bookmark-container associations and URL parameter handling
-- **Features:** Query parameter processing, association storage, bulk bookmark management
+#### StatsService (src/background/services/StatsService.ts)
+- **Usage Tracking** - Tab creation, navigation, activation events
+- **Session Management** - Tab session duration tracking
+- **Trend Analysis** - Daily/weekly usage patterns and container trends
+- **Activity Logging** - Recent activity feed with privacy considerations
+
+#### TagService (src/background/services/TagService.ts)
+- **Tag Management** - CRUD operations for bookmark tags
+- **Color System** - Tag color assignment and organization
+- **Bulk Tag Operations** - Mass tag assignment/removal across bookmarks
+
+## Message Passing System
+
+### Type-Safe Communication
+
+The messaging system uses a comprehensive type-safe approach for browser extension communication:
+
+#### Core Message Infrastructure
+```typescript
+interface Message<T = unknown> {
+  type: string
+  payload?: T
+  requestId?: string
+}
+
+interface MessageResponse<T = unknown> {
+  success: boolean
+  data?: T
+  error?: string
+}
+```
+
+#### Message Categories (src/shared/constants/index.ts)
+- **Container Operations** - GET_CONTAINERS, CREATE_CONTAINER, UPDATE_CONTAINER, DELETE_CONTAINER
+- **Rule Operations** - GET_RULES, CREATE_RULE, UPDATE_RULE, DELETE_RULE, EVALUATE_URL
+- **Bookmark Operations** - Full CRUD + bulk operations (25+ message types)
+- **Statistics** - GET_STATS, GET_DAILY_STATS, GET_ACTIVE_TABS, RECORD_STAT_EVENT
+- **Storage** - GET_PREFERENCES, BACKUP_DATA, RESTORE_DATA
+- **Testing** - TEST_PATTERN, TEST_INTERCEPTOR
+
+#### Messaging Service (src/shared/utils/messaging.ts)
+- **Request/Response Handling** - Automatic request ID generation and correlation
+- **Error Propagation** - Structured error handling with type safety
+- **Service Methods** - High-level methods for common operations (getContainers(), createRule(), etc.)
 
 ## Build System Architecture
 
 ### Development Workflow
 
-The build system uses a hybrid approach combining the Extension CLI with custom build scripts:
+The build system uses a hybrid approach with Extension CLI and custom build scripts:
 
-1. **Extension CLI** - Handles development server, hot reloading, and browser packaging
-2. **Custom Build Scripts** - Handle React component compilation and CSS processing
-3. **Temporary Build Directory** - Intermediate build artifacts in `temp/` directory
-4. **Multi-Browser Support** - Generates browser-specific builds
-
-### Build Process
-
-#### Development Commands
-```bash
-npm run dev                    # Start development with hot reloading
-npm run dev:firefox           # Start development with Firefox specifically
-npm run build                 # Production build for all browsers
-npm run build:firefox         # Production build for Firefox only
-```
-
-#### Build Pipeline
-1. **TypeScript Compilation** - React components compiled to JavaScript with esbuild
-2. **CSS Processing** - Tailwind CSS compilation with PostCSS and optimization
+#### Build Process
+1. **React Component Compilation** - esbuild compiles TypeScript React components to IIFE bundles
+2. **CSS Processing** - Tailwind CSS compilation with PostCSS optimization
 3. **Asset Bundling** - JavaScript and CSS bundles created in `temp/` directory
-4. **HTML Shell Generation** - Simple HTML files that load the compiled bundles
-5. **Extension Packaging** - Extension CLI packages everything for browser installation
+4. **Extension Packaging** - Extension CLI packages everything for Firefox installation
+
+#### Key Scripts (package.json)
+```bash
+npm run dev              # Development server with hot reloading
+npm run build            # Production build (calls build-all.js)
+npm run test             # Jest test suite
+npm run test:coverage    # Coverage report generation
+npm run type-check       # TypeScript validation
+npm run fmt              # Biome formatting and linting
+```
 
 #### Build Outputs
 ```
-temp/                          # Intermediate build artifacts
-├── popup.iife.js              # Popup JavaScript bundle
-├── popup.iife.css             # Popup CSS bundle
-├── options.iife.js            # Options JavaScript bundle
-└── options.iife.css           # Options CSS bundle
+temp/                    # Intermediate build artifacts
+├── popup.iife.js       # Popup JavaScript bundle
+├── popup.iife.css      # Popup CSS bundle
+├── options.iife.js     # Options JavaScript bundle
+└── options.iife.css    # Options CSS bundle
 
-dist/                          # Final extension packages (browser-specific)
-├── firefox/                   # Firefox-specific build
-└── chrome/                    # Chrome-specific build (if applicable)
+dist/                   # Final extension package
+└── firefox/            # Firefox-specific build
 ```
 
-### Entry Point Architecture
-
-#### HTML Entry Points
-The extension uses minimal HTML shells that load the compiled React applications:
-
-**Popup** (`src/popup/index.html`):
-- Loads `popup.iife.js` and `popup.iife.css`
-- Provides `<div id="root">` for React mounting
-- Optimized for popup size constraints (400x600px)
-
-**Options** (`src/options/index.html`):  
-- Loads `options.iife.js` and `options.iife.css`
-- Provides `<div id="root">` for React mounting
-- Opens in full browser tab for complex management interfaces
-
-## Message Passing System
-
-Type-safe communication between UI and background contexts:
-
-### Core Message Types
-```typescript
-// Container operations
-GET_CONTAINERS, CREATE_CONTAINER, UPDATE_CONTAINER, DELETE_CONTAINER
-
-// Rule operations  
-GET_RULES, CREATE_RULE, UPDATE_RULE, DELETE_RULE, EVALUATE_URL
-
-// Bookmark operations
-GET_BOOKMARK_ASSOCIATIONS, ADD_BOOKMARK_ASSOCIATION, REMOVE_BOOKMARK_ASSOCIATION
-
-// Data operations
-BACKUP_DATA, RESTORE_DATA, EXPORT_CSV, IMPORT_CSV
-
-// UI operations
-OPEN_IN_CONTAINER, TEST_PATTERN, TEST_INTERCEPTOR
-```
+#### Entry Points
+- **popup.html** - Loads popup.iife.js/css, provides React mount point
+- **options.html** - Loads options.iife.js/css, opens in full browser tab
+- **Background Script** - Direct TypeScript compilation via Extension CLI
 
 ## URL Matching Engine
 
 ### Pattern Types
-1. **Exact Match** - `https://example.com/path`
-2. **Domain Match** - `example.com` (matches all paths and subdomains)
-3. **Glob Pattern** - `*.example.com` or `example.com/*`
-4. **Regex Pattern** - `^https://.*\.example\.com/admin/.*$`
+1. **EXACT** - `https://example.com/specific/path` (complete URL match)
+2. **DOMAIN** - `example.com` (matches all paths, protocols, subdomains)  
+3. **GLOB** - `*.example.com/admin/*` (wildcard pattern matching)
+4. **REGEX** - `^https://.*\.example\.com/admin/.*$` (regular expression)
 
-### Priority Resolution Algorithm
+### Rule Priority Resolution
 ```
 1. RESTRICT rules (highest priority - security enforcement)
-2. EXCLUDE rules (container breakout)
+2. EXCLUDE rules (container breakout - medium priority)  
 3. INCLUDE rules (sorted by priority value, higher first)
-4. Default container (if configured)
-5. No action (lowest priority)
+4. Default container (if configured in preferences)
+5. No action (current container or firefox-default)
 ```
 
 ### Performance Optimizations
-- **Rule Caching** - Memoized evaluation results for repeated URLs
-- **Pattern Compilation** - Pre-compiled regex patterns with validation
-- **Efficient Sorting** - Rules pre-sorted by specificity and priority
-- **Early Termination** - Stop evaluation on first matching RESTRICT/EXCLUDE rule
+- **Memoized Evaluation** - Cached results for repeated URL patterns
+- **Early Termination** - Stop on first RESTRICT/EXCLUDE match
+- **Pre-compiled Patterns** - Regex compilation with error handling
+- **Efficient Rule Sorting** - Priority-based pre-sorting for optimal evaluation order
 
 ## Testing Strategy
 
 ### Multi-Layer Testing Approach
 
-#### Unit Testing
-- **Framework:** Jest with jsdom environment for DOM simulation
-- **Coverage:** Background services, utilities, and core business logic
-- **Mocking:** Browser APIs and extension context simulation
-- **Target Coverage:** >90% for critical paths
+#### Test Configuration (jest.config.js)
+- **Environment** - jsdom for DOM simulation
+- **Coverage Thresholds** - 80% global, 90% for critical background services
+- **Module Resolution** - @/* path mapping for clean imports
+- **TypeScript Integration** - ts-jest with ESM support
 
-#### Component Testing  
-- **Framework:** React Testing Library for user-centric testing
-- **Coverage:** UI components, hooks, and user interaction flows
-- **Integration:** Component integration with mocked services and contexts
-- **Accessibility:** ARIA and keyboard navigation testing
+#### Testing Frameworks
+- **Unit Testing** - Jest for background services and utilities  
+- **Component Testing** - React Testing Library for UI components
+- **E2E Testing** - Playwright for complete extension workflows
+- **Coverage Reporting** - HTML, LCOV, and JSON formats
 
-#### End-to-End Testing
-- **Framework:** Playwright for full browser automation
-- **Coverage:** Extension installation, rule creation, and container management workflows
-- **Browser Testing:** Firefox-specific functionality and API integration
+#### Critical Test Areas
+- **Background Services** (90% coverage requirement)
+- **URL Pattern Matching** - Comprehensive matcher test suite
+- **Rule Evaluation** - Priority resolution and edge cases
+- **Bookmark Operations** - CRUD and bulk operations
+- **CSV Import/Export** - Data format validation and error handling
 
-#### Test Structure
+## Development Guidelines
+
+### Code Quality Tools
+
+#### Biome Configuration (biome.json)
+- **Unified Tooling** - Single tool for formatting and linting (replaces ESLint + Prettier)
+- **TypeScript Support** - Full TypeScript integration with React-specific rules
+- **Accessibility Rules** - Basic a11y linting for UI components
+- **Import Organization** - Automatic import sorting and cleanup
+
+#### TypeScript Configuration (tsconfig.json)
+- **Target** - ES2020 for modern browser compatibility
+- **Strict Mode** - Disabled for gradual migration flexibility
+- **Path Mapping** - @/* aliases for clean imports
+- **Extension Types** - Chrome, Firefox WebExt, and testing type definitions
+
+### Styling Guidelines
+
+#### Tailwind CSS Approach
+- **Utility-First** - All styling via Tailwind utility classes
+- **No Custom CSS** - Avoid custom CSS files; use Tailwind's design system
+- **Responsive Design** - Mobile-first responsive utilities (sm:, md:, lg:)
+- **Dark Mode Support** - Built-in dark mode class toggling
+
+```tsx
+// ✅ Preferred approach
+<div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800">
+  <span className="text-sm font-medium">Container Name</span>
+  <button className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded">
+    Edit
+  </button>
+</div>
+
+// ❌ Avoid inline styles
+<div style={{ display: 'flex', padding: '16px' }}>
 ```
-tests/
-├── unit/
-│   ├── background/services/          # Service layer tests
-│   ├── shared/utils/                 # Utility function tests
-│   └── ui/                          # Component and hook tests
-├── e2e/                             # Playwright end-to-end tests
-└── setup.ts                        # Jest configuration and global mocks
-```
 
-## Development Workflow
+## LLM Agent Development Hints
 
-### Getting Started
-```bash
-# Install dependencies
-npm install
+### Common Development Tasks
 
-# Start development server with hot reloading
-npm run dev
+#### Adding New Background Services
+1. Create service in `src/background/services/`
+2. Add message types to `src/shared/constants/index.ts`
+3. Register message handlers in `src/background/index.ts`
+4. Add messaging methods to `src/shared/utils/messaging.ts`
+5. Create Zustand store in `src/ui/shared/stores/`
 
-# Load extension in Firefox
-# Navigate to about:debugging -> This Firefox -> Load Temporary Add-on
-# Select manifest.json from the project root
-```
+#### Creating New UI Components  
+1. Add component to appropriate directory (`src/ui/shared/components/`)
+2. Use Tailwind CSS for all styling
+3. Import shared types from `@/shared/types`
+4. Connect to Zustand stores via selector hooks
+5. Add comprehensive TypeScript props interface
 
-### Code Quality Pipeline
-- **TypeScript:** Strict mode with comprehensive type coverage
-- **ESLint:** React and TypeScript-specific rules with automatic fixing
-- **Testing:** Required test coverage for new features and bug fixes
-- **Pre-commit Hooks:** Automated quality checks before commits
+#### Implementing New Rule Types
+1. Add enum value to `RuleType` in `src/shared/types/rule.ts`
+2. Update pattern matching logic in `src/background/utils/matcher.ts`
+3. Modify rule evaluation in `src/background/services/RulesEngine.ts`
+4. Update UI rule creation/editing components
+5. Add test cases for new rule behavior
+
+#### Adding New Statistics
+1. Extend event types in `StatsService.ts`
+2. Add data collection points in background event listeners
+3. Create aggregation methods for new statistics
+4. Add UI components for displaying statistics
+5. Update storage schema if needed
+
+### Key File Locations for Common Tasks
+
+- **URL Pattern Matching** - `src/background/utils/matcher.ts`
+- **Message Type Definitions** - `src/shared/constants/index.ts` 
+- **Type Definitions** - `src/shared/types/*.ts`
+- **Core Background Logic** - `src/background/index.ts`
+- **Zustand Store Patterns** - `src/ui/shared/stores/*.ts`
+- **Reusable UI Components** - `src/ui/shared/components/`
+- **Modal System** - `src/ui/shared/components/Modal.tsx`
+- **Test Setup** - `tests/setup.ts`
 
 ### Quality Assurance Commands
+
 ```bash
-# Development commands
-npm run dev                    # Development server with hot reloading
-npm run test                   # Unit and component test suite
-npm run test:watch            # Interactive test development
-npm run test:e2e              # End-to-end test suite
+# Development workflow
+npm run dev                    # Hot-reloading development server
+npm run type-check            # TypeScript validation
+npm run fmt                   # Biome formatting and linting
+npm run test                  # Full test suite
+npm run test:coverage         # Generate coverage report
+npm run build                 # Production build
 
-# Quality assurance
-npm run type-check            # TypeScript type validation
-npm run lint                  # ESLint validation
-npm run lint:fix              # Automatic ESLint fixes
-npm run check                 # Combined type-check and lint
-npm run test:coverage         # Coverage report generation
+# Extension debugging
+# 1. Load extension: about:debugging -> Load Temporary Add-on -> manifest.json
+# 2. Background script: about:debugging -> Inspect (background script)
+# 3. Popup debugging: Right-click extension icon -> Inspect
+# 4. Options page: Open options -> F12 Developer Tools
 ```
 
-## Performance Characteristics
+### Performance Considerations
 
-### Rule Evaluation Performance
-- **Target:** <1ms evaluation time for 1000+ rules
-- **Caching Strategy:** Memoized results for repeated URL patterns
-- **Optimization:** Efficient pattern matching with early termination
+- **Rule Evaluation** - Target <1ms for 1000+ rules with memoization
+- **Memory Usage** - Monitor background script memory consumption
+- **Bundle Size** - Minimize popup bundle for fast loading
+- **Storage Operations** - Batch operations to reduce I/O overhead
+- **UI Responsiveness** - Optimistic updates with error rollback patterns
 
-### Memory Management
-- **Target:** <50MB total memory footprint
-- **Optimization:** Lazy loading, efficient data structures, automatic cleanup
-- **Monitoring:** Performance tracking for large rule sets
+### Security Considerations
 
-### UI Responsiveness
-- **Target:** <100ms interaction response time
-- **Zustand Stores:** Efficient state management with optimistic updates and selective re-renders
-- **Code Splitting:** Lazy loading of heavy components and features
+- **Input Validation** - Validate all user input and external data
+- **URL Pattern Safety** - Sanitize regex patterns to prevent DoS
+- **Storage Privacy** - Don't log sensitive URLs or user data
+- **Permission Principle** - Use minimal required permissions
+- **Content Security Policy** - Strict CSP prevents XSS attacks
 
-## Security Considerations
-
-### Input Validation
-- **Runtime Validation:** Zod schemas for all user inputs and API responses
-- **Pattern Sanitization:** Safe regex compilation with error handling
-- **URL Validation:** Comprehensive URL parsing and security checks
-
-### Permission Model
-- **Minimal Permissions:** Only essential permissions requested
-- **Contextual Identities:** Deep Firefox container integration
-- **Storage Security:** Local storage only, no external network communication
-- **Content Security Policy:** Strict CSP for extension pages
-
-### Extension Permissions
-```json
-{
-  "permissions": [
-    "storage",           // Local data persistence
-    "tabs",             // Tab management and creation
-    "cookies",          // Container-aware cookie handling
-    "webRequest",       // URL interception
-    "webRequestBlocking", // Synchronous request modification
-    "contextualIdentities", // Firefox container management
-    "notifications",    // User notifications
-    "bookmarks",        // Bookmark integration
-    "<all_urls>"        // Universal URL access for rule matching
-  ]
-}
-```
-
-## Debugging and Development Tools
-
-### Browser DevTools Integration
-- **React DevTools:** Component inspection and state debugging
-- **Source Maps:** TypeScript debugging in browser with full source mapping
-- **Extension DevTools:** Background script and popup inspection
-
-### Extension-Specific Debugging
-```bash
-# Background script debugging
-about:debugging -> Inspect background script
-
-# Popup debugging  
-Right-click extension icon -> Inspect Popup
-
-# Options page debugging
-Open options page -> F12 Developer Tools
-
-# Console logging
-Structured logging with environment-aware levels
-```
-
-### Development Tools
-- **Hot Reloading:** Automatic extension reload during development
-- **Test Coverage:** Visual coverage reports with lcov integration
-- **Performance Profiling:** Browser profiler integration for performance analysis
-
-## Future Architecture Considerations
-
-### Planned Enhancements
-1. **Firefox Sync Integration** - Cross-device rule and container synchronization
-2. **Advanced Analytics** - Usage statistics and performance insights  
-3. **Plugin Architecture** - Extensible rule system with custom handlers
-4. **Performance Dashboard** - Real-time monitoring and optimization recommendations
-
-### Scalability Preparations
-- **Database Migration Path** - Structured storage evolution
-- **API Versioning** - Message passing system versioning
-- **Configuration Management** - Advanced preference system
-- **Internationalization** - Multi-language support infrastructure
-
-## Troubleshooting
-
-### Common Development Issues
-1. **Extension Loading Failures** - Manifest syntax and permission validation
-2. **Rule Evaluation Problems** - Pattern syntax validation in interactive tester
-3. **Build Process Errors** - TypeScript compilation and dependency resolution
-4. **Hot Reload Issues** - Extension CLI configuration and browser connection
-
-### Debug Workflows
-1. **Rule Debugging** - Interactive pattern tester and interceptor test tools
-2. **UI State Issues** - React DevTools and Zustand DevTools integration  
-3. **Background Service Issues** - Browser console and structured logging
-4. **Store State Debugging** - Direct store state inspection and action tracing
-5. **Performance Analysis** - Browser profiler and React Profiler integration
-
-This documentation reflects the current state of the Silo codebase and should be updated as the architecture evolves.
+This documentation reflects the current state of the Silo codebase and provides comprehensive guidance for development and maintenance.

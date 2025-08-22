@@ -1,6 +1,7 @@
 import { getContainerColor } from "@/shared/utils/containerColors"
 import { useContainers } from "@/ui/shared/stores"
 import useStatsStore from "@/ui/shared/stores/statsStore"
+import { Card } from "./Card"
 
 export function RecentActivityCard(): JSX.Element {
   const recentActivity = useStatsStore((state) => state.recentActivity)
@@ -52,19 +53,19 @@ export function RecentActivityCard(): JSX.Element {
 
   if (recentActivity.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Recent Activity
         </h3>
         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
           No recent activity
         </div>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+    <Card className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Recent Activity
       </h3>
@@ -108,6 +109,6 @@ export function RecentActivityCard(): JSX.Element {
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }

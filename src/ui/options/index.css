@@ -215,7 +215,7 @@ body {
   @apply bg-rose-500 text-white;
 }
 :root.dark .card {
-  @apply bg-gradient-to-b from-slate-900 to-slate-950 border-slate-800;
+  @apply bg-gray-800 border-gray-700;
 }
 :root.dark .swatch {
   @apply border-white/10;

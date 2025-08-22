@@ -1,15 +1,21 @@
 import {
   CheckSquare,
+  Edit3,
   ExternalLink,
   Folder,
   FolderOpen,
   Square,
+  Trash2,
 } from "lucide-react"
+import React from "react"
 import type { Bookmark } from "@/shared/types"
+import { BookmarkModal } from "../../../options/BookmarkModal"
+import { useContainers } from "../../stores"
 import {
   useBookmarkActions,
   useBookmarkStore,
   useSelectedBookmarks,
+  useSelectedFolders,
 } from "../../stores/bookmarkStore"
 import { Card } from "../Card"
 
@@ -23,17 +29,61 @@ export function BookmarkTreeView({
   const bookmarksTree = useBookmarkStore((state) => state.bookmarks)
   const expandedFolders = useBookmarkStore((state) => state.expandedFolders)
   const selectedBookmarks = useSelectedBookmarks()
-  const { toggleFolder, selectBookmark, selectFolder } = useBookmarkActions()
+  const selectedFolders = useSelectedFolders()
+  const containers = useContainers()
+  const { toggleFolder, selectBookmark, toggleFolderSelection, loadBookmarks } =
+    useBookmarkActions()
+
+  const [modalState, setModalState] = React.useState<{
+    isOpen: boolean
+    mode: "edit" | "delete"
+    bookmark?: Bookmark
+  }>({
+    isOpen: false,
+    mode: "edit",
+  })
+
+  const handleEditBookmark = (bookmark: Bookmark) => {
+    setModalState({
+      isOpen: true,
+      mode: "edit",
+      bookmark,
+    })
+  }
+
+  const handleDeleteBookmark = (bookmark: Bookmark) => {
+    setModalState({
+      isOpen: true,
+      mode: "delete",
+      bookmark,
+    })
+  }
+
+  const handleCloseModal = () => {
+    setModalState({
+      isOpen: false,
+      mode: "edit",
+    })
+  }
+
+  const handleModalSuccess = () => {
+    loadBookmarks()
+  }
 
   const renderBookmarkItem = (bookmark: Bookmark, depth = 0) => {
     const isSelected = selectedBookmarks.has(bookmark.id)
+    const isFolderSelected = selectedFolders.has(bookmark.id)
     const isExpanded = expandedFolders.has(bookmark.id)
 
     if (bookmark.type === "folder") {
       return (
         <div key={bookmark.id} style={{ marginLeft: `${depth * 20}px` }}>
           {/* Folder Header */}
-          <div className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group">
+          <div
+            className={`flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group ${
+              isFolderSelected ? "bg-blue-50 dark:bg-blue-900" : ""
+            }`}
+          >
             <button
               onClick={() => toggleFolder(bookmark.id)}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
@@ -46,11 +96,15 @@ export function BookmarkTreeView({
             </button>
 
             <button
-              onClick={() => selectFolder(bookmark.id)}
+              onClick={() => toggleFolderSelection(bookmark.id)}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-              title="Select all bookmarks in folder"
+              title="Select folder for bulk actions"
             >
-              <Square className="w-4 h-4 text-gray-400" />
+              {isFolderSelected ? (
+                <CheckSquare className="w-4 h-4 text-blue-500" />
+              ) : (
+                <Square className="w-4 h-4 text-gray-400" />
+              )}
             </button>
 
             <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -105,15 +159,31 @@ export function BookmarkTreeView({
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 {bookmark.title}
               </span>
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-opacity"
-                title="Open bookmark"
-              >
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => handleEditBookmark(bookmark)}
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
+                  title="Edit bookmark"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => handleDeleteBookmark(bookmark)}
+                  className="p-1 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 rounded"
+                  title="Delete bookmark"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+                <a
+                  href={bookmark.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
+                  title="Open bookmark"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 truncate font-mono">
               {bookmark.url}
@@ -203,6 +273,15 @@ export function BookmarkTreeView({
           }
         }
       `}</style>
+
+      <BookmarkModal
+        isOpen={modalState.isOpen}
+        mode={modalState.mode}
+        bookmark={modalState.bookmark}
+        containers={containers}
+        onClose={handleCloseModal}
+        onSuccess={handleModalSuccess}
+      />
     </Card>
   )
 }

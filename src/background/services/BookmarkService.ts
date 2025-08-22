@@ -320,6 +320,35 @@ export class BookmarkService {
   }
 
   // Folder operations
+  async deleteFolders(folderIds: string[]): Promise<void> {
+    this.log.info("Deleting folders", { count: folderIds.length, folderIds })
+
+    for (const folderId of folderIds) {
+      try {
+        // Firefox bookmarks.removeTree() will delete the folder and all its contents
+        await browser.bookmarks.removeTree(folderId)
+        this.log.info("Deleted folder", { folderId })
+      } catch (error) {
+        this.log.warn("Failed to delete folder", { folderId, error })
+        // Try to continue with other folders even if one fails
+      }
+    }
+
+    // Clean up any folder metadata we have stored
+    try {
+      const folderMetadata =
+        (await this.storage.get<FolderMetadata[]>(
+          STORAGE_KEYS.FOLDER_METADATA,
+        )) || []
+      const updatedMetadata = folderMetadata.filter(
+        (fm) => !folderIds.includes(fm.folderId),
+      )
+      await this.storage.set(STORAGE_KEYS.FOLDER_METADATA, updatedMetadata)
+    } catch (error) {
+      this.log.warn("Failed to clean up folder metadata", error)
+    }
+  }
+
   async setFolderMetadata(
     folderId: string,
     metadata: Partial<FolderMetadata>,

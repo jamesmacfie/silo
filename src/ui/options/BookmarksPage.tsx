@@ -23,6 +23,7 @@ import {
   useBookmarkView,
   useFilteredBookmarks,
   useSelectedBookmarks,
+  useSelectedFolders,
 } from "../shared/stores/bookmarkStore"
 
 const PAGE_DESCRIPTION =
@@ -31,6 +32,7 @@ const PAGE_DESCRIPTION =
 export function BookmarksPage() {
   const view = useBookmarkView()
   const selectedBookmarks = useSelectedBookmarks()
+  const selectedFolders = useSelectedFolders()
   const loading = useBookmarkLoading()
   const error = useBookmarkError()
   const searchState = useBookmarkSearchState()
@@ -67,13 +69,13 @@ export function BookmarksPage() {
     )
   }, [searchState])
 
-  const selectedCount = selectedBookmarks.size
+  const totalSelectedCount = selectedBookmarks.size + selectedFolders.size
 
   const isLoading = loading.bookmarks || loading.tags
   const isEmpty = !isLoading && !error && filteredBookmarks.length === 0
 
   return (
-    <PageLayout className="bookmark-manager">
+    <PageLayout>
       <PageHeader title="Bookmarks" description={PAGE_DESCRIPTION} />
 
       {/* Error Message */}
@@ -142,9 +144,9 @@ export function BookmarksPage() {
       )}
 
       {/* Bulk Actions Bar */}
-      {selectedCount > 0 && (
+      {totalSelectedCount > 0 && (
         <BulkActionsBar
-          selectedCount={selectedCount}
+          selectedCount={totalSelectedCount}
           containers={containers}
           className="mb-4"
         />
@@ -189,26 +191,14 @@ export function BookmarksPage() {
         <StatusBar>
           {filteredBookmarks.length} bookmark
           {filteredBookmarks.length !== 1 ? "s" : ""}
-          {selectedCount > 0 && ` (${selectedCount} selected)`}
+          {totalSelectedCount > 0 && ` (${totalSelectedCount} selected)`}
           {hasActiveFilters && " (filtered)"}
         </StatusBar>
       )}
 
       <style>{`
-        .bookmark-manager {
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
         .bookmark-content {
           min-height: 400px;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-          .bookmark-manager {
-            padding: 0 1rem;
-          }
         }
       `}</style>
     </PageLayout>

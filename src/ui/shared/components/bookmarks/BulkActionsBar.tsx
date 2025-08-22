@@ -12,6 +12,7 @@ import {
   useBookmarkActions,
   useBookmarkTags,
   useSelectedBookmarks,
+  useSelectedFolders,
 } from "../../stores/bookmarkStore"
 
 interface BulkActionsBarProps {
@@ -26,14 +27,19 @@ export function BulkActionsBar({
   className = "",
 }: BulkActionsBarProps): JSX.Element {
   const selectedBookmarks = useSelectedBookmarks()
+  const selectedFolders = useSelectedFolders()
   const tags = useBookmarkTags()
-  const { executeBulkAction, clearSelection } = useBookmarkActions()
+  const { executeBulkAction, clearSelection, deleteFolders } =
+    useBookmarkActions()
 
   const [showTagMenu, setShowTagMenu] = React.useState(false)
   const [showContainerMenu, setShowContainerMenu] = React.useState(false)
   const [isExecuting, setIsExecuting] = React.useState(false)
 
-  const selectedIds = Array.from(selectedBookmarks)
+  const selectedBookmarkIds = Array.from(selectedBookmarks)
+  const selectedFolderIds = Array.from(selectedFolders)
+  const totalSelectedCount =
+    selectedBookmarkIds.length + selectedFolderIds.length
 
   const handleBulkAction = async (action: BookmarkBulkAction) => {
     if (isExecuting) return
@@ -49,24 +55,48 @@ export function BulkActionsBar({
   }
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        `Delete ${selectedCount} bookmark${selectedCount === 1 ? "" : "s"}? This action cannot be undone.`,
-      )
-    ) {
+    const hasBookmarks = selectedBookmarkIds.length > 0
+    const hasFolders = selectedFolderIds.length > 0
+
+    let message = ""
+    if (hasBookmarks && hasFolders) {
+      message = `Delete ${selectedBookmarkIds.length} bookmark${selectedBookmarkIds.length === 1 ? "" : "s"} and ${selectedFolderIds.length} folder${selectedFolderIds.length === 1 ? "" : "s"}? This action cannot be undone.`
+    } else if (hasBookmarks) {
+      message = `Delete ${selectedBookmarkIds.length} bookmark${selectedBookmarkIds.length === 1 ? "" : "s"}? This action cannot be undone.`
+    } else if (hasFolders) {
+      message = `Delete ${selectedFolderIds.length} folder${selectedFolderIds.length === 1 ? "" : "s"} and all their contents? This action cannot be undone.`
+    }
+
+    if (!confirm(message)) {
       return
     }
 
-    await handleBulkAction({
-      type: "delete",
-      bookmarkIds: selectedIds,
-    })
+    try {
+      setIsExecuting(true)
+
+      // Delete folders first (which will delete their contents)
+      if (hasFolders) {
+        await deleteFolders(selectedFolderIds)
+      }
+
+      // Then delete individual bookmarks if any
+      if (hasBookmarks) {
+        await handleBulkAction({
+          type: "delete",
+          bookmarkIds: selectedBookmarkIds,
+        })
+      }
+    } catch (error) {
+      console.error("Delete operation failed:", error)
+    } finally {
+      setIsExecuting(false)
+    }
   }
 
   const handleAssignTag = async (tagId: string) => {
     await handleBulkAction({
       type: "assignTag",
-      bookmarkIds: selectedIds,
+      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
       payload: { tagId },
     })
     setShowTagMenu(false)
@@ -75,7 +105,7 @@ export function BulkActionsBar({
   const _handleRemoveTag = async (tagId: string) => {
     await handleBulkAction({
       type: "removeTag",
-      bookmarkIds: selectedIds,
+      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
       payload: { tagId },
     })
     setShowTagMenu(false)
@@ -84,7 +114,7 @@ export function BulkActionsBar({
   const handleAssignContainer = async (containerId: string) => {
     await handleBulkAction({
       type: "assignContainer",
-      bookmarkIds: selectedIds,
+      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
       payload: { containerId },
     })
     setShowContainerMenu(false)
@@ -93,20 +123,20 @@ export function BulkActionsBar({
   const handleRemoveContainer = async () => {
     await handleBulkAction({
       type: "removeContainer",
-      bookmarkIds: selectedIds,
+      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
     })
   }
 
   const handleOpenInContainer = async (containerId: string) => {
     await handleBulkAction({
       type: "openInContainer",
-      bookmarkIds: selectedIds,
+      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
       payload: { containerId },
     })
     setShowContainerMenu(false)
   }
 
-  if (selectedCount === 0) return null
+  if (totalSelectedCount === 0) return null
 
   return (
     <div className={`bulk-actions-bar ${className}`}>
@@ -117,8 +147,12 @@ export function BulkActionsBar({
               <div className="flex items-center gap-2">
                 <Check className="w-5 h-5 text-blue-500" />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {selectedCount} bookmark{selectedCount === 1 ? "" : "s"}{" "}
-                  selected
+                  {selectedBookmarkIds.length > 0 &&
+                  selectedFolderIds.length > 0
+                    ? `${selectedBookmarkIds.length} bookmark${selectedBookmarkIds.length === 1 ? "" : "s"} and ${selectedFolderIds.length} folder${selectedFolderIds.length === 1 ? "" : "s"} selected`
+                    : selectedBookmarkIds.length > 0
+                      ? `${selectedBookmarkIds.length} bookmark${selectedBookmarkIds.length === 1 ? "" : "s"} selected`
+                      : `${selectedFolderIds.length} folder${selectedFolderIds.length === 1 ? "" : "s"} selected`}
                 </span>
               </div>
 

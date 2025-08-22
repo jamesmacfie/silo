@@ -1,6 +1,7 @@
 import { getContainerColor } from "@/shared/utils/containerColors"
 import { useContainers } from "@/ui/shared/stores"
 import useStatsStore from "@/ui/shared/stores/statsStore"
+import { Card } from "./Card"
 
 export function ActiveContainersCard(): JSX.Element {
   const activeTabs = useStatsStore((state) => state.activeTabs)
@@ -22,19 +23,19 @@ export function ActiveContainersCard(): JSX.Element {
 
   if (activeContainerData.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Active Containers
         </h3>
         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
           No active container tabs
         </div>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+    <Card className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Active Containers
       </h3>
@@ -83,6 +84,6 @@ export function ActiveContainersCard(): JSX.Element {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   )
 }

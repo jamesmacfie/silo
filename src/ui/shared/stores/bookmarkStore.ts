@@ -21,6 +21,7 @@ interface BookmarkState {
   // UI State
   view: "table" | "tree"
   selectedBookmarks: Set<string>
+  selectedFolders: Set<string>
   expandedFolders: Set<string>
   searchQuery: string
   filters: BookmarkSearchFilters
@@ -48,6 +49,13 @@ interface BookmarkState {
     updateTag: (id: string, updates: Partial<BookmarkTag>) => Promise<void>
     deleteTag: (id: string) => Promise<void>
 
+    // Bookmark operations
+    updateBookmark: (
+      bookmarkId: string,
+      updates: { title?: string; url?: string },
+    ) => Promise<void>
+    deleteBookmark: (bookmarkId: string) => Promise<void>
+
     // Bookmark metadata
     updateBookmarkMetadata: (
       bookmarkId: string,
@@ -63,9 +71,11 @@ interface BookmarkState {
     // Bulk operations
     selectBookmark: (id: string, multi?: boolean) => void
     selectAll: () => void
-    selectFolder: (folderId: string) => void
+    selectFolder: (folderId: string, multi?: boolean) => void
+    toggleFolderSelection: (folderId: string) => void
     clearSelection: () => void
     executeBulkAction: (action: BookmarkBulkAction) => Promise<void>
+    deleteFolders: (folderIds: string[]) => Promise<void>
 
     // Search and filtering
     setSearchQuery: (query: string) => void
@@ -173,6 +183,7 @@ export const useBookmarkStore = create<BookmarkState>()(
     tags: [],
     view: "table",
     selectedBookmarks: new Set(),
+    selectedFolders: new Set(),
     expandedFolders: new Set(),
     searchQuery: "",
     filters: {},
@@ -322,6 +333,60 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
+      updateBookmark: async (bookmarkId, updates) => {
+        try {
+          // Use Firefox's bookmarks API to update title and URL
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.UPDATE_BOOKMARK_NATIVE,
+            payload: { bookmarkId, updates },
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to update bookmark")
+          }
+
+          // Refresh bookmarks to get updated data
+          await get().actions.loadBookmarks()
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        }
+      },
+
+      deleteBookmark: async (bookmarkId) => {
+        try {
+          // Use Firefox's bookmarks API to delete the bookmark
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.DELETE_BOOKMARK_NATIVE,
+            payload: { bookmarkId },
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to delete bookmark")
+          }
+
+          // Remove from local state immediately
+          set((state) => ({
+            flatBookmarks: state.flatBookmarks.filter(
+              (b) => b.id !== bookmarkId,
+            ),
+            selectedBookmarks: new Set(
+              [...state.selectedBookmarks].filter((id) => id !== bookmarkId),
+            ),
+          }))
+
+          // Refresh bookmarks to get updated tree
+          await get().actions.loadBookmarks()
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        }
+      },
+
       updateBookmarkMetadata: async (bookmarkId, updates) => {
         try {
           const response = await browser.runtime.sendMessage({
@@ -419,7 +484,7 @@ export const useBookmarkStore = create<BookmarkState>()(
         }))
       },
 
-      selectFolder: (folderId) => {
+      selectFolder: (folderId, multi = false) => {
         // Find all bookmarks in this folder and select them
         const findFolderBookmarks = (
           bookmarks: Bookmark[],
@@ -456,23 +521,95 @@ export const useBookmarkStore = create<BookmarkState>()(
             state.bookmarks,
             folderId,
           )
-          const newSelection = new Set(state.selectedBookmarks)
-          folderBookmarkIds.forEach((id) => newSelection.add(id))
-          return { selectedBookmarks: newSelection }
+          const newBookmarkSelection = new Set(
+            multi ? state.selectedBookmarks : [],
+          )
+          folderBookmarkIds.forEach((id) => newBookmarkSelection.add(id))
+          return { selectedBookmarks: newBookmarkSelection }
+        })
+      },
+
+      toggleFolderSelection: (folderId) => {
+        set((state) => {
+          const newFolderSelection = new Set(state.selectedFolders)
+          if (newFolderSelection.has(folderId)) {
+            newFolderSelection.delete(folderId)
+          } else {
+            newFolderSelection.add(folderId)
+          }
+          return { selectedFolders: newFolderSelection }
         })
       },
 
       clearSelection: () => {
-        set({ selectedBookmarks: new Set() })
+        set({ selectedBookmarks: new Set(), selectedFolders: new Set() })
       },
 
       executeBulkAction: async (action) => {
         set((state) => ({ loading: { ...state.loading, bulkOperation: true } }))
 
         try {
+          // Collect bookmarks from selected folders
+          const collectBookmarksFromFolders = (
+            bookmarks: Bookmark[],
+            folderIds: string[],
+          ): string[] => {
+            const bookmarkIds: string[] = []
+
+            const findInTree = (items: Bookmark[]) => {
+              for (const item of items) {
+                if (
+                  item.type === "folder" &&
+                  folderIds.includes(item.id) &&
+                  item.children
+                ) {
+                  // Collect all bookmarks in this folder
+                  const collectIds = (children: Bookmark[]) => {
+                    for (const child of children) {
+                      if (child.type === "bookmark") {
+                        bookmarkIds.push(child.id)
+                      }
+                      if (child.children) {
+                        collectIds(child.children)
+                      }
+                    }
+                  }
+                  collectIds(item.children)
+                }
+                if (item.children) {
+                  findInTree(item.children)
+                }
+              }
+            }
+
+            findInTree(bookmarks)
+            return bookmarkIds
+          }
+
+          const state = get()
+          const selectedFolderIds = Array.from(state.selectedFolders)
+          const folderBookmarkIds = collectBookmarksFromFolders(
+            state.bookmarks,
+            selectedFolderIds,
+          )
+
+          // Combine selected bookmarks with bookmarks from selected folders
+          const allBookmarkIds = [
+            ...Array.from(state.selectedBookmarks),
+            ...folderBookmarkIds,
+          ]
+
+          // Remove duplicates
+          const uniqueBookmarkIds = [...new Set(allBookmarkIds)]
+
+          const enhancedAction = {
+            ...action,
+            bookmarkIds: uniqueBookmarkIds,
+          }
+
           const response = await browser.runtime.sendMessage({
             type: MESSAGE_TYPES.BULK_UPDATE_BOOKMARKS,
-            payload: action,
+            payload: enhancedAction,
           })
 
           if (!response?.success) {
@@ -480,7 +617,35 @@ export const useBookmarkStore = create<BookmarkState>()(
           }
 
           // Clear selection and refresh data
-          set({ selectedBookmarks: new Set() })
+          set({ selectedBookmarks: new Set(), selectedFolders: new Set() })
+          await get().actions.loadBookmarks()
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        } finally {
+          set((state) => ({
+            loading: { ...state.loading, bulkOperation: false },
+          }))
+        }
+      },
+
+      deleteFolders: async (folderIds) => {
+        set((state) => ({ loading: { ...state.loading, bulkOperation: true } }))
+
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.DELETE_BOOKMARK_FOLDERS,
+            payload: { folderIds },
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to delete folders")
+          }
+
+          // Clear selection and refresh data
+          set({ selectedFolders: new Set(), selectedBookmarks: new Set() })
           await get().actions.loadBookmarks()
         } catch (error) {
           set({
@@ -613,6 +778,8 @@ export const useBookmarkTags = () => useBookmarkStore((state) => state.tags)
 export const useBookmarkView = () => useBookmarkStore((state) => state.view)
 export const useSelectedBookmarks = () =>
   useBookmarkStore((state) => state.selectedBookmarks)
+export const useSelectedFolders = () =>
+  useBookmarkStore((state) => state.selectedFolders)
 export const useBookmarkActions = () =>
   useBookmarkStore((state) => state.actions)
 export const useBookmarkLoading = () =>

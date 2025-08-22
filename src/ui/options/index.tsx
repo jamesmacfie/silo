@@ -1,58 +1,64 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import '@/ui/options/index.css';
-import { useAppInitialization, useStoreEffects } from '@/ui/shared/stores';
-import { CSVImportExport } from '@/ui/shared/components/CSVImportExport';
-import { ThemeSwitcher } from '@/ui/shared/components/ThemeSwitcher';
-import { BookmarkManager } from '@/ui/shared/components/BookmarkManager';
-import { 
-  useRules, 
-  useRuleActions, 
+import React from "react"
+import { createRoot } from "react-dom/client"
+import "@/ui/options/index.css"
+import { useAppInitialization, useStoreEffects } from "@/ui/shared/stores"
+import { CSVImportExport } from "@/ui/shared/components/CSVImportExport"
+import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
+import { BookmarksPage } from "@/ui/options/BookmarksPage"
+import { TagsPage } from "@/ui/options/TagsPage"
+import { RulesPage } from "@/ui/options/RulesPage"
+import { ContainersPage } from "@/ui/options/ContainersPage"
+import { Dashboard } from "@/ui/options/Dashboard"
+import {
+  useRules,
+  useRuleActions,
   useRuleLoading,
   useRuleError,
-  useContainers, 
-  useContainerActions, 
+  useContainers,
+  useContainerActions,
   useContainerLoading,
   useContainerError,
   useStatsActions,
   useStatsLoading,
-  useStatsError
-} from '@/ui/shared/stores';
-import { ContainerModal } from '@/ui/options/ContainerModal';
-import { RuleModal } from '@/ui/options/RuleModal';
-import { SearchInput } from '@/ui/shared/components/SearchInput';
-import { ContainerCard, type ContainerLite } from '@/ui/shared/components/ContainerCard';
-import { RuleCard } from '@/ui/shared/components/RuleCard';
-import { PageHeader } from '@/ui/shared/components/PageHeader';
-import { InterceptorTest } from '@/ui/shared/components/InterceptorTest';
-import { StatusBar } from '@/ui/shared/components/StatusBar';
-import { DuplicateRuleManager } from '@/ui/shared/components/DuplicateRuleManager';
-import { StatsOverviewCard } from '@/ui/shared/components/StatsOverviewCard';
-import { ActiveContainersCard } from '@/ui/shared/components/ActiveContainersCard';
-import { RecentActivityCard } from '@/ui/shared/components/RecentActivityCard';
-import { ContainerStatsTable } from '@/ui/shared/components/ContainerStatsTable';
-import type { CSVImportResult } from '@/shared/utils/csv';
-import type { Rule } from '@/shared/types';
-import { getDuplicateCount } from '@/shared/utils/duplicateRules';
+  useStatsError,
+} from "@/ui/shared/stores"
+import { ContainerModal } from "@/ui/options/ContainerModal"
+import { RuleModal } from "@/ui/options/RuleModal"
+import { SearchInput } from "@/ui/shared/components/SearchInput"
+import {
+  ContainerCard,
+  type ContainerLite,
+} from "@/ui/shared/components/ContainerCard"
+import { RuleCard } from "@/ui/shared/components/RuleCard"
+import { PageHeader } from "@/ui/shared/components/PageHeader"
+import { InterceptorTest } from "@/ui/shared/components/InterceptorTest"
+import { StatusBar } from "@/ui/shared/components/StatusBar"
+import { DuplicateRuleManager } from "@/ui/shared/components/DuplicateRuleManager"
+import { StatsOverviewCard } from "@/ui/shared/components/StatsOverviewCard"
+import { ActiveContainersCard } from "@/ui/shared/components/ActiveContainersCard"
+import { RecentActivityCard } from "@/ui/shared/components/RecentActivityCard"
+import { ContainerStatsTable } from "@/ui/shared/components/ContainerStatsTable"
+import type { CSVImportResult } from "@/shared/utils/csv"
+import type { Rule } from "@/shared/types"
+import { getDuplicateCount } from "@/shared/utils/duplicateRules"
 
-
-function PageShell(props: { children: React.ReactNode; }): JSX.Element {
-  return (
-    <div className="app">
-      {props.children}
-    </div>
-  );
+function PageShell(props: { children: React.ReactNode }): JSX.Element {
+  return <div className="app">{props.children}</div>
 }
 
-function Sidebar(props: { current: string; onNavigate(page: string): void; }): JSX.Element {
+function Sidebar(props: {
+  current: string
+  onNavigate(page: string): void
+}): JSX.Element {
   const nav = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'containers', label: 'Containers' },
-    { key: 'rules', label: 'Rules' },
-    { key: 'bookmarks', label: 'Bookmarks' },
-    { key: 'import-export', label: 'Import/Export' },
-    { key: 'settings', label: 'Settings' },
-  ];
+    { key: "dashboard", label: "Dashboard" },
+    { key: "containers", label: "Containers" },
+    { key: "rules", label: "Rules" },
+    { key: "bookmarks", label: "Bookmarks" },
+    { key: "tags", label: "Tags" },
+    { key: "import-export", label: "Import/Export" },
+    { key: "settings", label: "Settings" },
+  ]
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -61,137 +67,163 @@ function Sidebar(props: { current: string; onNavigate(page: string): void; }): J
       </div>
       <div className="nav">
         {nav.map((n) => (
-          <button key={n.key} className={props.current === n.key ? 'active' : ''} type="button" onClick={() => { props.onNavigate(n.key); return; }}>{n.label}</button>
+          <button
+            key={n.key}
+            className={props.current === n.key ? "active" : ""}
+            type="button"
+            onClick={() => {
+              props.onNavigate(n.key)
+              return
+            }}
+          >
+            {n.label}
+          </button>
         ))}
       </div>
     </aside>
-  );
+  )
 }
 
-function Content(props: { children: React.ReactNode; }): JSX.Element {
-  return (
-    <main className="content">
-      {props.children}
-    </main>
-  );
+function Content(props: { children: React.ReactNode }): JSX.Element {
+  return <main className="content">{props.children}</main>
 }
 
-function Dashboard(): JSX.Element {
-  const { refresh, startRealTimeUpdates, stopRealTimeUpdates, clearError } = useStatsActions();
-  const loading = useStatsLoading();
-  const error = useStatsError();
+// OLD Dashboard function - replaced by Dashboard
+// function Dashboard(): JSX.Element {
+//   const { refresh, startRealTimeUpdates, stopRealTimeUpdates, clearError } = useStatsActions();
+//   const loading = useStatsLoading();
+//   const error = useStatsError();
 
-  // Load stats data when dashboard is opened
-  React.useEffect(() => {
-    refresh();
-    startRealTimeUpdates();
-    
-    return () => {
-      stopRealTimeUpdates();
-    };
-  }, []); // Empty dependency array - we only want this to run once when the component mounts
+//   // Load stats data when dashboard is opened
+//   React.useEffect(() => {
+//     refresh();
+//     startRealTimeUpdates();
 
-  if (loading) {
-    return (
-      <div className="page">
-        <PageHeader title="Dashboard" />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-gray-600 dark:text-gray-400">Loading dashboard data...</div>
-        </div>
-      </div>
-    );
-  }
+//     return () => {
+//       stopRealTimeUpdates();
+//     };
+//   }, []); // Empty dependency array - we only want this to run once when the component mounts
 
-  return (
-    <div className="page">
-      <PageHeader title="Dashboard">
-        <button 
-          className="btn ghost" 
-          type="button" 
-          onClick={refresh}
-          disabled={loading}
-        >
-          Refresh
-        </button>
-      </PageHeader>
-      
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg">
-          <div className="text-sm text-red-700 dark:text-red-300">
-            Error loading stats: {error}
-          </div>
-          <button 
-            className="mt-2 text-xs text-red-600 dark:text-red-400 underline"
-            type="button"
-            onClick={clearError}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Top Row - Summary Cards */}
-        <StatsOverviewCard />
-        <ActiveContainersCard />
-        <RecentActivityCard />
-        
-        {/* Bottom Row - Detailed Table */}
-        <ContainerStatsTable className="col-span-full" />
-      </div>
-    </div>
-  );
-}
+//   if (loading) {
+//     return (
+//       <div className="page">
+//         <PageHeader title="Dashboard" />
+//         <div className="flex items-center justify-center py-12">
+//           <div className="text-gray-600 dark:text-gray-400">Loading dashboard data...</div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="page">
+//       <PageHeader title="Dashboard">
+//         <button
+//           className="btn ghost"
+//           type="button"
+//           onClick={refresh}
+//           disabled={loading}
+//         >
+//           Refresh
+//         </button>
+//       </PageHeader>
+
+//       {error && (
+//         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg">
+//           <div className="text-sm text-red-700 dark:text-red-300">
+//             Error loading stats: {error}
+//           </div>
+//           <button
+//             className="mt-2 text-xs text-red-600 dark:text-red-400 underline"
+//             type="button"
+//             onClick={clearError}
+//           >
+//             Dismiss
+//           </button>
+//         </div>
+//       )}
+
+//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//         {/* Top Row - Summary Cards */}
+//         <StatsOverviewCard />
+//         <ActiveContainersCard />
+//         <RecentActivityCard />
+
+//         {/* Bottom Row - Detailed Table */}
+//         <ContainerStatsTable className="col-span-full" />
+//       </div>
+//     </div>
+//   );
+// }
 
 // This hook is replaced by useContainers from Zustand stores
 
-function ContainersPage(): JSX.Element {
-  const containers = useContainers();
-  const { load: refresh, delete: deleteContainerAction, clearCookies } = useContainerActions();
-  const loading = useContainerLoading();
-  const error = useContainerError();
-  const [query, setQuery] = React.useState<string>('');
+function OldContainersPage(): JSX.Element {
+  const containers = useContainers()
+  const {
+    load: refresh,
+    delete: deleteContainerAction,
+    clearCookies,
+  } = useContainerActions()
+  const loading = useContainerLoading()
+  const error = useContainerError()
+  const [query, setQuery] = React.useState<string>("")
   const [modalState, setModalState] = React.useState<{
-    isOpen: boolean;
-    mode: 'create' | 'edit';
-    container?: ContainerLite;
-  }>({ isOpen: false, mode: 'create' });
+    isOpen: boolean
+    mode: "create" | "edit"
+    container?: ContainerLite
+  }>({ isOpen: false, mode: "create" })
 
-  const filtered = React.useMemo(() => containers.filter((c) => !query || String(c.name || '').toLowerCase().includes(query.toLowerCase())), [containers, query]);
+  const filtered = React.useMemo(
+    () =>
+      containers.filter(
+        (c) =>
+          !query ||
+          String(c.name || "")
+            .toLowerCase()
+            .includes(query.toLowerCase()),
+      ),
+    [containers, query],
+  )
 
   const openCreateModal = React.useCallback(() => {
-    setModalState({ isOpen: true, mode: 'create' });
-  }, []);
+    setModalState({ isOpen: true, mode: "create" })
+  }, [])
 
   const openEditModal = React.useCallback((container: ContainerLite) => {
-    setModalState({ isOpen: true, mode: 'edit', container });
-  }, []);
+    setModalState({ isOpen: true, mode: "edit", container })
+  }, [])
 
   const closeModal = React.useCallback(() => {
-    setModalState(prev => ({ ...prev, isOpen: false }));
-  }, []);
+    setModalState((prev) => ({ ...prev, isOpen: false }))
+  }, [])
 
-  const deleteContainer = React.useCallback(async (container: ContainerLite) => {
-    if (!confirm(`Delete container "${container.name}"?`)) return;
+  const deleteContainer = React.useCallback(
+    async (container: ContainerLite) => {
+      if (!confirm(`Delete container "${container.name}"?`)) return
 
-    try {
-      await deleteContainerAction(container.cookieStoreId);
-    } catch (e: unknown) {
-      const msg = (e instanceof Error) ? e.message : String(e);
-      alert(`Delete failed: ${msg}`);
-    }
-  }, [deleteContainerAction]);
+      try {
+        await deleteContainerAction(container.cookieStoreId)
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e)
+        alert(`Delete failed: ${msg}`)
+      }
+    },
+    [deleteContainerAction],
+  )
 
-  const clearContainerCookies = React.useCallback(async (container: ContainerLite) => {
-    try {
-      await clearCookies(container.cookieStoreId);
-      alert(`Cookies cleared for "${container.name}"`);
-    } catch (e: unknown) {
-      const msg = (e instanceof Error) ? e.message : String(e);
-      alert(`Clear cookies failed: ${msg}`);
-    }
-  }, [clearCookies]);
-
+  const clearContainerCookies = React.useCallback(
+    async (container: ContainerLite) => {
+      try {
+        await clearCookies(container.cookieStoreId)
+        alert(`Cookies cleared for "${container.name}"`)
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e)
+        alert(`Clear cookies failed: ${msg}`)
+      }
+    },
+    [clearCookies],
+  )
 
   return (
     <div className="page">
@@ -206,20 +238,24 @@ function ContainersPage(): JSX.Element {
         </div>
       </PageHeader>
       <div className="toolbar">
-        <SearchInput 
+        <SearchInput
           value={query}
           onChange={setQuery}
           placeholder="Search containers..."
         />
       </div>
-      {loading ? (<div className="small">Loading…</div>) : null}
-      {error ? (<div className="small" role="alert">{error}</div>) : null}
+      {loading ? <div className="small">Loading…</div> : null}
+      {error ? (
+        <div className="small" role="alert">
+          {error}
+        </div>
+      ) : null}
       <div className="cards-grid">
         {filtered.map((c) => (
-          <ContainerCard 
-            key={c.id} 
-            container={c} 
-            onEdit={openEditModal} 
+          <ContainerCard
+            key={c.id}
+            container={c}
+            onEdit={openEditModal}
             onDelete={deleteContainer}
             onClearCookies={clearContainerCookies}
           />
@@ -235,89 +271,102 @@ function ContainersPage(): JSX.Element {
         onSuccess={refresh}
       />
     </div>
-  );
+  )
 }
 
-function RulesPage(): JSX.Element {
-  const containers = useContainers();
-  const rules = useRules();
-  const rulesLoading = useRuleLoading();
-  const rulesError = useRuleError();
-  const { update: updateRule, delete: deleteRule } = useRuleActions();
-  const [filter, setFilter] = React.useState('');
-  const [sortBy, setSortBy] = React.useState<'pattern' | 'priority' | 'type' | 'container'>('priority');
-  const [showDuplicates, setShowDuplicates] = React.useState(false);
+function OldRulesPage(): JSX.Element {
+  const containers = useContainers()
+  const rules = useRules()
+  const rulesLoading = useRuleLoading()
+  const rulesError = useRuleError()
+  const { update: updateRule, delete: deleteRule } = useRuleActions()
+  const [filter, setFilter] = React.useState("")
+  const [sortBy, setSortBy] = React.useState<
+    "pattern" | "priority" | "type" | "container"
+  >("priority")
+  const [showDuplicates, setShowDuplicates] = React.useState(false)
   const [ruleModalState, setRuleModalState] = React.useState<{
-    isOpen: boolean;
-    mode: 'create' | 'edit';
-    rule?: Rule;
-  }>({ isOpen: false, mode: 'create' });
+    isOpen: boolean
+    mode: "create" | "edit"
+    rule?: Rule
+  }>({ isOpen: false, mode: "create" })
 
-  const duplicateCount = React.useMemo(() => getDuplicateCount(rules), [rules]);
+  const duplicateCount = React.useMemo(() => getDuplicateCount(rules), [rules])
 
   const openCreateRuleModal = React.useCallback(() => {
-    setRuleModalState({ isOpen: true, mode: 'create' });
-  }, []);
+    setRuleModalState({ isOpen: true, mode: "create" })
+  }, [])
 
   const openEditRuleModal = React.useCallback((rule: Rule) => {
-    setRuleModalState({ isOpen: true, mode: 'edit', rule });
-  }, []);
+    setRuleModalState({ isOpen: true, mode: "edit", rule })
+  }, [])
 
   const closeRuleModal = React.useCallback(() => {
-    setRuleModalState(prev => ({ ...prev, isOpen: false }));
-  }, []);
+    setRuleModalState((prev) => ({ ...prev, isOpen: false }))
+  }, [])
 
   const filteredRules = React.useMemo(() => {
     try {
-      let filtered = rules;
+      let filtered = rules
 
       if (filter) {
-        const lowerFilter = filter.toLowerCase();
-        filtered = rules.filter(rule =>
-          rule.pattern.toLowerCase().includes(lowerFilter) ||
-          rule.metadata.description?.toLowerCase().includes(lowerFilter) ||
-          containers.find(c => c.cookieStoreId === rule.containerId)?.name.toLowerCase().includes(lowerFilter),
-        );
+        const lowerFilter = filter.toLowerCase()
+        filtered = rules.filter(
+          (rule) =>
+            rule.pattern.toLowerCase().includes(lowerFilter) ||
+            rule.metadata.description?.toLowerCase().includes(lowerFilter) ||
+            containers
+              .find((c) => c.cookieStoreId === rule.containerId)
+              ?.name.toLowerCase()
+              .includes(lowerFilter),
+        )
       }
 
       return filtered.sort((a, b) => {
         switch (sortBy) {
-          case 'pattern':
-            return a.pattern.localeCompare(b.pattern);
-          case 'priority':
-            return b.priority - a.priority; // Higher priority first
-          case 'type':
-            return a.ruleType.localeCompare(b.ruleType);
-          case 'container': {
-            const containerA = containers.find(c => c.cookieStoreId === a.containerId)?.name || '';
-            const containerB = containers.find(c => c.cookieStoreId === b.containerId)?.name || '';
-            return containerA.localeCompare(containerB);
+          case "pattern":
+            return a.pattern.localeCompare(b.pattern)
+          case "priority":
+            return b.priority - a.priority // Higher priority first
+          case "type":
+            return a.ruleType.localeCompare(b.ruleType)
+          case "container": {
+            const containerA =
+              containers.find((c) => c.cookieStoreId === a.containerId)?.name ||
+              ""
+            const containerB =
+              containers.find((c) => c.cookieStoreId === b.containerId)?.name ||
+              ""
+            return containerA.localeCompare(containerB)
           }
           default:
-            return 0;
+            return 0
         }
-      });
+      })
     } catch (error) {
-      return [];
+      return []
     }
-  }, [rules, containers, filter, sortBy]);
+  }, [rules, containers, filter, sortBy])
 
-  const handleToggleEnabled = React.useCallback(async (rule: Rule) => {
-    try {
-      await updateRule(rule.id, { enabled: !rule.enabled });
-    } catch (error) {
-    }
-  }, [updateRule]);
+  const handleToggleEnabled = React.useCallback(
+    async (rule: Rule) => {
+      try {
+        await updateRule(rule.id, { enabled: !rule.enabled })
+      } catch (error) {}
+    },
+    [updateRule],
+  )
 
-  const handleDeleteRule = React.useCallback(async (rule: Rule) => {
-    if (!confirm(`Delete rule for "${rule.pattern}"?`)) return;
+  const handleDeleteRule = React.useCallback(
+    async (rule: Rule) => {
+      if (!confirm(`Delete rule for "${rule.pattern}"?`)) return
 
-    try {
-      await deleteRule(rule.id);
-    } catch (error) {
-    }
-  }, [deleteRule]);
-
+      try {
+        await deleteRule(rule.id)
+      } catch (error) {}
+    },
+    [deleteRule],
+  )
 
   if (rulesLoading) {
     return (
@@ -325,7 +374,7 @@ function RulesPage(): JSX.Element {
         <PageHeader title="Rules" />
         <div className="small">Loading rules...</div>
       </div>
-    );
+    )
   }
 
   if (rulesError) {
@@ -334,7 +383,7 @@ function RulesPage(): JSX.Element {
         <PageHeader title="Rules" />
         <div className="small">Error loading rules: {rulesError}</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -342,12 +391,12 @@ function RulesPage(): JSX.Element {
       <PageHeader title="Rules">
         <div className="flex gap-2">
           {duplicateCount > 0 && (
-            <button 
-              className="btn ghost" 
-              type="button" 
+            <button
+              className="btn ghost"
+              type="button"
               onClick={() => setShowDuplicates(!showDuplicates)}
             >
-              {showDuplicates ? 'Hide' : 'Show'} Duplicates ({duplicateCount})
+              {showDuplicates ? "Hide" : "Show"} Duplicates ({duplicateCount})
             </button>
           )}
           <button className="btn" type="button" onClick={openCreateRuleModal}>
@@ -387,7 +436,9 @@ function RulesPage(): JSX.Element {
       <div className="cards-grid">
         {filteredRules.length === 0 ? (
           <div className="small">
-            {filter ? 'No rules match your filter.' : 'No rules configured. Add your first rule!'}
+            {filter
+              ? "No rules match your filter."
+              : "No rules configured. Add your first rule!"}
           </div>
         ) : (
           filteredRules.map((rule) => {
@@ -401,25 +452,27 @@ function RulesPage(): JSX.Element {
                   onEdit={openEditRuleModal}
                   onDelete={handleDeleteRule}
                 />
-              );
+              )
             } catch {
               return (
                 <div key={rule.id} className="small">
-                  Error rendering rule: {rule.id || 'unknown'}
+                  Error rendering rule: {rule.id || "unknown"}
                 </div>
-              );
+              )
             }
           })
         )}
       </div>
 
-      <StatusBar message={`${filteredRules.length} of ${rules.length} rule(s)${filter ? ` (filtered: "${filter}")` : ''}`} />
+      <StatusBar
+        message={`${filteredRules.length} of ${rules.length} rule(s)${filter ? ` (filtered: "${filter}")` : ""}`}
+      />
 
       <RuleModal
         isOpen={ruleModalState.isOpen}
         mode={ruleModalState.mode}
         rule={ruleModalState.rule}
-        containers={containers.map(c => ({
+        containers={containers.map((c) => ({
           id: c.id,
           name: c.name,
           cookieStoreId: c.cookieStoreId,
@@ -432,27 +485,27 @@ function RulesPage(): JSX.Element {
         }}
       />
     </div>
-  );
+  )
 }
 
 function ImportExportPage(): JSX.Element {
-  const [status, setStatus] = React.useState('');
+  const [status, setStatus] = React.useState("")
 
   const handleImportComplete = React.useCallback((result: CSVImportResult) => {
-    const { rules, errors, warnings } = result;
-    let message = `Imported ${rules.length} rules`;
-    if (warnings.length > 0) message += ` with ${warnings.length} warnings`;
-    if (errors.length > 0) message += ` and ${errors.length} errors`;
-    setStatus(message);
+    const { rules, errors, warnings } = result
+    let message = `Imported ${rules.length} rules`
+    if (warnings.length > 0) message += ` with ${warnings.length} warnings`
+    if (errors.length > 0) message += ` and ${errors.length} errors`
+    setStatus(message)
 
     // Clear status after 5 seconds
-    setTimeout(() => setStatus(''), 5000);
-  }, []);
+    setTimeout(() => setStatus(""), 5000)
+  }, [])
 
   const handleError = React.useCallback((error: string) => {
-    setStatus(`Error: ${error}`);
-    setTimeout(() => setStatus(''), 5000);
-  }, []);
+    setStatus(`Error: ${error}`)
+    setTimeout(() => setStatus(""), 5000)
+  }, [])
 
   return (
     <div className="page">
@@ -463,27 +516,16 @@ function ImportExportPage(): JSX.Element {
         onError={handleError}
       />
     </div>
-  );
+  )
 }
 
-function BookmarksPage(): JSX.Element {
-  const containers = useContainers();
-
-  return (
-    <div className="page">
-      <PageHeader title="Bookmarks" />
-      <BookmarkManager containers={containers.map(c => ({
-        ...c,
-        icon: c.icon || 'fingerprint',
-        color: c.color || 'toolbar',
-        created: c.created || Date.now(),
-        modified: c.modified || Date.now(),
-        temporary: c.temporary || false,
-        syncEnabled: c.syncEnabled || false,
-      }))} />
-    </div>
-  );
-}
+// function OldBookmarksPage(): JSX.Element {
+//   return (
+//     <div className="page">
+//       <BookmarkManager />
+//     </div>
+//   );
+// }
 
 function SettingsPage(): JSX.Element {
   return (
@@ -493,32 +535,39 @@ function SettingsPage(): JSX.Element {
       <InterceptorTest />
       <div className="small">More settings coming soon.</div>
     </div>
-  );
+  )
 }
 
 function OptionsApp(): JSX.Element {
-  const [page, setPage] = React.useState<string>('containers');
+  const [page, setPage] = React.useState<string>("containers")
   return (
     <PageShell>
-      <Sidebar current={page} onNavigate={(p) => { setPage(p); return; }} />
+      <Sidebar
+        current={page}
+        onNavigate={(p) => {
+          setPage(p)
+          return
+        }}
+      />
       <Content>
-        {page === 'dashboard' && <Dashboard />}
-        {page === 'containers' && <ContainersPage />}
-        {page === 'rules' && <RulesPage />}
-        {page === 'bookmarks' && <BookmarksPage />}
-        {page === 'import-export' && <ImportExportPage />}
-        {page === 'settings' && <SettingsPage />}
+        {page === "dashboard" && <Dashboard />}
+        {page === "containers" && <ContainersPage />}
+        {page === "rules" && <RulesPage />}
+        {page === "bookmarks" && <BookmarksPage />}
+        {page === "tags" && <TagsPage />}
+        {page === "import-export" && <ImportExportPage />}
+        {page === "settings" && <SettingsPage />}
       </Content>
     </PageShell>
-  );
+  )
 }
 
 function App(): JSX.Element {
-  const { isInitialized, initializationError, retry } = useAppInitialization();
-  
+  const { isInitialized, initializationError, retry } = useAppInitialization()
+
   // Set up cross-store effects
-  useStoreEffects();
-  
+  useStoreEffects()
+
   if (initializationError) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center min-h-screen">
@@ -528,7 +577,7 @@ function App(): JSX.Element {
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md">
           {initializationError}
         </div>
-        <button 
+        <button
           type="button"
           onClick={retry}
           className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -536,9 +585,9 @@ function App(): JSX.Element {
           Retry
         </button>
       </div>
-    );
+    )
   }
-  
+
   if (!isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -546,20 +595,18 @@ function App(): JSX.Element {
           Loading...
         </div>
       </div>
-    );
+    )
   }
-  
-  return <OptionsApp />;
+
+  return <OptionsApp />
 }
 
-const mount = document.getElementById('root');
+const mount = document.getElementById("root")
 if (mount) {
-  const root = createRoot(mount);
+  const root = createRoot(mount)
   root.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>,
-  );
+  )
 }
-
-

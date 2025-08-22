@@ -1,10 +1,13 @@
-import React from 'react';
+import React from "react"
 
 interface StatusBarProps {
-  message: string;
-  className?: string;
+  message: string
+  className?: string
 }
 
-export function StatusBar({ message, className = 'status' }: StatusBarProps): JSX.Element {
-  return <div className={className}>{message}</div>;
+export function StatusBar({
+  message,
+  className = "status",
+}: StatusBarProps): JSX.Element {
+  return <div className={className}>{message}</div>
 }

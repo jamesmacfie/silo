@@ -1,14 +1,14 @@
-import React from 'react';
-import type { Rule } from '@/shared/types';
-import { getContainerColors } from '@/shared/utils/containerHelpers';
-import type { ContainerLite } from './ContainerCard';
+import React from "react"
+import type { Rule } from "@/shared/types"
+import { getContainerColors } from "@/shared/utils/containerHelpers"
+import type { ContainerLite } from "./ContainerCard"
 
 interface RuleCardProps {
-  rule: Rule;
-  containers: ContainerLite[];
-  onToggleEnabled: (rule: Rule) => void;
-  onEdit: (rule: Rule) => void;
-  onDelete: (rule: Rule) => void;
+  rule: Rule
+  containers: ContainerLite[]
+  onToggleEnabled: (rule: Rule) => void
+  onEdit: (rule: Rule) => void
+  onDelete: (rule: Rule) => void
 }
 
 export function RuleCard({
@@ -21,40 +21,50 @@ export function RuleCard({
   const safeRule = {
     ...rule,
     metadata: rule.metadata || {},
-    priority: typeof rule.priority === 'number' ? rule.priority : 0,
-    pattern: rule.pattern || '',
-    ruleType: rule.ruleType || 'include',
-    matchType: rule.matchType || 'exact',
+    priority: typeof rule.priority === "number" ? rule.priority : 0,
+    pattern: rule.pattern || "",
+    ruleType: rule.ruleType || "include",
+    matchType: rule.matchType || "exact",
     enabled: rule.enabled !== undefined ? rule.enabled : true,
-  } as Rule;
+  } as Rule
 
-  const container = containers.find(c => c.cookieStoreId === rule.containerId);
-  const containerColors = container ? getContainerColors(container.color) : null;
+  const container = containers.find((c) => c.cookieStoreId === rule.containerId)
+  const containerColors = container ? getContainerColors(container.color) : null
 
   const getMatchTypeIcon = () => {
     switch (rule.matchType) {
-      case 'exact': return '🎯';
-      case 'domain': return '🌐';
-      case 'glob': return '✨';
-      default: return '🔍';
+      case "exact":
+        return "🎯"
+      case "domain":
+        return "🌐"
+      case "glob":
+        return "✨"
+      default:
+        return "🔍"
     }
-  };
+  }
 
   const getRuleTypeIcon = () => {
     switch (rule.ruleType) {
-      case 'include': return '➕';
-      case 'exclude': return '➖';
-      default: return '🔒';
+      case "include":
+        return "➕"
+      case "exclude":
+        return "➖"
+      default:
+        return "🔒"
     }
-  };
+  }
 
   const getRuleTypeColor = () => {
     switch (rule.ruleType) {
-      case 'include': return '#28a745';
-      case 'exclude': return '#ffc107';
-      default: return '#dc3545';
+      case "include":
+        return "#28a745"
+      case "exclude":
+        return "#ffc107"
+      default:
+        return "#dc3545"
     }
-  };
+  }
 
   return (
     <div className="card flex flex-col h-full">
@@ -63,15 +73,15 @@ export function RuleCard({
           <span className="match-type-icon" title={`${rule.matchType} match`}>
             {getMatchTypeIcon()}
           </span>
-          <span 
+          <span
             className="rule-type-icon"
             style={{ color: getRuleTypeColor() }}
             title={`${rule.ruleType} rule`}
           >
             {getRuleTypeIcon()}
           </span>
-          <span 
-            className="pattern font-mono font-medium overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0" 
+          <span
+            className="pattern font-mono font-medium overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0"
             title={rule.pattern}
           >
             {rule.pattern}
@@ -91,7 +101,7 @@ export function RuleCard({
               {container.name}
             </span>
           )}
-          {rule.ruleType === 'exclude' && !container && (
+          {rule.ruleType === "exclude" && !container && (
             <span className="no-container-badge bg-gray-100 border-gray-300 text-gray-500 px-2 py-1 rounded-full text-xs font-medium border italic">
               No Container
             </span>
@@ -119,11 +129,11 @@ export function RuleCard({
         <div />
         <div className="actions">
           <button
-            className={`btn ghost sm ${rule.enabled ? 'enabled' : 'disabled'}`}
+            className={`btn ghost sm ${rule.enabled ? "enabled" : "disabled"}`}
             onClick={() => onToggleEnabled(safeRule)}
-            title={rule.enabled ? 'Disable rule' : 'Enable rule'}
+            title={rule.enabled ? "Disable rule" : "Enable rule"}
           >
-            {rule.enabled ? 'Enabled' : 'Disabled'}
+            {rule.enabled ? "Enabled" : "Disabled"}
           </button>
           <button
             className="btn ghost sm"
@@ -142,5 +152,5 @@ export function RuleCard({
         </div>
       </div>
     </div>
-  );
+  )
 }

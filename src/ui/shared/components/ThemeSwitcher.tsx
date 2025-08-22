@@ -1,15 +1,15 @@
-import React from 'react';
-import { useTheme } from '../stores';
+import React from "react"
+import { useTheme } from "../stores"
 
 interface Props {
-  compact?: boolean;
+  compact?: boolean
 }
 
 export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
-  const { theme, setTheme, loading } = useTheme();
+  const { theme, setTheme, loading } = useTheme()
 
   if (loading) {
-    return <div className="theme-switcher loading">Loading...</div>;
+    return <div className="theme-switcher loading">Loading...</div>
   }
 
   if (compact) {
@@ -18,7 +18,9 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
       <div className="theme-switcher compact">
         <select
           value={theme}
-          onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'auto')}
+          onChange={(e) =>
+            setTheme(e.target.value as "light" | "dark" | "auto")
+          }
           className="theme-select"
           aria-label="Theme"
         >
@@ -27,7 +29,7 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
           <option value="dark">🌙 Dark</option>
         </select>
       </div>
-    );
+    )
   }
 
   // Full version for settings page
@@ -40,17 +42,37 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
 
       <div className="theme-options">
         {[
-          { value: 'auto', label: 'Auto', icon: '🌓', description: 'Match system preference' },
-          { value: 'light', label: 'Light', icon: '☀️', description: 'Light theme' },
-          { value: 'dark', label: 'Dark', icon: '🌙', description: 'Dark theme' },
+          {
+            value: "auto",
+            label: "Auto",
+            icon: "🌓",
+            description: "Match system preference",
+          },
+          {
+            value: "light",
+            label: "Light",
+            icon: "☀️",
+            description: "Light theme",
+          },
+          {
+            value: "dark",
+            label: "Dark",
+            icon: "🌙",
+            description: "Dark theme",
+          },
         ].map((option) => (
-          <label key={option.value} className={`theme-option ${theme === option.value ? 'selected' : ''}`}>
+          <label
+            key={option.value}
+            className={`theme-option ${theme === option.value ? "selected" : ""}`}
+          >
             <input
               type="radio"
               name="theme"
               value={option.value}
               checked={theme === option.value}
-              onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'auto')}
+              onChange={(e) =>
+                setTheme(e.target.value as "light" | "dark" | "auto")
+              }
             />
             <div className="theme-preview">
               <div className="icon">{option.icon}</div>
@@ -180,5 +202,5 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
         }
       `}</style>
     </div>
-  );
+  )
 }

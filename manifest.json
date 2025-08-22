@@ -12,9 +12,7 @@
   },
   "author": "Silo Team",
   "background": {
-    "scripts": [
-      "src/background/index.ts"
-    ],
+    "scripts": ["src/background/index.ts"],
     "persistent": true
   },
   "browser_action": {

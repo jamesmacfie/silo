@@ -1,19 +1,19 @@
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
-import browser from 'webextension-polyfill';
-import type { Preferences } from '@/shared/types';
-import { MESSAGE_TYPES, DEFAULT_PREFERENCES } from '@/shared/constants';
+import { create } from "zustand"
+import { subscribeWithSelector } from "zustand/middleware"
+import browser from "webextension-polyfill"
+import type { Preferences } from "@/shared/types"
+import { MESSAGE_TYPES, DEFAULT_PREFERENCES } from "@/shared/constants"
 
 interface PreferencesState {
-  preferences: Preferences;
-  loading: boolean;
-  error?: string;
-  
+  preferences: Preferences
+  loading: boolean
+  error?: string
+
   actions: {
-    load: () => Promise<void>;
-    update: (updates: Partial<Preferences>) => Promise<void>;
-    clearError: () => void;
-  };
+    load: () => Promise<void>
+    update: (updates: Partial<Preferences>) => Promise<void>
+    clearError: () => void
+  }
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -21,59 +21,65 @@ export const usePreferencesStore = create<PreferencesState>()(
     preferences: DEFAULT_PREFERENCES,
     loading: false,
     error: undefined,
-    
+
     actions: {
       load: async () => {
-        set({ loading: true, error: undefined });
-        
+        set({ loading: true, error: undefined })
+
         try {
           const response = await browser.runtime.sendMessage({
             type: MESSAGE_TYPES.GET_PREFERENCES,
-          });
-          
+          })
+
           if (!response?.success) {
-            throw new Error(response?.error || 'Failed to fetch preferences');
+            throw new Error(response?.error || "Failed to fetch preferences")
           }
-          
-          set({ 
+
+          set({
             preferences: { ...DEFAULT_PREFERENCES, ...response.data },
-            loading: false 
-          });
+            loading: false,
+          })
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Unknown error',
-            loading: false 
-          });
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+            loading: false,
+          })
         }
       },
-      
+
       update: async (updates) => {
         try {
-          const current = get().preferences;
-          const newPreferences = { ...current, ...updates };
-          
+          const current = get().preferences
+          const newPreferences = { ...current, ...updates }
+
           const response = await browser.runtime.sendMessage({
             type: MESSAGE_TYPES.UPDATE_PREFERENCES,
             payload: newPreferences,
-          });
-          
+          })
+
           if (!response?.success) {
-            throw new Error(response?.error || 'Failed to update preferences');
+            throw new Error(response?.error || "Failed to update preferences")
           }
-          
-          set({ preferences: newPreferences });
+
+          set({ preferences: newPreferences })
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Unknown error' });
-          throw error;
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
         }
       },
-      
+
       clearError: () => set({ error: undefined }),
     },
-  }))
-);
+  })),
+)
 
-export const usePreferences = () => usePreferencesStore(state => state.preferences);
-export const usePreferencesActions = () => usePreferencesStore(state => state.actions);
-export const usePreferencesLoading = () => usePreferencesStore(state => state.loading);
-export const usePreferencesError = () => usePreferencesStore(state => state.error);
+export const usePreferences = () =>
+  usePreferencesStore((state) => state.preferences)
+export const usePreferencesActions = () =>
+  usePreferencesStore((state) => state.actions)
+export const usePreferencesLoading = () =>
+  usePreferencesStore((state) => state.loading)
+export const usePreferencesError = () =>
+  usePreferencesStore((state) => state.error)

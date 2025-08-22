@@ -1,127 +1,140 @@
-import React from 'react';
-import browser from 'webextension-polyfill';
-import { MESSAGE_TYPES } from '@/shared/constants';
-import type { CSVImportResult, CSVExportOptions } from '@/shared/utils/csv';
+import React from "react"
+import browser from "webextension-polyfill"
+import { MESSAGE_TYPES } from "@/shared/constants"
+import { Button } from "./layout/Button"
+import type { CSVImportResult, CSVExportOptions } from "@/shared/utils/csv"
 
 interface Props {
-  onImportComplete?: (result: CSVImportResult) => void;
-  onError?: (error: string) => void;
+  onImportComplete?: (result: CSVImportResult) => void
+  onError?: (error: string) => void
 }
 
-export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Element {
-  const [importing, setImporting] = React.useState(false);
-  const [exporting, setExporting] = React.useState(false);
-  const [importResult, setImportResult] = React.useState<CSVImportResult | null>(null);
-  const [showPreview, setShowPreview] = React.useState(false);
-  const [csvContent, setCsvContent] = React.useState('');
-  const [createMissing, setCreateMissing] = React.useState(true);
+export function CSVImportExport({
+  onImportComplete,
+  onError,
+}: Props): JSX.Element {
+  const [importing, setImporting] = React.useState(false)
+  const [exporting, setExporting] = React.useState(false)
+  const [importResult, setImportResult] =
+    React.useState<CSVImportResult | null>(null)
+  const [showPreview, setShowPreview] = React.useState(false)
+  const [csvContent, setCsvContent] = React.useState("")
+  const [createMissing, setCreateMissing] = React.useState(true)
   const [exportOptions, setExportOptions] = React.useState<CSVExportOptions>({
-    includeComments: false,  // Changed to false - no comments by default
+    includeComments: false, // Changed to false - no comments by default
     includeHeaders: true,
     includeDisabled: true,
-  });
+  })
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleExport = React.useCallback(async () => {
-    if (exporting) return;
+    if (exporting) return
 
-    setExporting(true);
+    setExporting(true)
     try {
       const response = await browser.runtime.sendMessage({
         type: MESSAGE_TYPES.EXPORT_CSV,
         payload: { options: exportOptions },
-      });
+      })
 
       if (response?.success) {
-        const csv = response.data.csv;
+        const csv = response.data.csv
 
         // Create and trigger download
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `silo-rules-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `silo-rules-${new Date().toISOString().split("T")[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       } else {
-        onError?.(response?.error || 'Export failed');
+        onError?.(response?.error || "Export failed")
       }
     } catch (error) {
-      onError?.(error instanceof Error ? error.message : 'Export failed');
+      onError?.(error instanceof Error ? error.message : "Export failed")
     } finally {
-      setExporting(false);
+      setExporting(false)
     }
-  }, [exporting, exportOptions, onError]);
+  }, [exporting, exportOptions, onError])
 
   const handleDownloadTemplate = React.useCallback(async () => {
     try {
       const response = await browser.runtime.sendMessage({
         type: MESSAGE_TYPES.GENERATE_CSV_TEMPLATE,
-      });
+      })
 
       if (response?.success) {
-        const template = response.data.template;
+        const template = response.data.template
 
         // Create and trigger download
-        const blob = new Blob([template], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'silo-template.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const blob = new Blob([template], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "silo-template.csv"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       } else {
-        onError?.(response?.error || 'Template generation failed');
+        onError?.(response?.error || "Template generation failed")
       }
     } catch (error) {
-      onError?.(error instanceof Error ? error.message : 'Template download failed');
+      onError?.(
+        error instanceof Error ? error.message : "Template download failed",
+      )
     }
-  }, [onError]);
+  }, [onError])
 
-  const previewImport = React.useCallback(async (content: string) => {
-    setImporting(true);
-    try {
-      // We don't actually import yet, just parse to show preview
-      const response = await browser.runtime.sendMessage({
-        type: MESSAGE_TYPES.IMPORT_CSV,
-        payload: { csvContent: content, createMissingContainers: false },
-      });
+  const previewImport = React.useCallback(
+    async (content: string) => {
+      setImporting(true)
+      try {
+        // We don't actually import yet, just parse to show preview
+        const response = await browser.runtime.sendMessage({
+          type: MESSAGE_TYPES.IMPORT_CSV,
+          payload: { csvContent: content, createMissingContainers: false },
+        })
 
-      if (response?.success) {
-        setImportResult(response.data);
-        setShowPreview(true);
-      } else {
-        onError?.(response?.error || 'Preview failed');
+        if (response?.success) {
+          setImportResult(response.data)
+          setShowPreview(true)
+        } else {
+          onError?.(response?.error || "Preview failed")
+        }
+      } catch (error) {
+        onError?.(error instanceof Error ? error.message : "Preview failed")
+      } finally {
+        setImporting(false)
       }
-    } catch (error) {
-      onError?.(error instanceof Error ? error.message : 'Preview failed');
-    } finally {
-      setImporting(false);
-    }
-  }, [onError]);
+    },
+    [onError],
+  )
 
-  const handleFileSelect = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file) return
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setCsvContent(content);
-      previewImport(content);
-    };
-    reader.readAsText(file);
-  }, [previewImport]);
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const content = e.target?.result as string
+        setCsvContent(content)
+        previewImport(content)
+      }
+      reader.readAsText(file)
+    },
+    [previewImport],
+  )
 
   const handleConfirmImport = React.useCallback(async () => {
-    if (!csvContent) return;
+    if (!csvContent) return
 
-    setImporting(true);
+    setImporting(true)
     try {
       const response = await browser.runtime.sendMessage({
         type: MESSAGE_TYPES.IMPORT_CSV,
@@ -129,34 +142,34 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
           csvContent,
           createMissingContainers: createMissing,
         },
-      });
+      })
 
       if (response?.success) {
-        setImportResult(response.data);
-        onImportComplete?.(response.data);
-        setShowPreview(false);
-        setCsvContent('');
+        setImportResult(response.data)
+        onImportComplete?.(response.data)
+        setShowPreview(false)
+        setCsvContent("")
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          fileInputRef.current.value = ""
         }
       } else {
-        onError?.(response?.error || 'Import failed');
+        onError?.(response?.error || "Import failed")
       }
     } catch (error) {
-      onError?.(error instanceof Error ? error.message : 'Import failed');
+      onError?.(error instanceof Error ? error.message : "Import failed")
     } finally {
-      setImporting(false);
+      setImporting(false)
     }
-  }, [csvContent, createMissing, onImportComplete, onError]);
+  }, [csvContent, createMissing, onImportComplete, onError])
 
   const handleCancelImport = React.useCallback(() => {
-    setShowPreview(false);
-    setImportResult(null);
-    setCsvContent('');
+    setShowPreview(false)
+    setImportResult(null)
+    setCsvContent("")
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ""
     }
-  }, []);
+  }, [])
 
   return (
     <div className="csv-import-export">
@@ -171,7 +184,12 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
             <input
               type="checkbox"
               checked={exportOptions.includeComments}
-              onChange={(e) => setExportOptions(prev => ({ ...prev, includeComments: e.target.checked }))}
+              onChange={(e) =>
+                setExportOptions((prev) => ({
+                  ...prev,
+                  includeComments: e.target.checked,
+                }))
+              }
             />
             Include comments and headers
           </label>
@@ -179,26 +197,24 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
             <input
               type="checkbox"
               checked={exportOptions.includeDisabled}
-              onChange={(e) => setExportOptions(prev => ({ ...prev, includeDisabled: e.target.checked }))}
+              onChange={(e) =>
+                setExportOptions((prev) => ({
+                  ...prev,
+                  includeDisabled: e.target.checked,
+                }))
+              }
             />
             Include disabled rules
           </label>
         </div>
 
         <div className="buttons">
-          <button
-            className="btn"
-            onClick={handleExport}
-            disabled={exporting}
-          >
-            {exporting ? 'Exporting...' : 'Export CSV'}
-          </button>
-          <button
-            className="btn ghost"
-            onClick={handleDownloadTemplate}
-          >
+          <Button onClick={handleExport} disabled={exporting} variant="primary">
+            {exporting ? "Exporting..." : "Export CSV"}
+          </Button>
+          <Button onClick={handleDownloadTemplate} variant="secondary">
             Download Template
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -250,7 +266,8 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
             )}
             {importResult.missingContainers.length > 0 && (
               <div className="stat">
-                <strong>{importResult.missingContainers.length}</strong> missing containers
+                <strong>{importResult.missingContainers.length}</strong> missing
+                containers
               </div>
             )}
           </div>
@@ -287,30 +304,31 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
             <div className="preview-section missing">
               <h4>Missing Containers</h4>
               <div className="missing-containers">
-                {importResult.missingContainers.map(name => (
-                  <span key={name} className="container-name">{name}</span>
+                {importResult.missingContainers.map((name) => (
+                  <span key={name} className="container-name">
+                    {name}
+                  </span>
                 ))}
               </div>
               {createMissing && (
-                <p className="note">These containers will be created automatically.</p>
+                <p className="note">
+                  These containers will be created automatically.
+                </p>
               )}
             </div>
           )}
 
           <div className="preview-actions">
-            <button
-              className="btn"
+            <Button
               onClick={handleConfirmImport}
               disabled={importing || importResult.errors.length > 0}
+              variant="primary"
             >
-              {importing ? 'Importing...' : 'Import Rules'}
-            </button>
-            <button
-              className="btn ghost"
-              onClick={handleCancelImport}
-            >
+              {importing ? "Importing..." : "Import Rules"}
+            </Button>
+            <Button onClick={handleCancelImport} variant="secondary">
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -358,30 +376,6 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
           display: flex;
           gap: 0.5rem;
           flex-wrap: wrap;
-        }
-
-        .btn {
-          padding: 0.5rem 1rem;
-          border: 1px solid var(--primary, #4a90e2);
-          background: var(--primary, #4a90e2);
-          color: white;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 0.9rem;
-        }
-
-        .btn:hover:not(:disabled) {
-          opacity: 0.9;
-        }
-
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn.ghost {
-          background: transparent;
-          color: var(--primary, #4a90e2);
         }
 
         .file-input input {
@@ -500,5 +494,5 @@ export function CSVImportExport({ onImportComplete, onError }: Props): JSX.Eleme
         }
       `}</style>
     </div>
-  );
+  )
 }

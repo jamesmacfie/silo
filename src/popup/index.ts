@@ -1,1 +1,1 @@
-import '@/ui/popup/index.tsx';
+import "@/ui/popup/index.tsx"

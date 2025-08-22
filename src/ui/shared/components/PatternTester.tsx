@@ -1,14 +1,18 @@
-import React from 'react';
-import { MatchType } from '@/shared/types';
-import { validatePattern, getPatternExamples, suggestMatchType } from '@/shared/utils/patternValidator';
-import { useRuleActions } from '../stores';
+import React from "react"
+import { MatchType } from "@/shared/types"
+import {
+  validatePattern,
+  getPatternExamples,
+  suggestMatchType,
+} from "@/shared/utils/patternValidator"
+import { useRuleActions } from "../stores"
 
 interface Props {
-  pattern: string;
-  matchType: MatchType;
-  onPatternChange?: (pattern: string) => void;
-  onMatchTypeChange?: (matchType: MatchType) => void;
-  className?: string;
+  pattern: string
+  matchType: MatchType
+  onPatternChange?: (pattern: string) => void
+  onMatchTypeChange?: (matchType: MatchType) => void
+  className?: string
 }
 
 export function PatternTester({
@@ -16,52 +20,61 @@ export function PatternTester({
   matchType,
   onPatternChange,
   onMatchTypeChange,
-  className = '',
+  className = "",
 }: Props): JSX.Element {
-  const { testPattern } = useRuleActions();
-  const [testUrl, setTestUrl] = React.useState('');
-  const [testResult, setTestResult] = React.useState<{ matches: boolean; tested: boolean }>({ matches: false, tested: false });
-  const [isTesting, setIsTesting] = React.useState(false);
+  const { testPattern } = useRuleActions()
+  const [testUrl, setTestUrl] = React.useState("")
+  const [testResult, setTestResult] = React.useState<{
+    matches: boolean
+    tested: boolean
+  }>({ matches: false, tested: false })
+  const [isTesting, setIsTesting] = React.useState(false)
 
   // Validate pattern
   const validation = React.useMemo(() => {
-    if (!pattern) return { isValid: true };
-    return validatePattern(pattern, matchType);
-  }, [pattern, matchType]);
+    if (!pattern) return { isValid: true }
+    return validatePattern(pattern, matchType)
+  }, [pattern, matchType])
 
   // Get examples for current match type
-  const examples = React.useMemo(() => getPatternExamples(matchType), [matchType]);
+  const examples = React.useMemo(
+    () => getPatternExamples(matchType),
+    [matchType],
+  )
 
   // Suggest match type based on pattern
   const suggestedMatchType = React.useMemo(() => {
-    if (!pattern) return null;
-    const suggested = suggestMatchType(pattern);
-    return suggested !== matchType ? suggested : null;
-  }, [pattern, matchType]);
+    if (!pattern) return null
+    const suggested = suggestMatchType(pattern)
+    return suggested !== matchType ? suggested : null
+  }, [pattern, matchType])
 
   const handleTest = React.useCallback(async () => {
-    if (!testUrl || !pattern || !validation.isValid) return;
+    if (!testUrl || !pattern || !validation.isValid) return
 
-    setIsTesting(true);
+    setIsTesting(true)
     try {
-      const matches = await testPattern(testUrl, pattern, matchType);
-      setTestResult({ matches, tested: true });
+      const matches = await testPattern(testUrl, pattern, matchType)
+      setTestResult({ matches, tested: true })
     } catch (error) {
-      setTestResult({ matches: false, tested: true });
+      setTestResult({ matches: false, tested: true })
     } finally {
-      setIsTesting(false);
+      setIsTesting(false)
     }
-  }, [testUrl, pattern, matchType, validation.isValid, testPattern]);
+  }, [testUrl, pattern, matchType, validation.isValid, testPattern])
 
-  const handleUseExample = React.useCallback((example: string) => {
-    onPatternChange?.(example);
-  }, [onPatternChange]);
+  const handleUseExample = React.useCallback(
+    (example: string) => {
+      onPatternChange?.(example)
+    },
+    [onPatternChange],
+  )
 
   const handleUseSuggestion = React.useCallback(() => {
     if (suggestedMatchType) {
-      onMatchTypeChange?.(suggestedMatchType);
+      onMatchTypeChange?.(suggestedMatchType)
     }
-  }, [suggestedMatchType, onMatchTypeChange]);
+  }, [suggestedMatchType, onMatchTypeChange])
 
   return (
     <div className={`pattern-tester ${className}`}>
@@ -90,8 +103,13 @@ export function PatternTester({
       {/* Match Type Suggestion */}
       {suggestedMatchType && (
         <div className="validation-message suggestion">
-          <strong>Suggestion:</strong> This pattern looks like it should use {suggestedMatchType} matching.
-          <button type="button" className="suggestion-btn" onClick={handleUseSuggestion}>
+          <strong>Suggestion:</strong> This pattern looks like it should use{" "}
+          {suggestedMatchType} matching.
+          <button
+            type="button"
+            className="suggestion-btn"
+            onClick={handleUseSuggestion}
+          >
             Switch to {suggestedMatchType}
           </button>
         </div>
@@ -114,13 +132,15 @@ export function PatternTester({
             onClick={handleTest}
             disabled={!testUrl || !pattern || !validation.isValid || isTesting}
           >
-            {isTesting ? 'Testing...' : 'Test'}
+            {isTesting ? "Testing..." : "Test"}
           </button>
         </div>
 
         {testResult.tested && (
-          <div className={`test-result ${testResult.matches ? 'match' : 'no-match'}`}>
-            {testResult.matches ? '✓ Matches' : '✗ No match'}
+          <div
+            className={`test-result ${testResult.matches ? "match" : "no-match"}`}
+          >
+            {testResult.matches ? "✓ Matches" : "✗ No match"}
           </div>
         )}
       </div>
@@ -342,5 +362,5 @@ export function PatternTester({
         }
       `}</style>
     </div>
-  );
+  )
 }

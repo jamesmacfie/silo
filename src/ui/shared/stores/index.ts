@@ -1,11 +1,12 @@
 // Store exports
-export * from './containerStore';
-export * from './ruleStore';
-export * from './themeStore';
-export * from './preferencesStore';
-export * from './bookmarkStore';
-export * from './appStore';
-export * from './statsStore';
+export * from "./containerStore"
+export * from "./ruleStore"
+export * from "./themeStore"
+export * from "./preferencesStore"
+export * from "./bookmarkStore"
+export * from "./appStore"
+export * from "./statsStore"
+export * from "./uiStateStore"
 
 // Re-export common hooks for convenience
 export {
@@ -13,14 +14,14 @@ export {
   useContainerActions,
   useContainerLoading,
   useContainerError,
-} from './containerStore';
+} from "./containerStore"
 
 export {
   useRules,
   useRuleActions,
   useRuleLoading,
   useRuleError,
-} from './ruleStore';
+} from "./ruleStore"
 
 export {
   useTheme,
@@ -28,29 +29,34 @@ export {
   useThemeError,
   useThemeEffects,
   useThemeInitialization,
-} from './themeStore';
+} from "./themeStore"
 
 export {
   usePreferences,
   usePreferencesActions,
   usePreferencesLoading,
   usePreferencesError,
-} from './preferencesStore';
+} from "./preferencesStore"
 
+// Bookmark exports
 export {
-  useBookmarkAssociations,
-  useBookmarksTree,
+  useBookmarkStore,
+  useFilteredBookmarks,
+  useBookmarkTags,
+  useBookmarkView,
+  useSelectedBookmarks,
   useBookmarkActions,
   useBookmarkLoading,
   useBookmarkError,
-} from './bookmarkStore';
+  useBookmarkSearchState,
+} from "./bookmarkStore"
 
 export {
   useAppInitialization,
   useStoreEffects,
   useGlobalErrors,
   useGlobalLoading,
-} from './appStore';
+} from "./appStore"
 
 export {
   useStats,
@@ -62,4 +68,12 @@ export {
   useStatsLoading,
   useStatsError,
   useStatsActions,
-} from './statsStore';
+} from "./statsStore"
+
+export {
+  useUIStateStore,
+  useRulesPageState,
+  useContainersPageState,
+  useBookmarksPageState,
+  useTagsPageState,
+} from "./uiStateStore"

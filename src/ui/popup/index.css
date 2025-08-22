@@ -36,10 +36,18 @@
 .btn {
   @apply bg-blue-500 text-white border-0 px-2.5 py-2 rounded-lg font-semibold text-xs hover:bg-blue-600;
 }
-.small { @apply font-medium text-gray-700; }
-.status { @apply mt-2 text-xs text-gray-600; }
-.footerLink { @apply mt-2 flex justify-end; }
-.link { @apply text-blue-500 text-xs no-underline hover:text-blue-600; }
+.small {
+  @apply font-medium text-gray-700;
+}
+.status {
+  @apply mt-2 text-xs text-gray-600;
+}
+.footerLink {
+  @apply mt-2 flex justify-end;
+}
+.link {
+  @apply text-blue-500 text-xs no-underline hover:text-blue-600;
+}
 
 /* Dark mode styles */
 :root.dark .title {
@@ -57,9 +65,15 @@
 :root.dark .btn {
   @apply bg-blue-500 text-white hover:bg-blue-600;
 }
-:root.dark .small { @apply text-slate-300; }
-:root.dark .status { @apply text-slate-400; }
-:root.dark .link { @apply text-blue-400 hover:text-blue-300; }
+:root.dark .small {
+  @apply text-slate-300;
+}
+:root.dark .status {
+  @apply text-slate-400;
+}
+:root.dark .link {
+  @apply text-blue-400 hover:text-blue-300;
+}
 
 /* Theme selector styles */
 .theme-select {
@@ -71,7 +85,8 @@
 
 /* CSS Variables for theming */
 :root {
-  --popup-bg: radial-gradient(900px 600px at 70% -10%, #f8f9fa 0%, #ffffff 45%), #ffffff;
+  --popup-bg:
+    radial-gradient(900px 600px at 70% -10%, #f8f9fa 0%, #ffffff 45%), #ffffff;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --surface: #f8f9fa;
@@ -80,7 +95,8 @@
 }
 
 :root.dark {
-  --popup-bg: radial-gradient(900px 600px at 70% -10%, #13213a 0%, #0b0d12 45%), #0b0d12;
+  --popup-bg:
+    radial-gradient(900px 600px at 70% -10%, #13213a 0%, #0b0d12 45%), #0b0d12;
   --text-primary: #e6eaf2;
   --text-secondary: #94a3b8;
   --surface: #1e293b;
@@ -93,5 +109,3 @@ body {
   background: var(--popup-bg);
   color: var(--text-primary);
 }
-
-

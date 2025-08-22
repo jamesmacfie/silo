@@ -12,7 +12,7 @@ export const logger = {
     warn: jest.fn(),
     error: jest.fn(),
   })),
-  exportLogs: jest.fn(() => Promise.resolve('')),
-};
+  exportLogs: jest.fn(() => Promise.resolve("")),
+}
 
-export default logger;
+export default logger

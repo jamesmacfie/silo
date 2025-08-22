@@ -138,6 +138,125 @@ Examples of component categories:
 - **Data Components** - Rule displays, container management
 - **Utility Components** - Theme switchers, search inputs, status indicators
 
+#### Modal Component System
+
+The application uses a centralized modal system with a reusable `Modal` component that provides consistent styling and behavior across all modal dialogs:
+
+**Location:** `/src/ui/shared/components/Modal.tsx`
+
+**Features:**
+- **Accessibility First** - Full ARIA compliance, keyboard navigation (ESC to close), focus management
+- **Responsive Design** - Multiple size options (small, default, large) with mobile-friendly layouts
+- **Dark Theme Support** - Automatic dark/light theme integration with CSS variables
+- **Backdrop Behavior** - Configurable backdrop click-to-close functionality
+- **Animation Support** - Smooth fade-in/fade-out transitions with backdrop blur
+- **Body Scroll Prevention** - Prevents background scrolling when modal is open
+- **TypeScript Integration** - Full type safety with comprehensive prop interfaces
+
+**Core Components:**
+- `Modal` - Main modal wrapper with header, body, and footer
+- `ModalFormRow` - Standardized form row layout component
+- `ModalLabel` - Consistent label styling with required field indicators
+- `ModalInput` - Styled input fields with error state support
+- `ModalSelect` - Styled select dropdowns with error state support
+- `ModalTextarea` - Styled textarea fields with error state support
+- `ModalError` - Error message display component
+- `ModalWarning` - Warning message display component
+- `ModalInfo` - Informational message display component
+
+**Usage Example:**
+```tsx
+<Modal
+  isOpen={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  title="Create Container"
+  size="default"
+  footer={
+    <>
+      <button className="btn ghost" onClick={onCancel}>Cancel</button>
+      <button className="btn" onClick={onSave}>Save</button>
+    </>
+  }
+>
+  <ModalFormRow>
+    <ModalLabel htmlFor="name" required>Name</ModalLabel>
+    <ModalInput
+      id="name"
+      type="text"
+      placeholder="Container name"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      error={!name.trim()}
+    />
+    {!name.trim() && <ModalError>Name is required</ModalError>}
+  </ModalFormRow>
+</Modal>
+```
+
+**Modal Implementations:**
+- `ContainerModal` - Container creation and editing (`/src/ui/options/ContainerModal.tsx`)
+- `RuleModal` - Rule creation and editing with pattern testing (`/src/ui/options/RuleModal.tsx`)  
+- `TagModal` - Tag creation and editing with color picker (`/src/ui/options/TagModal.tsx`)
+
+**Design Principles:**
+- **Consistent UX** - All modals follow the same interaction patterns and visual design
+- **Form Validation** - Integrated error/warning/info messaging system
+- **Performance** - Efficient rendering with conditional mounting and cleanup
+- **Maintainability** - Single source of truth for modal styling and behavior
+
+#### ColorSelector Component System
+
+The application uses a centralized color selection system with a reusable `ColorSelector` component that provides consistent color picking across containers and tags:
+
+**Location:** `/src/ui/shared/components/ColorSelector.tsx`
+
+**Features:**
+- **Flexible Layouts** - List layout (with labels) for modals, grid layout (circles only) for inline pickers
+- **Multiple Color Sets** - Predefined color palettes for containers (named colors) and tags (hex values)
+- **Responsive Sizing** - Small, medium, and large size options with configurable grid columns
+- **Consistent Styling** - Shared visual design with hover states and selection indicators
+- **TypeScript Integration** - Full type safety with ColorOption interface
+
+**Core Components:**
+- `ColorSelector` - Main color picker component with layout and size options
+- `CONTAINER_COLORS` - Predefined color set for Firefox container colors (named values)
+- `TAG_COLORS` - Predefined color set for bookmark tags (hex values)
+- `containerColorToCss()` - Helper function to convert container color names to CSS values
+- `getColorDisplayName()` - Helper function to get display names for colors
+
+**Usage Examples:**
+```tsx
+// List layout for modals (like ContainerModal)
+<ColorSelector
+  selectedColor={color}
+  onColorChange={setColor}
+  colors={CONTAINER_COLORS}
+  layout="list"
+  columns={3}
+  size="small"
+/>
+
+// Grid layout for inline pickers (like TagsPage)
+<ColorSelector
+  selectedColor={tag.color}
+  onColorChange={(color) => handleUpdateTag(tag.id, { color })}
+  colors={TAG_COLORS}
+  layout="grid"
+  columns={5}
+  size="small"
+/>
+```
+
+**ColorSelector Implementations:**
+- `ContainerModal` - Container color selection with list layout and named colors
+- `TagModal` - Tag color selection with list layout and hex colors  
+- `TagsPage` - Inline tag color editing with grid layout popup
+
+**Color System:**
+- **Container Colors** - Use Firefox-compatible named colors ('blue', 'red', etc.) with corresponding hex values
+- **Tag Colors** - Use direct hex color values ('#4A90E2', '#D9534F', etc.) for maximum flexibility
+- **Conversion Utilities** - Helper functions bridge between named and hex color systems
+
 ### Styling Guidelines
 
 The project strictly follows Tailwind CSS utility-first methodology:

@@ -1,21 +1,21 @@
-import React from 'react';
-import browser from 'webextension-polyfill';
+import React from "react"
+import browser from "webextension-polyfill"
 
 export function InterceptorTest(): JSX.Element {
-  const [testUrl, setTestUrl] = React.useState('https://github.com');
-  const [testResult, setTestResult] = React.useState<string>('');
+  const [testUrl, setTestUrl] = React.useState("https://github.com")
+  const [testResult, setTestResult] = React.useState<string>("")
 
   const testInterceptor = React.useCallback(async () => {
     try {
       const response = await browser.runtime.sendMessage({
-        type: 'TEST_INTERCEPTOR',
+        type: "TEST_INTERCEPTOR",
         payload: { url: testUrl },
-      });
-      setTestResult(JSON.stringify(response, null, 2));
+      })
+      setTestResult(JSON.stringify(response, null, 2))
     } catch (error) {
-      setTestResult(`Error: ${error}`);
+      setTestResult(`Error: ${error}`)
     }
-  }, [testUrl]);
+  }, [testUrl])
 
   return (
     <div className="mt-8 p-4 border border-gray-300 rounded">
@@ -28,7 +28,9 @@ export function InterceptorTest(): JSX.Element {
           placeholder="Enter URL to test"
           className="w-80 mr-2.5"
         />
-        <button type="button" onClick={testInterceptor}>Test Rules Engine</button>
+        <button type="button" onClick={testInterceptor}>
+          Test Rules Engine
+        </button>
       </div>
       {testResult && (
         <pre className="bg-gray-100 p-4 text-xs overflow-auto">
@@ -36,5 +38,5 @@ export function InterceptorTest(): JSX.Element {
         </pre>
       )}
     </div>
-  );
+  )
 }

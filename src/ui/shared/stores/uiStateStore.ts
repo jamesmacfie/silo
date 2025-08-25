@@ -99,7 +99,7 @@ const defaultPageStates: UIState["pages"] = {
     searchQuery: "",
     sortBy: "priority",
     sortOrder: "desc",
-    viewMode: "cards",
+    viewMode: "table",
     showFilters: false,
     showDuplicates: false,
     filters: {
@@ -113,7 +113,7 @@ const defaultPageStates: UIState["pages"] = {
     searchQuery: "",
     sortBy: "name",
     sortOrder: "asc",
-    viewMode: "cards",
+    viewMode: "table",
     showFilters: false,
     filters: {
       hasRules: "",
@@ -124,7 +124,7 @@ const defaultPageStates: UIState["pages"] = {
     searchQuery: "",
     sortBy: "title",
     sortOrder: "asc",
-    viewMode: "table",
+    viewMode: "tree",
     showFilters: false,
     filters: {
       tags: [],
@@ -137,7 +137,7 @@ const defaultPageStates: UIState["pages"] = {
     searchQuery: "",
     sortBy: "name",
     sortOrder: "asc",
-    viewMode: "cards",
+    viewMode: "table",
     showFilters: false,
     filters: {
       hasBookmarks: "",

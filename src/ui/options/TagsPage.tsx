@@ -1,6 +1,7 @@
 import { Edit3, Eye, Plus, Tag, Trash2 } from "lucide-react"
 import React, { useCallback, useMemo } from "react"
 import type { BookmarkTag } from "../../shared/types"
+import { ActionIcon } from "../shared/components/ActionIcon"
 import { Card } from "../shared/components/Card"
 import { ColorDot } from "../shared/components/ColorDot"
 import { ColorSelector, TAG_COLORS } from "../shared/components/ColorSelector"
@@ -16,6 +17,7 @@ import {
   type ToolBarSortOption,
   type ViewMode,
 } from "../shared/components/layout"
+import { TagCard } from "../shared/components/TagCard"
 import { TagFilters } from "../shared/components/TagFilters"
 import { useTagsPageState } from "../shared/stores"
 import {
@@ -286,16 +288,16 @@ export function TagsPage() {
           <div className="flex items-center gap-2">
             <span className="font-medium">{tag.usageCount}</span>
             {tag.usageCount > 0 && (
-              <button
+              <ActionIcon
+                icon={Eye}
                 onClick={(e) => {
                   e.stopPropagation()
                   handleViewBookmarks(tag.id)
                 }}
-                className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-sm flex items-center gap-1"
+                actionType="view"
+                context="table"
                 title="View bookmarks with this tag"
-              >
-                <Eye className="w-3 h-3" />
-              </button>
+              />
             )}
           </div>
         ),
@@ -316,26 +318,26 @@ export function TagsPage() {
         header: "Actions",
         render: (tag: TagWithUsage) => (
           <div className="flex items-center gap-2">
-            <button
+            <ActionIcon
+              icon={Edit3}
               onClick={(e) => {
                 e.stopPropagation()
                 openEditModal(tag)
               }}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded transition-colors"
+              actionType="edit"
+              context="table"
               title="Edit tag"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
-            <button
+            />
+            <ActionIcon
+              icon={Trash2}
               onClick={(e) => {
                 e.stopPropagation()
                 handleDeleteTag(tag)
               }}
-              className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded transition-colors"
+              actionType="delete"
+              context="table"
               title="Delete tag"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            />
           </div>
         ),
         width: "w-32",
@@ -344,57 +346,16 @@ export function TagsPage() {
     [showColorPicker, openEditModal],
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: hooks changin
   const renderTagCard = useCallback(
     (tag: TagWithUsage) => (
-      <Card>
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600"
-                style={{ backgroundColor: tag.color }}
-              />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                {tag.name}
-              </h3>
-            </div>
-            <div className="flex gap-1">
-              <button
-                onClick={() => openEditModal(tag)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                title="Edit"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDeleteTag(tag)}
-                className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded text-red-500"
-                title="Delete"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <div className="text-gray-600 dark:text-gray-400">
-              {tag.usageCount} bookmark{tag.usageCount !== 1 ? "s" : ""}
-            </div>
-            {tag.usageCount > 0 && (
-              <button
-                onClick={() => handleViewBookmarks(tag.id)}
-                className="text-blue-500 hover:text-blue-600 flex items-center gap-1"
-              >
-                <Eye className="w-3 h-3" />
-                View
-              </button>
-            )}
-          </div>
-        </div>
-      </Card>
+      <TagCard
+        tag={tag}
+        onEdit={openEditModal}
+        onDelete={handleDeleteTag}
+        onViewBookmarks={handleViewBookmarks}
+      />
     ),
-    [openEditModal],
+    [openEditModal, handleDeleteTag, handleViewBookmarks],
   )
 
   const hasActiveFilters = Object.values(filters).some(

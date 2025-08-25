@@ -1,6 +1,7 @@
 import { Cookie, Edit3, Package, Plus, Trash2 } from "lucide-react"
 import React, { useCallback, useMemo } from "react"
 import type { Container } from "../../shared/types/container"
+import { ActionIcon } from "../shared/components/ActionIcon"
 import { ColorDot } from "../shared/components/ColorDot"
 import { containerColorToCss } from "../shared/components/ColorSelector"
 import { ContainerCard } from "../shared/components/ContainerCard"
@@ -255,36 +256,36 @@ export function ContainersPage() {
         header: "Actions",
         render: (container: Container) => (
           <div className="flex items-center gap-2">
-            <button
+            <ActionIcon
+              icon={Edit3}
               onClick={(e) => {
                 e.stopPropagation()
                 openEditContainerModal(container)
               }}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded transition-colors"
+              actionType="edit"
+              context="table"
               title="Edit container"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
-            <button
+            />
+            <ActionIcon
+              icon={Cookie}
               onClick={(e) => {
                 e.stopPropagation()
                 handleClearCookies(container)
               }}
-              className="p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded transition-colors"
+              actionType="clear"
+              context="table"
               title="Clear cookies"
-            >
-              <Cookie className="w-4 h-4" />
-            </button>
-            <button
+            />
+            <ActionIcon
+              icon={Trash2}
               onClick={(e) => {
                 e.stopPropagation()
                 handleDeleteContainer(container)
               }}
-              className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded transition-colors"
+              actionType="delete"
+              context="table"
               title="Delete container"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            />
           </div>
         ),
         width: "w-40",

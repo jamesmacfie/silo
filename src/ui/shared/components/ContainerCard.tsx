@@ -1,4 +1,6 @@
+import { Cookie, Edit3, Trash2 } from "lucide-react"
 import { colorToCss, iconToEmoji } from "@/shared/utils/containerHelpers"
+import { ActionIcon } from "@/ui/shared/components/ActionIcon"
 import {
   Card,
   CardActions,
@@ -47,29 +49,29 @@ export function ContainerCard({
       <div className="row">
         <div />
         <CardActions>
-          <button
-            className="btn ghost sm"
-            type="button"
+          <ActionIcon
+            icon={Edit3}
             onClick={() => onEdit(container)}
-          >
-            Edit
-          </button>
+            actionType="edit"
+            context="card"
+            title="Edit container"
+          />
           {onClearCookies && (
-            <button
-              className="btn ghost sm"
-              type="button"
+            <ActionIcon
+              icon={Cookie}
               onClick={() => onClearCookies(container)}
-            >
-              Clear Cookies
-            </button>
+              actionType="clear"
+              context="card"
+              title="Clear cookies"
+            />
           )}
-          <button
-            className="btn danger sm"
-            type="button"
+          <ActionIcon
+            icon={Trash2}
             onClick={() => onDelete(container)}
-          >
-            Delete
-          </button>
+            actionType="delete"
+            context="card"
+            title="Delete container"
+          />
         </CardActions>
       </div>
     </Card>

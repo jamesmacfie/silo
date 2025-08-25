@@ -1,16 +1,14 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import "@/ui/options/index.css"
-import type { CSVImportResult } from "@/shared/utils/csv"
 import { BookmarksPage } from "@/ui/options/BookmarksPage"
 import { ContainersPage } from "@/ui/options/ContainersPage"
 import { Dashboard } from "@/ui/options/Dashboard"
+import { ImportExportPage } from "@/ui/options/ImportExportPage"
 import { RulesPage } from "@/ui/options/RulesPage"
 import { TagsPage } from "@/ui/options/TagsPage"
-import { CSVImportExport } from "@/ui/shared/components/CSVImportExport"
 import { InterceptorTest } from "@/ui/shared/components/InterceptorTest"
 import { PageHeader } from "@/ui/shared/components/PageHeader"
-import { StatusBar } from "@/ui/shared/components/StatusBar"
 import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
 import { useAppInitialization, useStoreEffects } from "@/ui/shared/stores"
 
@@ -58,36 +56,6 @@ function Sidebar(props: {
 
 function Content(props: { children: React.ReactNode }): JSX.Element {
   return <main className="content">{props.children}</main>
-}
-function ImportExportPage(): JSX.Element {
-  const [status, setStatus] = React.useState("")
-
-  const handleImportComplete = React.useCallback((result: CSVImportResult) => {
-    const { rules, errors, warnings } = result
-    let message = `Imported ${rules.length} rules`
-    if (warnings.length > 0) message += ` with ${warnings.length} warnings`
-    if (errors.length > 0) message += ` and ${errors.length} errors`
-    setStatus(message)
-
-    // Clear status after 5 seconds
-    setTimeout(() => setStatus(""), 5000)
-  }, [])
-
-  const handleError = React.useCallback((error: string) => {
-    setStatus(`Error: ${error}`)
-    setTimeout(() => setStatus(""), 5000)
-  }, [])
-
-  return (
-    <div className="page">
-      <PageHeader title="Import/Export" />
-      {status && <StatusBar message={status} />}
-      <CSVImportExport
-        onImportComplete={handleImportComplete}
-        onError={handleError}
-      />
-    </div>
-  )
 }
 
 function SettingsPage(): JSX.Element {

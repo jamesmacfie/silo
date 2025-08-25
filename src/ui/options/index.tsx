@@ -1,40 +1,18 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import "@/ui/options/index.css"
-import type { Rule } from "@/shared/types"
 import type { CSVImportResult } from "@/shared/utils/csv"
-import { getDuplicateCount } from "@/shared/utils/duplicateRules"
 import { BookmarksPage } from "@/ui/options/BookmarksPage"
-import { ContainerModal } from "@/ui/options/ContainerModal"
 import { ContainersPage } from "@/ui/options/ContainersPage"
 import { Dashboard } from "@/ui/options/Dashboard"
-import { RuleModal } from "@/ui/options/RuleModal"
 import { RulesPage } from "@/ui/options/RulesPage"
 import { TagsPage } from "@/ui/options/TagsPage"
-import {
-  ContainerCard,
-  type ContainerLite,
-} from "@/ui/shared/components/ContainerCard"
 import { CSVImportExport } from "@/ui/shared/components/CSVImportExport"
-import { DuplicateRuleManager } from "@/ui/shared/components/DuplicateRuleManager"
 import { InterceptorTest } from "@/ui/shared/components/InterceptorTest"
 import { PageHeader } from "@/ui/shared/components/PageHeader"
-import { RuleCard } from "@/ui/shared/components/RuleCard"
-import { SearchInput } from "@/ui/shared/components/SearchInput"
 import { StatusBar } from "@/ui/shared/components/StatusBar"
 import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
-import {
-  useAppInitialization,
-  useContainerActions,
-  useContainerError,
-  useContainerLoading,
-  useContainers,
-  useRuleActions,
-  useRuleError,
-  useRuleLoading,
-  useRules,
-  useStoreEffects,
-} from "@/ui/shared/stores"
+import { useAppInitialization, useStoreEffects } from "@/ui/shared/stores"
 
 function PageShell(props: { children: React.ReactNode }): JSX.Element {
   return <div className="app">{props.children}</div>

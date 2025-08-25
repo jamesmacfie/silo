@@ -9,15 +9,7 @@ import {
   useSensors,
 } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import {
-  CheckSquare,
-  Edit3,
-  ExternalLink,
-  Folder,
-  FolderOpen,
-  Square,
-  Trash2,
-} from "lucide-react"
+import { Folder, Plus } from "lucide-react"
 import React from "react"
 import type { Bookmark } from "@/shared/types"
 import { BookmarkModal } from "../../../options/BookmarkModal"
@@ -43,6 +35,7 @@ export function BookmarkTreeView({
 }: BookmarkTreeViewProps): JSX.Element {
   const bookmarksTree = useBookmarkStore((state) => state.bookmarks)
   const expandedFolders = useBookmarkStore((state) => state.expandedFolders)
+  const newlyCreatedItems = useBookmarkStore((state) => state.newlyCreatedItems)
   const selectedBookmarks = useSelectedBookmarks()
   const selectedFolders = useSelectedFolders()
   const containers = useContainers()
@@ -69,6 +62,24 @@ export function BookmarkTreeView({
     new Map(),
   )
 
+  // Refs for scroll-to-view functionality
+  const itemRefs = React.useRef<Map<string, HTMLElement>>(new Map())
+
+  // Scroll to newly created items
+  React.useEffect(() => {
+    if (newlyCreatedItems.size > 0) {
+      // Scroll to the first newly created item
+      const firstNewItemId = Array.from(newlyCreatedItems)[0]
+      const element = itemRefs.current.get(firstNewItemId)
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }
+    }
+  }, [newlyCreatedItems])
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -79,8 +90,9 @@ export function BookmarkTreeView({
 
   const [modalState, setModalState] = React.useState<{
     isOpen: boolean
-    mode: "edit" | "delete"
+    mode: "create-bookmark" | "create-folder" | "edit" | "delete"
     bookmark?: Bookmark
+    parentId?: string
   }>({
     isOpen: false,
     mode: "edit",
@@ -99,6 +111,22 @@ export function BookmarkTreeView({
       isOpen: true,
       mode: "delete",
       bookmark,
+    })
+  }
+
+  const handleCreateBookmark = (parentId?: string) => {
+    setModalState({
+      isOpen: true,
+      mode: "create-bookmark",
+      parentId,
+    })
+  }
+
+  const handleCreateFolder = (parentId?: string) => {
+    setModalState({
+      isOpen: true,
+      mode: "create-folder",
+      parentId,
     })
   }
 
@@ -267,6 +295,7 @@ export function BookmarkTreeView({
     const isSelected = selectedBookmarks.has(bookmark.id)
     const isFolderSelected = selectedFolders.has(bookmark.id)
     const isExpanded = expandedFolders.has(bookmark.id)
+    const isHighlighted = newlyCreatedItems.has(bookmark.id)
 
     // Get container and tag information for bookmarks
     const container = bookmark.containerId
@@ -274,6 +303,15 @@ export function BookmarkTreeView({
       : null
     const ruleMatch = ruleMatches.get(bookmark.id)
     const suggestedContainer = ruleMatch ? getContainer(ruleMatch) : null
+
+    // Callback to store element ref for scrolling
+    const setItemRef = (element: HTMLElement | null) => {
+      if (element) {
+        itemRefs.current.set(bookmark.id, element)
+      } else {
+        itemRefs.current.delete(bookmark.id)
+      }
+    }
 
     if (bookmark.type === "folder") {
       return (
@@ -287,11 +325,15 @@ export function BookmarkTreeView({
           isDropTarget={
             dropTarget?.id === bookmark.id && dropTarget?.type === "folder"
           }
+          isHighlighted={isHighlighted}
+          setItemRef={setItemRef}
           onToggleFolder={toggleFolder}
           onSelectBookmark={selectBookmark}
           onToggleFolderSelection={toggleFolderSelection}
           onEditBookmark={handleEditBookmark}
           onDeleteBookmark={handleDeleteBookmark}
+          onCreateBookmark={handleCreateBookmark}
+          onCreateFolder={handleCreateFolder}
         >
           {/* Folder Contents */}
           {isExpanded && bookmark.children && (
@@ -322,6 +364,8 @@ export function BookmarkTreeView({
           isDropTarget={
             dropTarget?.id === bookmark.id && dropTarget?.type === "folder"
           }
+          isHighlighted={isHighlighted}
+          setItemRef={setItemRef}
           container={container}
           suggestedContainer={suggestedContainer}
           tags={tags}
@@ -330,6 +374,8 @@ export function BookmarkTreeView({
           onToggleFolderSelection={toggleFolderSelection}
           onEditBookmark={handleEditBookmark}
           onDeleteBookmark={handleDeleteBookmark}
+          onCreateBookmark={handleCreateBookmark}
+          onCreateFolder={handleCreateFolder}
         />
       )
     }
@@ -400,6 +446,27 @@ export function BookmarkTreeView({
             </div>
           </div>
         )}
+
+        {/* Subtle creation buttons at top */}
+        <div className="absolute top-4 right-4 flex gap-2 z-30">
+          <button
+            onClick={() => handleCreateBookmark()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-colors shadow-sm"
+            title="Create new bookmark"
+          >
+            <Plus className="w-3 h-3" />
+            Bookmark
+          </button>
+          <button
+            onClick={() => handleCreateFolder()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-colors shadow-sm"
+            title="Create new folder"
+          >
+            <Folder className="w-3 h-3" />
+            Folder
+          </button>
+        </div>
+
         <div className="space-y-1">
           <SortableContext
             items={renderableBookmarks.map((bookmark) => bookmark.id)}
@@ -454,6 +521,7 @@ export function BookmarkTreeView({
         mode={modalState.mode}
         bookmark={modalState.bookmark}
         containers={containers}
+        parentId={modalState.parentId}
         onClose={handleCloseModal}
         onSuccess={handleModalSuccess}
       />

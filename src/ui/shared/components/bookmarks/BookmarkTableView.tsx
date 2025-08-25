@@ -18,6 +18,8 @@ import {
   useSelectedBookmarks,
 } from "../../stores/bookmarkStore"
 import { Card } from "../Card"
+import { ContainerBadge } from "../ContainerBadge"
+import { TagBadge } from "../TagBadge"
 
 interface BookmarkTableViewProps {
   className?: string
@@ -270,14 +272,7 @@ export function BookmarkTableView({
                   <td className="py-3 px-4">
                     <div className="flex flex-col gap-1">
                       {container ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-medium text-blue-700 dark:text-blue-300">
-                            {container.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">
-                            {container.name}
-                          </span>
-                        </div>
+                        <ContainerBadge container={container} size="xs" />
                       ) : suggestedContainer ? (
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-amber-500" />
@@ -305,18 +300,7 @@ export function BookmarkTableView({
                         {bookmark.tags.slice(0, 3).map((tagId) => {
                           const tag = getTag(tagId)
                           if (!tag) return null
-                          return (
-                            <span
-                              key={tagId}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                            >
-                              <div
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: tag.color }}
-                              />
-                              {tag.name}
-                            </span>
-                          )
+                          return <TagBadge key={tagId} tag={tag} size="xs" />
                         })}
                         {bookmark.tags.length > 3 && (
                           <span className="text-xs text-gray-400 dark:text-gray-500">

@@ -1,14 +1,8 @@
-import {
-  Bookmark as BookmarkIcon,
-  Edit3,
-  Eye,
-  Plus,
-  Tag,
-  Trash2,
-} from "lucide-react"
+import { Edit3, Eye, Plus, Tag, Trash2 } from "lucide-react"
 import React, { useCallback, useMemo } from "react"
 import type { BookmarkTag } from "../../shared/types"
 import { Card } from "../shared/components/Card"
+import { ColorDot } from "../shared/components/ColorDot"
 import { ColorSelector, TAG_COLORS } from "../shared/components/ColorSelector"
 import {
   Button,
@@ -29,6 +23,7 @@ import {
   useBookmarkTags,
   useFilteredBookmarks,
 } from "../shared/stores/bookmarkStore"
+import { BookmarksModal } from "./BookmarksModal"
 import { TagModal } from "./TagModal"
 
 interface TagWithUsage extends BookmarkTag {
@@ -54,8 +49,6 @@ export function TagsPage() {
     deleteTag,
     loadBookmarks,
     loadTags,
-    setFilters,
-    clearFilters,
   } = useBookmarkActions()
 
   // Use persistent UI state
@@ -78,9 +71,8 @@ export function TagsPage() {
   const [showColorPicker, setShowColorPicker] = React.useState<string | null>(
     null,
   )
-  const [viewingBookmarks, setViewingBookmarks] = React.useState<string | null>(
-    null,
-  )
+  const [bookmarksModalTag, setBookmarksModalTag] =
+    React.useState<BookmarkTag | null>(null)
   const [modalState, setModalState] = React.useState<{
     isOpen: boolean
     mode: "create" | "edit"
@@ -216,9 +208,10 @@ export function TagsPage() {
   }
 
   const handleViewBookmarks = (tagId: string) => {
-    clearFilters()
-    setFilters({ tags: [tagId] })
-    setViewingBookmarks(tagId)
+    const tag = tags.find((t) => t.id === tagId)
+    if (tag) {
+      setBookmarksModalTag(tag)
+    }
   }
 
   const openCreateModal = useCallback(() => {
@@ -256,10 +249,11 @@ export function TagsPage() {
                   e.stopPropagation()
                   setShowColorPicker(showColorPicker === tag.id ? null : tag.id)
                 }}
-                className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:scale-110 transition-transform"
-                style={{ backgroundColor: tag.color }}
+                className="hover:scale-110 transition-transform"
                 title="Change color"
-              />
+              >
+                <ColorDot color={tag.color} size="sm" />
+              </button>
               {showColorPicker === tag.id && (
                 <>
                   <div
@@ -301,7 +295,6 @@ export function TagsPage() {
                 title="View bookmarks with this tag"
               >
                 <Eye className="w-3 h-3" />
-                View
               </button>
             )}
           </div>
@@ -490,36 +483,11 @@ export function TagsPage() {
         {(searchQuery || hasActiveFilters) && " (filtered)"}
       </StatusBar>
 
-      {/* Viewing Bookmarks Section */}
-      {viewingBookmarks && (
-        <Card className="mt-4">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <BookmarkIcon className="w-5 h-5" />
-                Bookmarks with "
-                {tags.find((t) => t.id === viewingBookmarks)?.name}"
-              </h3>
-              <button
-                onClick={() => {
-                  setViewingBookmarks(null)
-                  clearFilters()
-                }}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {
-                allBookmarks.filter((b) => b.tags?.includes(viewingBookmarks!))
-                  .length
-              }{" "}
-              bookmarks
-            </div>
-          </div>
-        </Card>
-      )}
+      <BookmarksModal
+        isOpen={!!bookmarksModalTag}
+        tag={bookmarksModalTag}
+        onClose={() => setBookmarksModalTag(null)}
+      />
 
       <TagModal
         isOpen={modalState.isOpen}

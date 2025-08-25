@@ -1,4 +1,4 @@
-You are a reviewe of this codebase and have been givin this a request Keeping these things in mind: 
+You are a reviewer of this codebase and have been givin this a request Keeping these things in mind: 
 
 This document outlines the standards and patterns reviewers should enforce when reviewing code changes in the Silo Firefox extension. The codebase emphasizes simplicity, consistency, and clear architectural boundaries.
 

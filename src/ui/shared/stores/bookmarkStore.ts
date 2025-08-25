@@ -26,6 +26,7 @@ interface BookmarkState {
   searchQuery: string
   filters: BookmarkSearchFilters
   sortOptions: BookmarkSortOptions
+  newlyCreatedItems: Set<string> // Track newly created items for highlighting
 
   // Loading states
   loading: {
@@ -51,6 +52,17 @@ interface BookmarkState {
     deleteTag: (id: string) => Promise<void>
 
     // Bookmark operations
+    createBookmark: (options: {
+      title: string
+      url: string
+      parentId?: string
+      containerId?: string
+      tags?: string[]
+    }) => Promise<void>
+    createFolder: (options: {
+      title: string
+      parentId?: string
+    }) => Promise<void>
     updateBookmark: (
       bookmarkId: string,
       updates: { title?: string; url?: string },
@@ -87,6 +99,8 @@ interface BookmarkState {
     // View management
     setView: (view: "table" | "tree") => void
     toggleFolder: (folderId: string) => void
+    highlightNewItem: (itemId: string) => void
+    clearHighlights: () => void
     expandAllFolders: () => void
     collapseAllFolders: () => void
 
@@ -197,6 +211,7 @@ export const useBookmarkStore = create<BookmarkState>()(
     searchQuery: "",
     filters: {},
     sortOptions: { field: "title", order: "asc" },
+    newlyCreatedItems: new Set(),
     loading: {
       bookmarks: false,
       tags: false,
@@ -335,6 +350,84 @@ export const useBookmarkStore = create<BookmarkState>()(
 
           // Refresh bookmarks to update tag associations
           await get().actions.loadBookmarks()
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        }
+      },
+
+      createBookmark: async (options) => {
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.CREATE_BOOKMARK,
+            payload: options,
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to create bookmark")
+          }
+
+          const createdBookmark = response.data
+
+          // If no parent specified, ensure "Other Bookmarks" folder is expanded
+          if (!options.parentId) {
+            set((state) => {
+              const newExpanded = new Set(state.expandedFolders)
+              newExpanded.add("unfiled_____") // "Other Bookmarks" folder
+              return { expandedFolders: newExpanded }
+            })
+          }
+
+          // Refresh bookmarks to get updated data with new bookmark
+          await get().actions.loadBookmarks()
+
+          // Highlight the new item
+          if (createdBookmark?.id) {
+            get().actions.highlightNewItem(createdBookmark.id)
+          }
+
+          return createdBookmark
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+          throw error
+        }
+      },
+
+      createFolder: async (options) => {
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.CREATE_BOOKMARK_FOLDER,
+            payload: options,
+          })
+
+          if (!response?.success) {
+            throw new Error(response?.error || "Failed to create folder")
+          }
+
+          const createdFolder = response.data
+
+          // If no parent specified, ensure "Other Bookmarks" folder is expanded
+          if (!options.parentId) {
+            set((state) => {
+              const newExpanded = new Set(state.expandedFolders)
+              newExpanded.add("unfiled_____") // "Other Bookmarks" folder
+              return { expandedFolders: newExpanded }
+            })
+          }
+
+          // Refresh bookmarks to get updated data with new folder
+          await get().actions.loadBookmarks()
+
+          // Highlight the new item
+          if (createdFolder?.id) {
+            get().actions.highlightNewItem(createdFolder.id)
+          }
+
+          return createdFolder
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : "Unknown error",
@@ -707,6 +800,27 @@ export const useBookmarkStore = create<BookmarkState>()(
           }
           return { expandedFolders: newExpanded }
         })
+      },
+
+      highlightNewItem: (itemId) => {
+        set((state) => {
+          const newHighlights = new Set(state.newlyCreatedItems)
+          newHighlights.add(itemId)
+          return { newlyCreatedItems: newHighlights }
+        })
+
+        // Clear highlight after 3 seconds
+        setTimeout(() => {
+          set((state) => {
+            const newHighlights = new Set(state.newlyCreatedItems)
+            newHighlights.delete(itemId)
+            return { newlyCreatedItems: newHighlights }
+          })
+        }, 3000)
+      },
+
+      clearHighlights: () => {
+        set({ newlyCreatedItems: new Set() })
       },
 
       expandAllFolders: () => {

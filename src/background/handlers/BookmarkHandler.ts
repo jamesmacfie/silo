@@ -24,6 +24,7 @@ export class BookmarkHandler implements MessageHandler {
 
     // Modern bookmark operations
     MESSAGE_TYPES.GET_BOOKMARKS,
+    MESSAGE_TYPES.CREATE_BOOKMARK,
     MESSAGE_TYPES.UPDATE_BOOKMARK,
     MESSAGE_TYPES.UPDATE_BOOKMARK_NATIVE,
     MESSAGE_TYPES.DELETE_BOOKMARK_NATIVE,
@@ -44,6 +45,7 @@ export class BookmarkHandler implements MessageHandler {
     MESSAGE_TYPES.BULK_OPEN_IN_CONTAINER,
 
     // Bookmark folders
+    MESSAGE_TYPES.CREATE_BOOKMARK_FOLDER,
     MESSAGE_TYPES.DELETE_BOOKMARK_FOLDERS,
 
     // Bookmark reordering
@@ -75,6 +77,8 @@ export class BookmarkHandler implements MessageHandler {
       // Modern bookmark operations
       case MESSAGE_TYPES.GET_BOOKMARKS:
         return this.getBookmarks()
+      case MESSAGE_TYPES.CREATE_BOOKMARK:
+        return this.createBookmark(message)
       case MESSAGE_TYPES.UPDATE_BOOKMARK:
         return this.updateBookmark(message)
       case MESSAGE_TYPES.UPDATE_BOOKMARK_NATIVE:
@@ -109,6 +113,8 @@ export class BookmarkHandler implements MessageHandler {
         return this.bulkOpenInContainer(message)
 
       // Bookmark folders
+      case MESSAGE_TYPES.CREATE_BOOKMARK_FOLDER:
+        return this.createBookmarkFolder(message)
       case MESSAGE_TYPES.DELETE_BOOKMARK_FOLDERS:
         return this.deleteBookmarkFolders(message)
 
@@ -777,6 +783,85 @@ export class BookmarkHandler implements MessageHandler {
           error instanceof Error
             ? error.message
             : "Failed to migrate bookmarks",
+      }
+    }
+  }
+
+  // Bookmark creation
+  private async createBookmark(message: Message): Promise<MessageResponse> {
+    try {
+      const { title, url, parentId, containerId, tags } = message.payload as {
+        title: string
+        url: string
+        parentId?: string
+        containerId?: string
+        tags?: string[]
+      }
+
+      if (!title || !url) {
+        return { success: false, error: "Title and URL are required" }
+      }
+
+      const bookmark = await bookmarkService.createBookmark({
+        title: title.trim(),
+        url: url.trim(),
+        parentId,
+        containerId,
+        tags: tags || [],
+      })
+
+      this.log.info("Bookmark created", {
+        bookmarkId: bookmark.id,
+        title: bookmark.title,
+        parentId,
+        containerId,
+        tagCount: tags?.length || 0,
+      })
+
+      return { success: true, data: bookmark }
+    } catch (error) {
+      this.log.error("Failed to create bookmark", error)
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to create bookmark",
+      }
+    }
+  }
+
+  private async createBookmarkFolder(
+    message: Message,
+  ): Promise<MessageResponse> {
+    try {
+      const { title, parentId } = message.payload as {
+        title: string
+        parentId?: string
+      }
+
+      if (!title) {
+        return { success: false, error: "Title is required" }
+      }
+
+      const folder = await bookmarkService.createFolder({
+        title: title.trim(),
+        parentId,
+      })
+
+      this.log.info("Bookmark folder created", {
+        folderId: folder.id,
+        title: folder.title,
+        parentId,
+      })
+
+      return { success: true, data: folder }
+    } catch (error) {
+      this.log.error("Failed to create bookmark folder", error)
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create bookmark folder",
       }
     }
   }

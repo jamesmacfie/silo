@@ -1,6 +1,7 @@
 import { Cookie, Edit3, Package, Plus, Trash2 } from "lucide-react"
 import React, { useCallback, useMemo } from "react"
 import type { Container } from "../../shared/types/container"
+import { ColorDot } from "../shared/components/ColorDot"
 import { containerColorToCss } from "../shared/components/ColorSelector"
 import { ContainerCard } from "../shared/components/ContainerCard"
 import { ContainerFilters } from "../shared/components/ContainerFilters"
@@ -214,10 +215,7 @@ export function ContainersPage() {
         header: "Container",
         render: (container: Container) => (
           <div className="flex items-center gap-3">
-            <div
-              className="w-4 h-4 rounded-full"
-              style={{ backgroundColor: containerColorToCss(container.color) }}
-            />
+            <ColorDot color={containerColorToCss(container.color)} size="sm" />
             <div>
               <div className="font-medium">{container.name}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">

@@ -1,5 +1,9 @@
 import React from "react"
-import type { Bookmark, BookmarkTag } from "@/shared/types"
+import type { Bookmark } from "@/shared/types"
+import {
+  getContainerColors,
+  iconToEmoji,
+} from "@/shared/utils/containerHelpers"
 import {
   Modal,
   ModalError,
@@ -24,9 +28,10 @@ interface Container {
 
 interface Props {
   isOpen: boolean
-  mode: "edit" | "delete"
+  mode: "create-bookmark" | "create-folder" | "edit" | "delete"
   bookmark?: Bookmark
   containers: Container[]
+  parentId?: string // For creating new bookmarks/folders in specific location
   onClose: () => void
   onSuccess: () => void
 }
@@ -36,11 +41,18 @@ export function BookmarkModal({
   mode,
   bookmark,
   containers,
+  parentId,
   onClose,
   onSuccess,
 }: Props): JSX.Element {
-  const { updateBookmark, deleteBookmark, updateBookmarkMetadata } =
-    useBookmarkActions()
+  const {
+    createBookmark,
+    createFolder,
+    updateBookmark,
+    deleteBookmark,
+    updateBookmarkMetadata,
+    checkRuleMatch,
+  } = useBookmarkActions()
   const tags = useBookmarkTags()
 
   const [title, setTitle] = React.useState("")
@@ -49,16 +61,52 @@ export function BookmarkModal({
   const [selectedTags, setSelectedTags] = React.useState<string[]>([])
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [suggestedContainer, setSuggestedContainer] =
+    React.useState<Container | null>(null)
+
+  // Helper function to validate URL
+  const isValidUrl = React.useCallback((string: string) => {
+    try {
+      new URL(string)
+      return true
+    } catch {
+      return false
+    }
+  }, [])
 
   React.useEffect(() => {
-    if (isOpen && bookmark) {
-      setTitle(bookmark.title || "")
-      setUrl(bookmark.url || "")
-      setContainerId(bookmark.containerId || "")
-      setSelectedTags(bookmark.tags || [])
+    if (isOpen) {
+      if (bookmark && (mode === "edit" || mode === "delete")) {
+        // Editing existing bookmark
+        setTitle(bookmark.title || "")
+        setUrl(bookmark.url || "")
+        setContainerId(bookmark.containerId || "")
+        setSelectedTags(bookmark.tags || [])
+      } else if (mode === "create-bookmark" || mode === "create-folder") {
+        // Creating new bookmark/folder
+        setTitle("")
+        setUrl("")
+        setContainerId("")
+        setSelectedTags([])
+        setSuggestedContainer(null)
+
+        // For new bookmarks, try to get URL from clipboard
+        if (mode === "create-bookmark") {
+          navigator.clipboard
+            .readText()
+            .then((clipboardText) => {
+              if (clipboardText && isValidUrl(clipboardText)) {
+                setUrl(clipboardText)
+              }
+            })
+            .catch(() => {
+              // Clipboard access failed, ignore
+            })
+        }
+      }
       setError(null)
     }
-  }, [isOpen, bookmark])
+  }, [isOpen, bookmark, mode, isValidUrl])
 
   const handleSave = React.useCallback(async () => {
     if (!title.trim()) {
@@ -66,7 +114,7 @@ export function BookmarkModal({
       return
     }
 
-    if (!url.trim()) {
+    if ((mode === "create-bookmark" || mode === "edit") && !url.trim()) {
       setError("URL is required")
       return
     }
@@ -75,8 +123,23 @@ export function BookmarkModal({
     setError(null)
 
     try {
-      if (bookmark) {
-        // Update the bookmark in Firefox
+      if (mode === "create-bookmark") {
+        // Create new bookmark
+        await createBookmark({
+          title: title.trim(),
+          url: url.trim(),
+          parentId,
+          containerId: containerId || undefined,
+          tags: selectedTags,
+        })
+      } else if (mode === "create-folder") {
+        // Create new folder
+        await createFolder({
+          title: title.trim(),
+          parentId,
+        })
+      } else if (mode === "edit" && bookmark) {
+        // Update existing bookmark
         await updateBookmark(bookmark.id, {
           title: title.trim(),
           url: url.trim(),
@@ -102,7 +165,11 @@ export function BookmarkModal({
     url,
     containerId,
     selectedTags,
+    mode,
     bookmark,
+    parentId,
+    createBookmark,
+    createFolder,
     updateBookmark,
     updateBookmarkMetadata,
     onSuccess,
@@ -153,7 +220,7 @@ export function BookmarkModal({
     }
   }
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value
     setUrl(newUrl)
 
@@ -166,6 +233,26 @@ export function BookmarkModal({
       }
     } catch {
       // Invalid URL, ignore
+    }
+
+    // Check for rule-based container suggestions
+    if (isValidUrl(newUrl)) {
+      try {
+        const matchedContainerId = await checkRuleMatch(newUrl)
+        if (matchedContainerId) {
+          const matchedContainer = containers.find(
+            (c) => c.cookieStoreId === matchedContainerId,
+          )
+          setSuggestedContainer(matchedContainer || null)
+        } else {
+          setSuggestedContainer(null)
+        }
+      } catch {
+        // Rule matching failed, ignore
+        setSuggestedContainer(null)
+      }
+    } else {
+      setSuggestedContainer(null)
     }
   }
 
@@ -221,6 +308,26 @@ export function BookmarkModal({
     )
   }
 
+  const getButtonText = () => {
+    if (saving) return "Saving..."
+    if (mode === "create-bookmark") return "Create Bookmark"
+    if (mode === "create-folder") return "Create Folder"
+    return "Save Bookmark"
+  }
+
+  const getTitle = () => {
+    if (mode === "create-bookmark") return "Create New Bookmark"
+    if (mode === "create-folder") return "Create New Folder"
+    return "Edit Bookmark"
+  }
+
+  const isFormValid = () => {
+    if (!title.trim()) return false
+    if ((mode === "create-bookmark" || mode === "edit") && !url.trim())
+      return false
+    return true
+  }
+
   const footer = (
     <>
       <button
@@ -235,9 +342,9 @@ export function BookmarkModal({
         type="button"
         className="btn"
         onClick={handleSave}
-        disabled={saving || !title.trim() || !url.trim()}
+        disabled={saving || !isFormValid()}
       >
-        {saving ? "Saving..." : "Save Bookmark"}
+        {getButtonText()}
       </button>
     </>
   )
@@ -246,7 +353,7 @@ export function BookmarkModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Bookmark"
+      title={getTitle()}
       footer={footer}
       size="large"
     >
@@ -255,94 +362,151 @@ export function BookmarkModal({
 
         <ModalFormRow>
           <ModalLabel htmlFor="title" required>
-            Title
+            {mode === "create-folder" ? "Folder Name" : "Title"}
           </ModalLabel>
           <ModalInput
             id="title"
             type="text"
-            placeholder="Bookmark title"
+            placeholder={
+              mode === "create-folder" ? "Folder name" : "Bookmark title"
+            }
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             error={!title.trim() && title.length > 0}
           />
         </ModalFormRow>
 
-        <ModalFormRow>
-          <ModalLabel htmlFor="url" required>
-            URL
-          </ModalLabel>
-          <ModalInput
-            id="url"
-            type="text"
-            placeholder="https://example.com"
-            value={url}
-            onChange={handleUrlChange}
-            error={!url.trim() && url.length > 0}
-          />
-          <ModalInfo>
-            Add ?silo=container-id to the URL to automatically open in a
-            specific container
-          </ModalInfo>
-        </ModalFormRow>
+        {mode !== "create-folder" && (
+          <ModalFormRow>
+            <ModalLabel htmlFor="url" required>
+              URL
+            </ModalLabel>
+            <ModalInput
+              id="url"
+              type="text"
+              placeholder="https://example.com"
+              value={url}
+              onChange={handleUrlChange}
+              error={!url.trim() && url.length > 0}
+            />
+            <ModalInfo>
+              Add ?silo=container-id to the URL to automatically open in a
+              specific container
+            </ModalInfo>
 
-        <ModalFormRow>
-          <ModalLabel htmlFor="container">Container</ModalLabel>
-          <ModalSelect
-            id="container"
-            value={containerId}
-            onChange={handleContainerChange}
-          >
-            <option value="">No container (default)</option>
-            {containers.map((container) => (
-              <option
-                key={container.cookieStoreId}
-                value={container.cookieStoreId}
-              >
-                {container.name}
-              </option>
-            ))}
-          </ModalSelect>
-          <ModalInfo>
-            When you open this bookmark, it will automatically open in the
-            selected container
-          </ModalInfo>
-        </ModalFormRow>
-
-        <ModalFormRow>
-          <ModalLabel>Tags</ModalLabel>
-          <div className="space-y-2">
-            {tags.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                No tags available. Create tags to organize your bookmarks.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <label
-                    key={tag.id}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            {/* Suggested Container */}
+            {suggestedContainer && !containerId && (
+              <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex items-center justify-center w-6 h-6 rounded text-sm"
+                    style={{
+                      backgroundColor: getContainerColors(
+                        suggestedContainer.color,
+                      ).bg,
+                      borderColor: getContainerColors(suggestedContainer.color)
+                        .border,
+                      color: getContainerColors(suggestedContainer.color).text,
+                      border: "1px solid",
+                    }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedTags.includes(tag.id)}
-                      onChange={() => handleTagToggle(tag.id)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: tag.color }}
-                      />
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {tag.name}
-                      </span>
-                    </div>
-                  </label>
-                ))}
+                    {iconToEmoji(suggestedContainer.icon)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Suggested container: {suggestedContainer.name}
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-300">
+                      Based on your rules, this URL matches the "
+                      {suggestedContainer.name}" container
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContainerId(suggestedContainer.cookieStoreId)
+                      setSuggestedContainer(null)
+                    }}
+                    className="px-3 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+                  >
+                    Use This
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSuggestedContainer(null)}
+                    className="p-1 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+                    title="Dismiss suggestion"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             )}
-          </div>
-        </ModalFormRow>
+          </ModalFormRow>
+        )}
+
+        {mode !== "create-folder" && (
+          <>
+            <ModalFormRow>
+              <ModalLabel htmlFor="container">Container</ModalLabel>
+              <ModalSelect
+                id="container"
+                value={containerId}
+                onChange={handleContainerChange}
+              >
+                <option value="">No container (default)</option>
+                {containers.map((container) => (
+                  <option
+                    key={container.cookieStoreId}
+                    value={container.cookieStoreId}
+                  >
+                    {container.name}
+                  </option>
+                ))}
+              </ModalSelect>
+              <ModalInfo>
+                When you open this bookmark, it will automatically open in the
+                selected container
+              </ModalInfo>
+            </ModalFormRow>
+
+            <ModalFormRow>
+              <ModalLabel>Tags</ModalLabel>
+              <div className="space-y-2">
+                {tags.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No tags available. Create tags to organize your bookmarks.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <label
+                        key={tag.id}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedTags.includes(tag.id)}
+                          onChange={() => handleTagToggle(tag.id)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {tag.name}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ModalFormRow>
+          </>
+        )}
       </div>
     </Modal>
   )

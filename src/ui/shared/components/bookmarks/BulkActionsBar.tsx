@@ -22,7 +22,6 @@ interface BulkActionsBarProps {
 }
 
 export function BulkActionsBar({
-  selectedCount,
   containers,
   className = "",
 }: BulkActionsBarProps): JSX.Element {

@@ -453,6 +453,112 @@ export class BookmarkService {
     }
   }
 
+  // Bookmark creation operations
+  async createBookmark(options: {
+    title: string
+    url: string
+    parentId?: string
+    containerId?: string
+    tags?: string[]
+  }): Promise<Bookmark> {
+    try {
+      const { title, url, parentId, containerId, tags = [] } = options
+
+      // Create the bookmark in Firefox
+      const firefoxBookmark = await browser.bookmarks.create({
+        title,
+        url,
+        parentId: parentId || "unfiled_____", // Default to other bookmarks
+      })
+
+      // Create our metadata if container or tags are specified
+      if (containerId || tags.length > 0) {
+        const metadata: BookmarkMetadata = {
+          bookmarkId: firefoxBookmark.id,
+          containerId,
+          tags,
+          autoOpen: false,
+          metadata: {},
+          created: Date.now(),
+          modified: Date.now(),
+        }
+
+        await this.tags.setBookmarkMetadata(firefoxBookmark.id, metadata)
+      }
+
+      this.log.info("Created bookmark", {
+        bookmarkId: firefoxBookmark.id,
+        title,
+        parentId,
+        containerId,
+        tagCount: tags.length,
+      })
+
+      // Convert to our bookmark format
+      const bookmark: Bookmark = {
+        id: firefoxBookmark.id,
+        title: firefoxBookmark.title,
+        url: firefoxBookmark.url,
+        parentId: firefoxBookmark.parentId,
+        index: firefoxBookmark.index || 0,
+        dateAdded: firefoxBookmark.dateAdded,
+        type: "bookmark",
+        containerId,
+        tags,
+        autoOpen: false,
+      }
+
+      return bookmark
+    } catch (error) {
+      this.log.error("Failed to create bookmark", { options, error })
+      throw new Error(
+        `Failed to create bookmark: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  async createFolder(options: {
+    title: string
+    parentId?: string
+  }): Promise<Bookmark> {
+    try {
+      const { title, parentId } = options
+
+      // Create the folder in Firefox
+      const firefoxFolder = await browser.bookmarks.create({
+        title,
+        parentId: parentId || "unfiled_____", // Default to other bookmarks
+      })
+
+      this.log.info("Created bookmark folder", {
+        folderId: firefoxFolder.id,
+        title,
+        parentId,
+      })
+
+      // Convert to our bookmark format
+      const folder: Bookmark = {
+        id: firefoxFolder.id,
+        title: firefoxFolder.title,
+        parentId: firefoxFolder.parentId,
+        index: firefoxFolder.index || 0,
+        dateAdded: firefoxFolder.dateAdded,
+        type: "folder",
+        containerId: undefined,
+        tags: [],
+        autoOpen: false,
+        children: [],
+      }
+
+      return folder
+    } catch (error) {
+      this.log.error("Failed to create folder", { options, error })
+      throw new Error(
+        `Failed to create folder: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
   // Migration from legacy bookmark associations
   async migrateLegacyBookmarks(): Promise<void> {
     try {

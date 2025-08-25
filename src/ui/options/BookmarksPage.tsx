@@ -1,5 +1,5 @@
-import { Bookmark } from "lucide-react"
-import { useEffect, useMemo } from "react"
+import { Bookmark, Plus } from "lucide-react"
+import React, { useEffect, useMemo } from "react"
 import { BookmarkFilters } from "../shared/components/bookmarks/BookmarkFilters"
 import { BookmarkSearchBar } from "../shared/components/bookmarks/BookmarkSearchBar"
 import { BookmarkTableView } from "../shared/components/bookmarks/BookmarkTableView"
@@ -7,6 +7,7 @@ import { BookmarkTreeView } from "../shared/components/bookmarks/BookmarkTreeVie
 import { BulkActionsBar } from "../shared/components/bookmarks/BulkActionsBar"
 import { Card } from "../shared/components/Card"
 import {
+  Button,
   EmptyState,
   PageHeader,
   PageLayout,
@@ -25,6 +26,7 @@ import {
   useSelectedBookmarks,
   useSelectedFolders,
 } from "../shared/stores/bookmarkStore"
+import { BookmarkModal } from "./BookmarkModal"
 
 const PAGE_DESCRIPTION =
   "Manage your bookmarks with tags, containers, and advanced search. Organize bookmarks across different containers and apply tags for easy categorization."
@@ -44,6 +46,15 @@ export function BookmarksPage() {
   // Use persistent UI state
   const pageState = useBookmarksPageState()
   const { showFilters, toggleFilters, updateViewMode, viewMode } = pageState
+
+  // Modal state
+  const [modalState, setModalState] = React.useState<{
+    isOpen: boolean
+    mode: "create-bookmark" | "create-folder" | "edit" | "delete"
+  }>({
+    isOpen: false,
+    mode: "create-bookmark",
+  })
 
   // Initialize data on mount
   useEffect(() => {
@@ -74,9 +85,34 @@ export function BookmarksPage() {
   const isLoading = loading.bookmarks || loading.tags
   const isEmpty = !isLoading && !error && filteredBookmarks.length === 0
 
+  // Modal handlers
+  const handleCreateBookmark = () => {
+    setModalState({
+      isOpen: true,
+      mode: "create-bookmark",
+    })
+  }
+
+  const handleCloseModal = () => {
+    setModalState((prev) => ({ ...prev, isOpen: false }))
+  }
+
+  const handleModalSuccess = () => {
+    loadBookmarks()
+  }
+
   return (
     <PageLayout>
-      <PageHeader title="Bookmarks" description={PAGE_DESCRIPTION} />
+      <PageHeader
+        title="Bookmarks"
+        description={PAGE_DESCRIPTION}
+        actions={
+          <Button onClick={handleCreateBookmark}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Bookmark
+          </Button>
+        }
+      />
 
       {/* Error Message */}
       {error && (
@@ -174,6 +210,14 @@ export function BookmarksPage() {
               ? "Try adjusting your search or filters"
               : "Your bookmarks will appear here once you start adding them"
           }
+          action={
+            !hasActiveFilters && (
+              <Button onClick={handleCreateBookmark}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Bookmark
+              </Button>
+            )
+          }
           hasSearch={!!hasActiveFilters}
           searchQuery={searchState.query}
         />
@@ -201,6 +245,14 @@ export function BookmarksPage() {
           min-height: 400px;
         }
       `}</style>
+
+      <BookmarkModal
+        isOpen={modalState.isOpen}
+        mode={modalState.mode}
+        containers={containers}
+        onClose={handleCloseModal}
+        onSuccess={handleModalSuccess}
+      />
     </PageLayout>
   )
 }

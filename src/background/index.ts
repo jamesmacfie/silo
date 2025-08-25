@@ -6,7 +6,7 @@ import { BackupHandler } from "./handlers/BackupHandler"
 import { BookmarkHandler } from "./handlers/BookmarkHandler"
 import { CategoryHandler } from "./handlers/CategoryHandler"
 import { ContainerHandler } from "./handlers/ContainerHandler"
-import { CSVHandler } from "./handlers/CSVHandler"
+import { ImportExportHandler } from "./handlers/ImportExportHandler"
 import { PreferenceHandler } from "./handlers/PreferenceHandler"
 import { RuleHandler } from "./handlers/RuleHandler"
 import { StatsHandler } from "./handlers/StatsHandler"
@@ -41,7 +41,7 @@ function registerHandlers(): void {
   router.register(new StatsHandler()) // Statistics
   router.register(new BookmarkHandler()) // Bookmark operations (largest)
   router.register(new BackupHandler()) // Backup/restore
-  router.register(new CSVHandler()) // CSV import/export
+  router.register(new ImportExportHandler()) // JSON import/export
   router.register(new TemplateHandler()) // Container templates
   router.register(new CategoryHandler()) // Categories
   router.register(new SyncHandler()) // Sync operations (not implemented)

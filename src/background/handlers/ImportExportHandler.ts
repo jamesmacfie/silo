@@ -1,6 +1,4 @@
 import { MESSAGE_TYPES, STORAGE_KEYS } from "@/shared/constants"
-import type { CSVExportOptions } from "@/shared/utils/csv"
-import { exportToCSV, generateCSVTemplate, parseCSV } from "@/shared/utils/csv"
 import { logger } from "@/shared/utils/logger"
 import type { Message, MessageResponse } from "@/shared/utils/messaging"
 import type { MessageHandler } from "../MessageRouter"
@@ -9,15 +7,15 @@ import rulesEngine from "../services/RulesEngine"
 import storageService from "../services/StorageService"
 
 /**
- * Handles CSV import/export operations
+ * Handles JSON import/export operations for all data types
  */
-export class CSVHandler implements MessageHandler {
-  private log = logger.withContext("CSVHandler")
+export class ImportExportHandler implements MessageHandler {
+  private log = logger.withContext("ImportExportHandler")
 
   private readonly handledTypes = [
-    MESSAGE_TYPES.EXPORT_CSV,
-    MESSAGE_TYPES.IMPORT_CSV,
-    MESSAGE_TYPES.GENERATE_CSV_TEMPLATE,
+    MESSAGE_TYPES.EXPORT_RULES,
+    MESSAGE_TYPES.IMPORT_RULES,
+    MESSAGE_TYPES.GENERATE_TEMPLATE,
     MESSAGE_TYPES.EXPORT_CONTAINERS,
     MESSAGE_TYPES.IMPORT_CONTAINERS,
     MESSAGE_TYPES.EXPORT_TAGS,
@@ -36,14 +34,14 @@ export class CSVHandler implements MessageHandler {
 
   async handle(message: Message): Promise<MessageResponse> {
     switch (message.type) {
-      case MESSAGE_TYPES.EXPORT_CSV:
-        return this.exportCSV(message)
+      case MESSAGE_TYPES.EXPORT_RULES:
+        return this.exportRules(message)
 
-      case MESSAGE_TYPES.IMPORT_CSV:
-        return this.importCSV(message)
+      case MESSAGE_TYPES.IMPORT_RULES:
+        return this.importRules(message)
 
-      case MESSAGE_TYPES.GENERATE_CSV_TEMPLATE:
-        return this.generateCSVTemplate()
+      case MESSAGE_TYPES.GENERATE_TEMPLATE:
+        return this.generateTemplate(message)
 
       case MESSAGE_TYPES.EXPORT_CONTAINERS:
         return this.exportContainers(message)
@@ -72,140 +70,213 @@ export class CSVHandler implements MessageHandler {
       default:
         return {
           success: false,
-          error: `CSVHandler cannot handle message type: ${message.type}`,
+          error: `ImportExportHandler cannot handle message type: ${message.type}`,
         }
     }
   }
 
   /**
-   * Export rules and containers to CSV format
+   * Export rules to JSON format
    */
-  private async exportCSV(message: Message): Promise<MessageResponse> {
+  private async exportRules(message: Message): Promise<MessageResponse> {
     try {
       const { options } = (message.payload || {}) as {
-        options?: CSVExportOptions
+        options?: { includeDisabled?: boolean; includeMetadata?: boolean }
       }
 
-      const rules = await storageService.getRules()
-      const containers = await storageService.getContainers()
+      let rules = await storageService.getRules()
 
-      const csv = exportToCSV(rules, containers, options)
+      // Filter based on options
+      if (options?.includeDisabled === false) {
+        rules = rules.filter((rule) => rule.enabled)
+      }
 
-      this.log.info("CSV export completed", {
+      // Optionally strip metadata
+      if (options?.includeMetadata === false) {
+        rules = rules.map((rule) => {
+          const { metadata, ...ruleWithoutMetadata } = rule
+          return ruleWithoutMetadata as any
+        })
+      }
+
+      this.log.info("Rules export completed", {
         rulesCount: rules.length,
-        containersCount: containers.length,
-        csvLength: csv.length,
       })
 
-      return { success: true, data: { csv } }
+      return { success: true, data: rules }
     } catch (error) {
-      this.log.error("Failed to export CSV", error)
+      this.log.error("Failed to export rules", error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to export CSV",
+        error:
+          error instanceof Error ? error.message : "Failed to export rules",
       }
     }
   }
 
   /**
-   * Import rules from CSV format
+   * Import rules from JSON format
    */
-  private async importCSV(message: Message): Promise<MessageResponse> {
+  private async importRules(message: Message): Promise<MessageResponse> {
     try {
-      const { csvContent, createMissingContainers } = (message.payload ||
-        {}) as {
-        csvContent: string
+      const {
+        data: rulesData,
+        preview,
+        createMissingContainers,
+      } = (message.payload || {}) as {
+        data: any[]
+        preview?: boolean
         createMissingContainers?: boolean
       }
 
-      if (!csvContent || typeof csvContent !== "string") {
-        return { success: false, error: "CSV content is required" }
+      if (!rulesData || !Array.isArray(rulesData)) {
+        return {
+          success: false,
+          error: "Rules data is required and must be an array",
+        }
       }
 
-      const containers = await storageService.getContainers()
-      const result = parseCSV(csvContent, containers)
+      if (preview) {
+        // Just validate and return preview info
+        const errors: Array<{ message: string; data?: string }> = []
+        const warnings: Array<{ message: string; data?: string }> = []
 
-      // Create missing containers if requested
-      if (createMissingContainers && result.missingContainers.length > 0) {
-        this.log.info("Creating missing containers", {
-          containers: result.missingContainers,
-        })
-
-        for (const containerName of result.missingContainers) {
-          try {
-            const created = await containerManager.create({
-              name: containerName,
-            })
-
-            // Update rules to use the new container
-            result.rules
-              .filter((r) => r.ruleType !== "exclude")
-              .forEach((r) => {
-                if (!r.containerId) {
-                  r.containerId = created.cookieStoreId
-                }
-              })
-
-            this.log.debug("Created missing container", {
-              name: containerName,
-              cookieStoreId: created.cookieStoreId,
-            })
-          } catch (error) {
-            this.log.warn("Failed to create missing container", {
-              containerName,
-              error,
+        // Basic validation
+        rulesData.forEach((rule, index) => {
+          if (!rule.pattern) {
+            errors.push({
+              message: `Rule ${index + 1}: Pattern is required`,
+              data: JSON.stringify(rule),
             })
           }
+          if (!rule.matchType) {
+            warnings.push({
+              message: `Rule ${index + 1}: Match type not specified, defaulting to domain`,
+              data: JSON.stringify(rule),
+            })
+          }
+        })
+
+        return {
+          success: true,
+          data: {
+            rules: rulesData,
+            errors,
+            warnings,
+            missingContainers: [],
+          },
         }
       }
 
-      // Import valid rules
+      // Import rules
       let importedCount = 0
-      for (const rule of result.rules) {
+      const errors: Array<{ message: string; data?: string }> = []
+
+      for (const ruleData of rulesData) {
         try {
-          await rulesEngine.addRule(rule)
+          await rulesEngine.addRule(ruleData)
           importedCount++
         } catch (error) {
-          this.log.warn("Failed to import rule", { rule, error })
+          this.log.warn("Failed to import rule", { ruleData, error })
+          errors.push({
+            message: `Failed to import rule: ${ruleData.pattern || "Unknown"}`,
+            data: JSON.stringify(ruleData),
+          })
         }
       }
 
-      this.log.info("CSV import completed", {
-        totalRules: result.rules.length,
+      this.log.info("Rules import completed", {
+        totalRules: rulesData.length,
         importedRules: importedCount,
-        errors: result.errors.length,
-        missingContainers: result.missingContainers.length,
-        createdContainers: createMissingContainers
-          ? result.missingContainers.length
-          : 0,
+        errors: errors.length,
       })
 
-      return { success: true, data: result }
+      return {
+        success: true,
+        data: {
+          rules: rulesData,
+          importedCount,
+          errors,
+        },
+      }
     } catch (error) {
-      this.log.error("Failed to import CSV", error)
+      this.log.error("Failed to import rules", error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to import CSV",
+        error:
+          error instanceof Error ? error.message : "Failed to import rules",
       }
     }
   }
 
   /**
-   * Generate a CSV template for import
+   * Generate a JSON template for import
    */
-  private async generateCSVTemplate(): Promise<MessageResponse> {
+  private async generateTemplate(message: Message): Promise<MessageResponse> {
     try {
-      const template = generateCSVTemplate()
-      this.log.debug("CSV template generated")
+      const { type } = (message.payload || {}) as { type: string }
+
+      let template: any
+
+      switch (type) {
+        case "IMPORT_RULES":
+          template = [
+            {
+              pattern: "example.com",
+              matchType: "domain",
+              ruleType: "include",
+              containerId: "firefox-container-1",
+              priority: 1,
+              enabled: true,
+              metadata: {
+                description: "Example rule for example.com",
+                source: "user",
+              },
+            },
+          ]
+          break
+
+        case "IMPORT_CONTAINERS":
+          template = [
+            {
+              name: "Work",
+              icon: "briefcase",
+              color: "blue",
+              temporary: false,
+              metadata: {
+                description: "Container for work-related browsing",
+              },
+            },
+          ]
+          break
+
+        case "IMPORT_TAGS":
+          template = [
+            {
+              name: "Important",
+              color: "#ff0000",
+              metadata: {
+                description: "Tag for important bookmarks",
+              },
+            },
+          ]
+          break
+
+        default:
+          template = {}
+          break
+      }
+
+      this.log.debug("Template generated", { type })
       return { success: true, data: { template } }
     } catch (error) {
-      this.log.error("Failed to generate CSV template", error)
+      this.log.error("Failed to generate template", error)
       return {
         success: false,
         error:
           error instanceof Error
             ? error.message
-            : "Failed to generate CSV template",
+            : "Failed to generate template",
       }
     }
   }

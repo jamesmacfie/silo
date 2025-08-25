@@ -1,7 +1,7 @@
 import React from "react"
 import browser from "webextension-polyfill"
 import { MESSAGE_TYPES } from "@/shared/constants"
-import type { CSVImportResult } from "@/shared/utils/csv"
+// Remove CSV import since we're using JSON now
 import { Button } from "@/ui/shared/components/layout/Button"
 import { PageHeader } from "@/ui/shared/components/PageHeader"
 import { StatusBar } from "@/ui/shared/components/StatusBar"
@@ -21,9 +21,9 @@ const SECTIONS: ImportExportSection[] = [
     title: "Rules",
     description:
       "Import/export container routing rules with patterns and priorities",
-    exportType: "EXPORT_CSV",
-    importType: "IMPORT_CSV",
-    fileExtension: "csv",
+    exportType: "EXPORT_RULES",
+    importType: "IMPORT_RULES",
+    fileExtension: "json",
     supportsTemplateDownload: true,
     supportsFormatOptions: true,
   },
@@ -109,19 +109,13 @@ function ImportExportSectionComponent({
       if (response?.success) {
         const data = response.data
         const content =
-          section.exportType === "EXPORT_CSV"
-            ? data.csv
-            : section.fileExtension === "html"
-              ? data.html
-              : JSON.stringify(data, null, 2)
+          section.fileExtension === "html"
+            ? data.html
+            : JSON.stringify(data, null, 2)
 
         // Create and trigger download
         const mimeType =
-          section.fileExtension === "html"
-            ? "text/html"
-            : section.fileExtension === "csv"
-              ? "text/csv"
-              : "application/json"
+          section.fileExtension === "html" ? "text/html" : "application/json"
 
         const blob = new Blob([content], { type: mimeType })
         const url = URL.createObjectURL(blob)
@@ -148,13 +142,14 @@ function ImportExportSectionComponent({
 
     try {
       const response = await browser.runtime.sendMessage({
-        type: MESSAGE_TYPES.GENERATE_CSV_TEMPLATE,
+        type: MESSAGE_TYPES.GENERATE_TEMPLATE,
+        payload: { type: section.importType },
       })
 
       if (response?.success) {
-        const template = response.data.template
+        const template = JSON.stringify(response.data.template, null, 2)
 
-        const blob = new Blob([template], { type: "text/csv" })
+        const blob = new Blob([template], { type: "application/json" })
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
@@ -179,18 +174,12 @@ function ImportExportSectionComponent({
       try {
         const response = await browser.runtime.sendMessage({
           type: MESSAGE_TYPES[section.importType as keyof typeof MESSAGE_TYPES],
-          payload:
-            section.fileExtension === "csv"
-              ? {
-                  csvContent: content,
-                  preview: true,
-                  createMissingContainers: false,
-                }
-              : {
-                  data: JSON.parse(content),
-                  preview: true,
-                  createMissingContainers: false,
-                },
+          payload: {
+            data:
+              section.fileExtension === "html" ? content : JSON.parse(content),
+            preview: true,
+            createMissingContainers: false,
+          },
         })
 
         if (response?.success) {
@@ -231,16 +220,13 @@ function ImportExportSectionComponent({
     try {
       const response = await browser.runtime.sendMessage({
         type: MESSAGE_TYPES[section.importType as keyof typeof MESSAGE_TYPES],
-        payload:
-          section.fileExtension === "csv"
-            ? {
-                csvContent: fileContent,
-                createMissingContainers: createMissing,
-              }
-            : {
-                data: JSON.parse(fileContent),
-                createMissingContainers: createMissing,
-              },
+        payload: {
+          data:
+            section.fileExtension === "html"
+              ? fileContent
+              : JSON.parse(fileContent),
+          createMissingContainers: createMissing,
+        },
       })
 
       if (response?.success) {
@@ -473,7 +459,7 @@ function ImportExportSectionComponent({
 }
 
 interface ImportExportPageProps {
-  onImportComplete?: (result: CSVImportResult) => void
+  onImportComplete?: (result: any) => void
   onError?: (error: string) => void
 }
 

@@ -2,7 +2,6 @@ import { Edit3, Eye, Plus, Tag, Trash2 } from "lucide-react"
 import React, { useCallback, useMemo } from "react"
 import type { BookmarkTag } from "../../shared/types"
 import { ActionIcon } from "../shared/components/ActionIcon"
-import { Card } from "../shared/components/Card"
 import { ColorDot } from "../shared/components/ColorDot"
 import { ColorSelector, TAG_COLORS } from "../shared/components/ColorSelector"
 import {
@@ -194,27 +193,33 @@ export function TagsPage() {
     }
   }
 
-  const handleDeleteTag = async (tag: TagWithUsage) => {
-    const message =
-      tag.usageCount > 0
-        ? `Delete tag "${tag.name}"? This will remove the tag from ${tag.usageCount} bookmark${tag.usageCount === 1 ? "" : "s"}.`
-        : `Delete tag "${tag.name}"?`
+  const handleDeleteTag = useCallback(
+    async (tag: TagWithUsage) => {
+      const message =
+        tag.usageCount > 0
+          ? `Delete tag "${tag.name}"? This will remove the tag from ${tag.usageCount} bookmark${tag.usageCount === 1 ? "" : "s"}.`
+          : `Delete tag "${tag.name}"?`
 
-    if (!confirm(message)) return
+      if (!confirm(message)) return
 
-    try {
-      await deleteTag(tag.id)
-    } catch (error) {
-      console.error("Failed to delete tag:", error)
-    }
-  }
+      try {
+        await deleteTag(tag.id)
+      } catch (error) {
+        console.error("Failed to delete tag:", error)
+      }
+    },
+    [deleteTag],
+  )
 
-  const handleViewBookmarks = (tagId: string) => {
-    const tag = tags.find((t) => t.id === tagId)
-    if (tag) {
-      setBookmarksModalTag(tag)
-    }
-  }
+  const handleViewBookmarks = useCallback(
+    (tagId: string) => {
+      const tag = tags.find((t) => t.id === tagId)
+      if (tag) {
+        setBookmarksModalTag(tag)
+      }
+    },
+    [tags],
+  )
 
   const openCreateModal = useCallback(() => {
     setModalState({ isOpen: true, mode: "create" })

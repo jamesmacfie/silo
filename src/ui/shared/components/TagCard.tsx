@@ -1,5 +1,4 @@
 import { Edit3, Eye, Trash2 } from "lucide-react"
-import React from "react"
 import type { BookmarkTag } from "../../../shared/types"
 import { ActionIcon } from "./ActionIcon"
 import { Card } from "./Card"

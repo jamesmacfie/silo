@@ -94,7 +94,7 @@ export class ImportExportHandler implements MessageHandler {
       // Optionally strip metadata
       if (options?.includeMetadata === false) {
         rules = rules.map((rule) => {
-          const { metadata, ...ruleWithoutMetadata } = rule
+          const { metadata: _metadata, ...ruleWithoutMetadata } = rule
           return ruleWithoutMetadata as any
         })
       }
@@ -119,11 +119,7 @@ export class ImportExportHandler implements MessageHandler {
    */
   private async importRules(message: Message): Promise<MessageResponse> {
     try {
-      const {
-        data: rulesData,
-        preview,
-        createMissingContainers,
-      } = (message.payload || {}) as {
+      const { data: rulesData, preview } = (message.payload || {}) as {
         data: any[]
         preview?: boolean
         createMissingContainers?: boolean
@@ -284,7 +280,7 @@ export class ImportExportHandler implements MessageHandler {
   /**
    * Export containers to JSON format
    */
-  private async exportContainers(message: Message): Promise<MessageResponse> {
+  private async exportContainers(_message: Message): Promise<MessageResponse> {
     try {
       const containers = await storageService.getContainers()
 
@@ -380,7 +376,7 @@ export class ImportExportHandler implements MessageHandler {
   /**
    * Export bookmark tags to JSON format
    */
-  private async exportTags(message: Message): Promise<MessageResponse> {
+  private async exportTags(_message: Message): Promise<MessageResponse> {
     try {
       const tags = ((await storageService.get(STORAGE_KEYS.BOOKMARK_TAGS)) ||
         []) as any[]
@@ -455,7 +451,7 @@ export class ImportExportHandler implements MessageHandler {
    * Export bookmarks in Silo format with full metadata
    */
   private async exportBookmarksSilo(
-    message: Message,
+    _message: Message,
   ): Promise<MessageResponse> {
     try {
       // This would require integration with BookmarkService to get full bookmark data
@@ -479,7 +475,7 @@ export class ImportExportHandler implements MessageHandler {
    * Import bookmarks in Silo format
    */
   private async importBookmarksSilo(
-    message: Message,
+    _message: Message,
   ): Promise<MessageResponse> {
     try {
       return {
@@ -501,7 +497,7 @@ export class ImportExportHandler implements MessageHandler {
    * Export bookmarks in cross-browser standard format (HTML)
    */
   private async exportBookmarksStandard(
-    message: Message,
+    _message: Message,
   ): Promise<MessageResponse> {
     try {
       return {
@@ -523,7 +519,7 @@ export class ImportExportHandler implements MessageHandler {
    * Import bookmarks from cross-browser standard format
    */
   private async importBookmarksStandard(
-    message: Message,
+    _message: Message,
   ): Promise<MessageResponse> {
     try {
       return {

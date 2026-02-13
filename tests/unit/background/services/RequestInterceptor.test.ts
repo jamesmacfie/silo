@@ -418,6 +418,34 @@ describe("RequestInterceptor", () => {
         "touch",
       )
     })
+
+    it("attributes EXCLUDE match stats to the source container", async () => {
+      const evaluation: EvaluationResult = {
+        action: "open",
+        rule: {
+          id: "rule-exclude",
+          ruleType: RuleType.EXCLUDE,
+        } as any,
+      }
+
+      const tabInContainer = {
+        ...mockTab,
+        cookieStoreId: "firefox-container-2",
+      }
+      ;(browser.tabs.get as jest.Mock).mockResolvedValue(tabInContainer)
+      mockRulesEngine.evaluate = jest.fn().mockResolvedValue(evaluation)
+
+      await (requestInterceptor as any).handleRequest(mockWebRequestDetails)
+
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith(
+        "firefox-container-2",
+        "match",
+      )
+      expect(mockStorageService.recordStat).toHaveBeenCalledWith(
+        "firefox-container-2",
+        "touch",
+      )
+    })
   })
 
   describe("handleRedirect", () => {

@@ -6,6 +6,7 @@ import type {
   BookmarkMetadata,
   FolderMetadata,
 } from "@/shared/types"
+import { flattenBookmarkTree } from "@/shared/utils/bookmarkTree"
 import { logger } from "@/shared/utils/logger"
 import rulesEngine from "./RulesEngine"
 import storageService from "./StorageService"
@@ -138,21 +139,7 @@ export class BookmarkService {
   // Flatten bookmarks for table view
   async getFlatBookmarkList(): Promise<Bookmark[]> {
     const bookmarkTree = await this.getBookmarks()
-    const flat: Bookmark[] = []
-
-    const flatten = (bookmarks: Bookmark[]) => {
-      for (const bookmark of bookmarks) {
-        if (bookmark.type === "bookmark" && bookmark.url) {
-          flat.push(bookmark)
-        }
-        if (bookmark.children) {
-          flatten(bookmark.children)
-        }
-      }
-    }
-
-    flatten(bookmarkTree)
-    return flat
+    return flattenBookmarkTree(bookmarkTree)
   }
 
   // Bookmark metadata operations

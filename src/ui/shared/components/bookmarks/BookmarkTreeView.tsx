@@ -12,6 +12,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Folder, Plus } from "lucide-react"
 import React from "react"
 import type { Bookmark } from "@/shared/types"
+import { flattenBookmarkTree } from "@/shared/utils/bookmarkTree"
 import { BookmarkModal } from "../../../options/BookmarkModal"
 import { useContainers } from "../../stores"
 import {
@@ -147,23 +148,9 @@ export function BookmarkTreeView({
 
   // Check rule matches for bookmarks without containers
   React.useEffect(() => {
-    // Get all bookmarks from tree for rule matching
-    const getAllBookmarks = (bookmarks: Bookmark[]): Bookmark[] => {
-      const allBookmarks: Bookmark[] = []
-      for (const bookmark of bookmarks) {
-        if (bookmark.type === "bookmark") {
-          allBookmarks.push(bookmark)
-        }
-        if (bookmark.children) {
-          allBookmarks.push(...getAllBookmarks(bookmark.children))
-        }
-      }
-      return allBookmarks
-    }
-
     const checkRules = async () => {
       const matches = new Map<string, string>()
-      const allBookmarks = getAllBookmarks(bookmarksTree)
+      const allBookmarks = flattenBookmarkTree(bookmarksTree)
 
       for (const bookmark of allBookmarks) {
         if (bookmark.url && !bookmark.containerId) {

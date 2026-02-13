@@ -12,6 +12,12 @@ import type {
   BookmarkTag,
   BookmarkTagCapabilities,
 } from "@/shared/types"
+import {
+  flattenBookmarkTree,
+  getBookmarkIdsInFolder,
+  getBookmarkIdsInFolders,
+  getFolderIds,
+} from "@/shared/utils/bookmarkTree"
 
 interface BookmarkState {
   // Data
@@ -136,24 +142,6 @@ const createSearchIndex = (bookmarks: Bookmark[]) => {
   })
 }
 
-const flattenBookmarks = (bookmarks: Bookmark[]): Bookmark[] => {
-  const flat: Bookmark[] = []
-
-  const flatten = (items: Bookmark[]) => {
-    for (const item of items) {
-      if (item.type === "bookmark" && item.url) {
-        flat.push(item)
-      }
-      if (item.children) {
-        flatten(item.children)
-      }
-    }
-  }
-
-  flatten(bookmarks)
-  return flat
-}
-
 const sortBookmarks = (
   bookmarks: Bookmark[],
   sortOptions: BookmarkSortOptions,
@@ -242,7 +230,7 @@ export const useBookmarkStore = create<BookmarkState>()(
           }
 
           const bookmarks = response.data || []
-          const flat = flattenBookmarks(bookmarks)
+          const flat = flattenBookmarkTree(bookmarks)
           const searchIndex = createSearchIndex(flat)
 
           set((state) => ({
@@ -614,39 +602,8 @@ export const useBookmarkStore = create<BookmarkState>()(
       },
 
       selectFolder: (folderId, multi = false) => {
-        // Find all bookmarks in this folder and select them
-        const findFolderBookmarks = (
-          bookmarks: Bookmark[],
-          targetId: string,
-        ): string[] => {
-          const ids: string[] = []
-
-          for (const bookmark of bookmarks) {
-            if (bookmark.id === targetId && bookmark.children) {
-              // Found the folder, collect all bookmark IDs in it
-              const collectIds = (items: Bookmark[]) => {
-                for (const item of items) {
-                  if (item.type === "bookmark") {
-                    ids.push(item.id)
-                  }
-                  if (item.children) {
-                    collectIds(item.children)
-                  }
-                }
-              }
-              collectIds(bookmark.children)
-              break
-            }
-            if (bookmark.children) {
-              ids.push(...findFolderBookmarks(bookmark.children, targetId))
-            }
-          }
-
-          return ids
-        }
-
         set((state) => {
-          const folderBookmarkIds = findFolderBookmarks(
+          const folderBookmarkIds = getBookmarkIdsInFolder(
             state.bookmarks,
             folderId,
           )
@@ -678,46 +635,9 @@ export const useBookmarkStore = create<BookmarkState>()(
         set((state) => ({ loading: { ...state.loading, bulkOperation: true } }))
 
         try {
-          // Collect bookmarks from selected folders
-          const collectBookmarksFromFolders = (
-            bookmarks: Bookmark[],
-            folderIds: string[],
-          ): string[] => {
-            const bookmarkIds: string[] = []
-
-            const findInTree = (items: Bookmark[]) => {
-              for (const item of items) {
-                if (
-                  item.type === "folder" &&
-                  folderIds.includes(item.id) &&
-                  item.children
-                ) {
-                  // Collect all bookmarks in this folder
-                  const collectIds = (children: Bookmark[]) => {
-                    for (const child of children) {
-                      if (child.type === "bookmark") {
-                        bookmarkIds.push(child.id)
-                      }
-                      if (child.children) {
-                        collectIds(child.children)
-                      }
-                    }
-                  }
-                  collectIds(item.children)
-                }
-                if (item.children) {
-                  findInTree(item.children)
-                }
-              }
-            }
-
-            findInTree(bookmarks)
-            return bookmarkIds
-          }
-
           const state = get()
           const selectedFolderIds = Array.from(state.selectedFolders)
-          const folderBookmarkIds = collectBookmarksFromFolders(
+          const folderBookmarkIds = getBookmarkIdsInFolders(
             state.bookmarks,
             selectedFolderIds,
           )
@@ -850,21 +770,8 @@ export const useBookmarkStore = create<BookmarkState>()(
       },
 
       expandAllFolders: () => {
-        const getAllFolderIds = (bookmarks: Bookmark[]): string[] => {
-          const ids: string[] = []
-          for (const bookmark of bookmarks) {
-            if (bookmark.type === "folder") {
-              ids.push(bookmark.id)
-            }
-            if (bookmark.children) {
-              ids.push(...getAllFolderIds(bookmark.children))
-            }
-          }
-          return ids
-        }
-
         set((state) => ({
-          expandedFolders: new Set(getAllFolderIds(state.bookmarks)),
+          expandedFolders: new Set(getFolderIds(state.bookmarks)),
         }))
       },
 

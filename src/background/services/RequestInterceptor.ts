@@ -6,6 +6,22 @@ import containerManager from "./ContainerManager"
 import rulesEngine from "./RulesEngine"
 import storageService from "./StorageService"
 
+const DEFAULT_CONTAINER_ID = "firefox-default"
+const ORIGINAL_TAB_CLOSE_DELAY_MS = 100
+const TEMP_CONTAINER_CLEANUP_DELAY_MS = 1000
+const IGNORED_URLS_REGEX =
+  /^(about|moz-extension|file|javascript|data|chrome|chrome-extension):/
+
+type StatEvent = "open" | "match" | "close" | "touch"
+
+interface OpenActionContext {
+  cleanUrl: string
+  tabId: number
+  currentContainerId?: string
+  evaluation: EvaluationResult
+  bookmarkContainerId?: string | null
+}
+
 export class RequestInterceptor {
   private rulesEngine = rulesEngine
   private containerManager = containerManager
@@ -27,7 +43,7 @@ export class RequestInterceptor {
     try {
       let webRequestRegistered = false
 
-      // Try to register webRequest listener if available
+      // Register network interception when available; tab listeners are fallback.
       if (browser.webRequest?.onBeforeRequest) {
         try {
           browser.webRequest.onBeforeRequest.addListener(
@@ -42,10 +58,9 @@ export class RequestInterceptor {
             webRequestError,
           )
         }
-      } else {
       }
 
-      // Always register tab listeners as fallback
+      // Always register tab listeners.
       browser.tabs.onUpdated.addListener(this.onTabUpdatedListener)
       browser.tabs.onCreated.addListener(this.onTabCreatedListener)
       browser.tabs.onRemoved.addListener(this.onTabRemovedListener)
@@ -110,23 +125,21 @@ export class RequestInterceptor {
     }
 
     try {
-      // Get current tab info
-      const tab = await browser.tabs.get(tabId)
-      const currentContainer = tab?.cookieStoreId
+      const currentTab = await browser.tabs.get(tabId)
+      const currentContainerId = currentTab?.cookieStoreId
 
-      // Check for bookmark container hint in URL and clean it
-      const processed = await bookmarkIntegration.processBookmarkUrl(url)
-      const urlToEvaluate = processed.cleanUrl
+      const bookmarkHintResult =
+        await bookmarkIntegration.processBookmarkUrl(url)
+      const cleanUrl = bookmarkHintResult.cleanUrl
 
-      // Evaluate URL against rules
       const evaluation = await this.rulesEngine.evaluate(
-        urlToEvaluate,
-        currentContainer,
+        cleanUrl,
+        currentContainerId,
       )
 
       this.log.debug("Request evaluation", {
-        url: urlToEvaluate,
-        currentContainer,
+        url: cleanUrl,
+        currentContainerId,
         evaluation,
       })
 
@@ -136,7 +149,7 @@ export class RequestInterceptor {
             return {}
           }
           return await this.handleRedirect(
-            urlToEvaluate,
+            cleanUrl,
             tabId,
             evaluation.containerId,
             evaluation,
@@ -144,56 +157,49 @@ export class RequestInterceptor {
 
         case "exclude":
           return await this.handleExclude(
-            urlToEvaluate,
+            cleanUrl,
             tabId,
             evaluation,
-            currentContainer,
+            currentContainerId,
           )
 
         case "block":
-          return await this.handleBlock(urlToEvaluate, tabId, evaluation)
+          return await this.handleBlock(cleanUrl, tabId, evaluation)
         default:
-          // If silo param specified, open in that container even if rules say open
-          if (
-            processed.containerId &&
-            processed.containerId !== currentContainer
-          ) {
-            return await this.handleRedirect(
-              urlToEvaluate,
-              tabId,
-              processed.containerId,
-              {
-                action: "redirect",
-                containerId: processed.containerId,
-                reason: "Bookmark silo param",
-              },
-            )
-          }
-          // Count matches even when no redirect is needed (already in correct container or no-op include)
-          try {
-            if (evaluation.rule) {
-              const containerForMatch =
-                evaluation.rule.ruleType === "exclude"
-                  ? currentContainer && currentContainer !== "firefox-default"
-                    ? currentContainer
-                    : undefined
-                  : evaluation.rule.containerId
-              if (containerForMatch) {
-                await this.storage.recordStat(containerForMatch, "match")
-              }
-            }
-            if (currentContainer && currentContainer !== "firefox-default") {
-              await this.storage.recordStat(currentContainer, "touch")
-            }
-          } catch {
-            /* ignore stats errors */
-          }
-          return {}
+          return await this.handleOpenAction({
+            cleanUrl,
+            tabId,
+            currentContainerId,
+            evaluation,
+            bookmarkContainerId: bookmarkHintResult.containerId,
+          })
       }
     } catch (error) {
       this.log.error("Error handling request", { url, tabId, error })
       return {} // Allow request to proceed on error
     }
+  }
+
+  private async handleOpenAction({
+    cleanUrl,
+    tabId,
+    currentContainerId,
+    evaluation,
+    bookmarkContainerId,
+  }: OpenActionContext): Promise<browser.WebRequest.BlockingResponse> {
+    // Explicit `?silo=` hints win over passive "open" results.
+    if (
+      this.hasBookmarkContainerOverride(bookmarkContainerId, currentContainerId)
+    ) {
+      return await this.handleRedirect(cleanUrl, tabId, bookmarkContainerId, {
+        action: "redirect",
+        containerId: bookmarkContainerId,
+        reason: "Bookmark silo param",
+      })
+    }
+
+    await this.recordOpenActionStats(evaluation, currentContainerId)
+    return {}
   }
 
   private async handleRedirect(
@@ -217,27 +223,12 @@ export class RequestInterceptor {
         rule: evaluation.rule?.id,
       })
 
-      // stats: count rule match for target container
-      try {
-        if (evaluation.rule) {
-          await this.storage.recordStat(targetContainer, "match")
-        }
-      } catch {
-        /* ignore stats errors */
+      if (evaluation.rule) {
+        await this.recordStatSafely(targetContainer, "match")
       }
 
-      // Handle old tab based on preferences
       const preferences = await this.storage.getPreferences()
-      if (!preferences.keepOldTabs && tabId !== -1) {
-        // Close original tab after a short delay to ensure new tab loads
-        setTimeout(async () => {
-          try {
-            await browser.tabs.remove(tabId)
-          } catch (error) {
-            this.log.warn("Failed to close original tab", { tabId, error })
-          }
-        }, 100)
-      }
+      this.maybeCloseOriginalTab(tabId, preferences.keepOldTabs)
 
       // Cancel the original request since we've opened it in a new tab
       return { cancel: true }
@@ -261,7 +252,7 @@ export class RequestInterceptor {
       // Open in default (no container) context explicitly
       const newTab = await browser.tabs.create({
         url,
-        cookieStoreId: "firefox-default",
+        cookieStoreId: DEFAULT_CONTAINER_ID,
         active: true,
       })
 
@@ -271,19 +262,13 @@ export class RequestInterceptor {
         rule: evaluation.rule?.id,
       })
 
-      // stats: attribute match to the source container (being excluded from)
-      try {
-        if (sourceContainerId && sourceContainerId !== "firefox-default") {
-          await this.storage.recordStat(sourceContainerId, "match")
-        }
-      } catch {
-        /* ignore */
+      // EXCLUDE matches are attributed to the source container being exited.
+      if (sourceContainerId && !this.isDefaultContainer(sourceContainerId)) {
+        await this.recordStatSafely(sourceContainerId, "match")
       }
 
-      // Handle old tab and optional notification
       const preferences = await this.storage.getPreferences()
 
-      // Show notification about exclusion if enabled
       if (preferences.notifications.showOnExclude) {
         try {
           await this.showExcludeNotification(url)
@@ -292,15 +277,7 @@ export class RequestInterceptor {
         }
       }
 
-      if (!preferences.keepOldTabs && tabId !== -1) {
-        setTimeout(async () => {
-          try {
-            await browser.tabs.remove(tabId)
-          } catch (error) {
-            this.log.warn("Failed to close original tab", { tabId, error })
-          }
-        }, 100)
-      }
+      this.maybeCloseOriginalTab(tabId, preferences.keepOldTabs)
 
       return { cancel: true }
     } catch (error) {
@@ -372,63 +349,57 @@ export class RequestInterceptor {
     changeInfo: browser.Tabs.OnUpdatedChangeInfoType,
     tab: browser.Tabs.Tab,
   ): Promise<void> {
-    // Only process when URL changes
     if (!changeInfo.url || !tab.url) {
       return
     }
 
-    // Skip if URL should not be intercepted
     if (!this.shouldIntercept(tab.url)) {
       return
     }
 
     try {
-      const currentContainer = tab.cookieStoreId
-      // Keep mapping up to date
-      if (typeof tabId === "number" && currentContainer) {
-        this.tabToContainer.set(tabId, currentContainer)
+      const currentContainerId = tab.cookieStoreId
+      if (typeof tabId === "number" && currentContainerId) {
+        this.tabToContainer.set(tabId, currentContainerId)
       }
-      const processed = await bookmarkIntegration.processBookmarkUrl(tab.url)
-      const urlToEvaluate = processed.cleanUrl
+
+      const bookmarkHintResult = await bookmarkIntegration.processBookmarkUrl(
+        tab.url,
+      )
+      const cleanUrl = bookmarkHintResult.cleanUrl
       const evaluation = await this.rulesEngine.evaluate(
-        urlToEvaluate,
-        currentContainer,
+        cleanUrl,
+        currentContainerId,
       )
 
       this.log.debug("Tab update evaluation", {
         tabId,
         url: tab.url,
-        currentContainer,
+        currentContainerId,
         evaluation,
       })
 
-      // Handle tab updates that require action
       if (evaluation.action === "redirect" || evaluation.action === "exclude") {
-        // Update the tab's container if needed
-        await this.handleTabContainerUpdate(tabId, urlToEvaluate, evaluation)
+        await this.handleTabContainerUpdate(tabId, cleanUrl, evaluation)
         return
       }
 
-      // If evaluation says open but bookmark param requests a container switch
       if (
         evaluation.action === "open" &&
-        processed.containerId &&
-        processed.containerId !== currentContainer
+        this.hasBookmarkContainerOverride(
+          bookmarkHintResult.containerId,
+          currentContainerId,
+        )
       ) {
-        await this.handleTabContainerUpdate(tabId, urlToEvaluate, {
+        await this.handleTabContainerUpdate(tabId, cleanUrl, {
           action: "redirect",
-          containerId: processed.containerId,
+          containerId: bookmarkHintResult.containerId,
         })
         return
       }
 
-      // Otherwise, update last used on container tabs when URL changed
-      try {
-        if (currentContainer && currentContainer !== "firefox-default") {
-          await this.storage.recordStat(currentContainer, "touch")
-        }
-      } catch {
-        /* ignore */
+      if (currentContainerId && !this.isDefaultContainer(currentContainerId)) {
+        await this.recordStatSafely(currentContainerId, "touch")
       }
     } catch (error) {
       this.log.error("Error handling tab update", {
@@ -445,47 +416,34 @@ export class RequestInterceptor {
     evaluation: EvaluationResult,
   ): Promise<void> {
     try {
-      const useDefault =
-        evaluation.action === "exclude" ||
-        evaluation.containerId === "firefox-default"
+      const sourceTab = await browser.tabs.get(tabId)
+      const targetContainerId = this.resolveTabUpdateTargetContainer(evaluation)
       const createProps: browser.Tabs.CreateCreatePropertiesType = {
         url,
         active: true,
-        index: (await browser.tabs.get(tabId)).index,
-      }
-      if (!useDefault && evaluation.containerId) {
-        createProps.cookieStoreId = evaluation.containerId
+        index: sourceTab.index,
       }
 
-      // Create new tab in correct container (or default) and close current tab
-      const newTab = await browser.tabs.create(
-        useDefault
-          ? { ...createProps, cookieStoreId: "firefox-default" }
-          : createProps,
-      )
+      if (targetContainerId) {
+        createProps.cookieStoreId = targetContainerId
+      }
+
+      const newTab = await browser.tabs.create(createProps)
 
       await browser.tabs.remove(tabId)
 
-      const targetContainer = useDefault
-        ? "firefox-default"
-        : evaluation.containerId
       this.log.info("Updated tab container", {
         url,
         oldTabId: tabId,
         newTabId: newTab.id,
-        targetContainer,
+        targetContainer: targetContainerId,
       })
 
-      // stats events
-      try {
-        if (!useDefault && targetContainer) {
-          await this.storage.recordStat(targetContainer, "open")
-          if (evaluation.rule) {
-            await this.storage.recordStat(targetContainer, "match")
-          }
+      if (targetContainerId && !this.isDefaultContainer(targetContainerId)) {
+        await this.recordStatSafely(targetContainerId, "open")
+        if (evaluation.rule) {
+          await this.recordStatSafely(targetContainerId, "match")
         }
-      } catch {
-        /* ignore */
       }
     } catch (error) {
       this.log.error("Failed to update tab container", { tabId, url, error })
@@ -494,12 +452,13 @@ export class RequestInterceptor {
 
   private async handleTabCreated(tab: browser.Tabs.Tab): Promise<void> {
     try {
-      const cid = tab.cookieStoreId
-      if (typeof tab.id === "number" && cid) {
-        this.tabToContainer.set(tab.id, cid)
+      const containerId = tab.cookieStoreId
+      if (typeof tab.id === "number" && containerId) {
+        this.tabToContainer.set(tab.id, containerId)
       }
-      if (cid && cid !== "firefox-default") {
-        await this.storage.recordStat(cid, "open")
+
+      if (containerId && !this.isDefaultContainer(containerId)) {
+        await this.recordStatSafely(containerId, "open")
       }
     } catch (error) {
       this.log.warn("Failed to handle tab created", { error })
@@ -511,9 +470,9 @@ export class RequestInterceptor {
     _removeInfo: browser.Tabs.OnRemovedRemoveInfoType,
   ): Promise<void> {
     try {
-      const cid = this.tabToContainer.get(tabId)
-      if (cid) {
-        await this.storage.recordStat(cid, "close")
+      const containerId = this.tabToContainer.get(tabId)
+      if (containerId) {
+        await this.recordStatSafely(containerId, "close")
 
         // Trigger cleanup of temporary containers after tab is closed
         setTimeout(async () => {
@@ -522,7 +481,7 @@ export class RequestInterceptor {
           } catch (error) {
             this.log.warn("Failed to cleanup temporary containers", { error })
           }
-        }, 1000) // Small delay to ensure tab is fully closed
+        }, TEMP_CONTAINER_CLEANUP_DELAY_MS)
       }
       this.tabToContainer.delete(tabId)
     } catch (error) {
@@ -530,11 +489,81 @@ export class RequestInterceptor {
     }
   }
 
-  shouldIntercept(url: string): boolean {
-    // Use the same regex pattern as the original implementation
-    const IGNORED_URLS_REGEX =
-      /^(about|moz-extension|file|javascript|data|chrome|chrome-extension):/
+  private hasBookmarkContainerOverride(
+    bookmarkContainerId: string | null | undefined,
+    currentContainerId?: string,
+  ): bookmarkContainerId is string {
+    return Boolean(
+      bookmarkContainerId && bookmarkContainerId !== currentContainerId,
+    )
+  }
 
+  private async recordOpenActionStats(
+    evaluation: EvaluationResult,
+    currentContainerId?: string,
+  ): Promise<void> {
+    if (evaluation.rule) {
+      const containerForMatch =
+        evaluation.rule.ruleType === "exclude"
+          ? this.isDefaultContainer(currentContainerId)
+            ? undefined
+            : currentContainerId
+          : evaluation.rule.containerId
+
+      if (containerForMatch) {
+        await this.recordStatSafely(containerForMatch, "match")
+      }
+    }
+
+    if (currentContainerId && !this.isDefaultContainer(currentContainerId)) {
+      await this.recordStatSafely(currentContainerId, "touch")
+    }
+  }
+
+  private async recordStatSafely(
+    containerId: string,
+    event: StatEvent,
+  ): Promise<void> {
+    try {
+      await this.storage.recordStat(containerId, event)
+    } catch {
+      /* ignore stats errors */
+    }
+  }
+
+  private maybeCloseOriginalTab(tabId: number, keepOldTabs: boolean): void {
+    if (keepOldTabs || tabId === -1) {
+      return
+    }
+
+    // Delay closure slightly so the replacement tab has time to initialize.
+    setTimeout(async () => {
+      try {
+        await browser.tabs.remove(tabId)
+      } catch (error) {
+        this.log.warn("Failed to close original tab", { tabId, error })
+      }
+    }, ORIGINAL_TAB_CLOSE_DELAY_MS)
+  }
+
+  private resolveTabUpdateTargetContainer(
+    evaluation: EvaluationResult,
+  ): string | undefined {
+    if (
+      evaluation.action === "exclude" ||
+      evaluation.containerId === DEFAULT_CONTAINER_ID
+    ) {
+      return DEFAULT_CONTAINER_ID
+    }
+
+    return evaluation.containerId
+  }
+
+  private isDefaultContainer(containerId?: string): boolean {
+    return !containerId || containerId === DEFAULT_CONTAINER_ID
+  }
+
+  shouldIntercept(url: string): boolean {
     if (IGNORED_URLS_REGEX.test(url)) {
       return false
     }

@@ -2,110 +2,144 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light mode styles (default) */
-.popup {
-  @apply w-[380px] p-3 font-sans;
-}
-.header {
-  @apply flex items-center justify-between mb-2;
-}
-.header-actions {
-  @apply flex items-center gap-2;
-}
-.brand {
-  @apply flex items-center gap-2;
-}
-.logo {
-  @apply w-[18px] h-[18px] rounded-md bg-gradient-to-br from-blue-400 to-purple-500;
-}
-.title {
-  @apply m-0 text-[13px] tracking-wide text-gray-900;
-}
-.ghost {
-  @apply bg-transparent text-gray-700 border border-gray-300 rounded-md px-2 py-1 text-xs hover:bg-gray-100;
-}
-.context {
-  @apply text-xs text-gray-600 bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-2 mb-2;
-}
-.select {
-  @apply w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-2.5 py-2;
-}
-.row {
-  @apply flex gap-2;
-}
-.btn {
-  @apply bg-blue-500 text-white border-0 px-2.5 py-2 rounded-lg font-semibold text-xs hover:bg-blue-600;
-}
-.small {
-  @apply font-medium text-gray-700;
-}
-.status {
-  @apply mt-2 text-xs text-gray-600;
-}
-.footerLink {
-  @apply mt-2 flex justify-end;
-}
-.link {
-  @apply text-blue-500 text-xs no-underline hover:text-blue-600;
-}
-
-/* Dark mode styles */
-:root.dark .title {
-  @apply text-slate-100;
-}
-:root.dark .ghost {
-  @apply text-white border-slate-700 hover:bg-slate-900;
-}
-:root.dark .context {
-  @apply text-slate-400 bg-slate-900/60 border-slate-800;
-}
-:root.dark .select {
-  @apply bg-slate-900/80 text-white border-slate-800;
-}
-:root.dark .btn {
-  @apply bg-blue-500 text-white hover:bg-blue-600;
-}
-:root.dark .small {
-  @apply text-slate-300;
-}
-:root.dark .status {
-  @apply text-slate-400;
-}
-:root.dark .link {
-  @apply text-blue-400 hover:text-blue-300;
-}
-
-/* Theme selector styles */
-.theme-select {
-  @apply px-2 py-1 text-xs rounded-md border bg-white text-gray-900 border-gray-300;
-}
-:root.dark .theme-select {
-  @apply bg-slate-800 text-white border-slate-700;
-}
-
-/* CSS Variables for theming */
 :root {
   --popup-bg:
-    radial-gradient(900px 600px at 70% -10%, #f8f9fa 0%, #ffffff 45%), #ffffff;
-  --text-primary: #212529;
-  --text-secondary: #6c757d;
-  --surface: #f8f9fa;
-  --border: #dee2e6;
-  --primary: #4a90e2;
+    radial-gradient(920px 620px at 80% -15%, #e9f3ff 0%, #ffffff 44%), #ffffff;
 }
 
 :root.dark {
   --popup-bg:
-    radial-gradient(900px 600px at 70% -10%, #13213a 0%, #0b0d12 45%), #0b0d12;
-  --text-primary: #e6eaf2;
-  --text-secondary: #94a3b8;
-  --surface: #1e293b;
-  --border: #334155;
-  --primary: #5ba0f2;
+    radial-gradient(920px 620px at 80% -15%, #122339 0%, #090d14 44%), #090d14;
 }
 
-/* Apply theme */
 body {
   background: var(--popup-bg);
-  color: var(--text-primary);
+}
+
+.popup {
+  @apply w-[390px] p-3.5 font-sans text-gray-900 dark:text-slate-100;
+}
+
+.header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.header-actions {
+  @apply flex items-center gap-2;
+}
+
+.brand {
+  @apply flex items-center gap-2;
+}
+
+.logo {
+  @apply w-[18px] h-[18px] rounded-md bg-gradient-to-br from-blue-500 to-cyan-400 shadow-sm;
+}
+
+.title {
+  @apply m-0 text-[13px] font-semibold tracking-wide;
+}
+
+.ghost {
+  @apply bg-white/80 dark:bg-slate-900/70 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-md px-2.5 py-1.5 text-xs hover:bg-white dark:hover:bg-slate-900 transition-colors;
+}
+
+.section-label {
+  @apply block text-[11px] uppercase tracking-wide text-gray-600 dark:text-slate-400 mb-1.5;
+}
+
+.context {
+  @apply rounded-lg border border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/70 px-3 py-2.5 mb-3;
+}
+
+.context-row {
+  @apply flex items-center justify-between text-xs;
+}
+
+.context-row + .context-row {
+  @apply mt-1;
+}
+
+.context-label {
+  @apply text-gray-500 dark:text-slate-400;
+}
+
+.selector {
+  @apply relative mb-3;
+}
+
+.selector-trigger {
+  @apply w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm hover:border-blue-400 dark:hover:border-blue-500 transition-colors;
+}
+
+.selector-value {
+  @apply flex items-center gap-2 min-w-0;
+}
+
+.container-dot {
+  @apply w-2.5 h-2.5 rounded-full shrink-0;
+}
+
+.container-icon {
+  @apply text-sm leading-none shrink-0;
+}
+
+.container-name {
+  @apply truncate;
+}
+
+.selector-arrow {
+  @apply text-xs text-gray-500 dark:text-slate-400;
+}
+
+.selector-panel {
+  @apply absolute z-20 left-0 right-0 mt-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 shadow-lg p-2;
+}
+
+.selector-search {
+  @apply w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.selector-list {
+  @apply max-h-44 overflow-auto;
+}
+
+.selector-option {
+  @apply w-full flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors;
+}
+
+.selector-option.active {
+  @apply bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-200;
+}
+
+.selector-empty {
+  @apply px-2.5 py-2 text-sm text-gray-500 dark:text-slate-400;
+}
+
+.btn {
+  @apply border-0 rounded-lg px-3 py-2.5 font-semibold text-xs transition-colors;
+}
+
+.btn.primary {
+  @apply w-full bg-blue-600 text-white hover:bg-blue-700 mb-2.5;
+}
+
+.actions-grid {
+  @apply grid grid-cols-3 gap-2;
+}
+
+.action-button {
+  @apply text-center px-2 py-2;
+}
+
+.status {
+  @apply mt-2 text-xs min-h-[18px] text-gray-600 dark:text-slate-300;
+}
+
+.footerLink {
+  @apply mt-1 flex justify-end;
+}
+
+.link {
+  @apply text-blue-600 dark:text-blue-300 text-xs no-underline hover:text-blue-700 dark:hover:text-blue-200;
 }

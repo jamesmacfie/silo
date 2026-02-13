@@ -7,14 +7,31 @@ const uuidv4 = (): string => {
   })
 }
 
+import browser from "webextension-polyfill"
 import { STORAGE_KEYS } from "@/shared/constants"
-import type { BookmarkMetadata, BookmarkTag } from "@/shared/types"
+import type {
+  BookmarkMetadata,
+  BookmarkTag,
+  BookmarkTagCapabilities,
+} from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
 import storageService from "./StorageService"
 
 export class TagService {
   private storage = storageService
   private log = logger.withContext("TagService")
+
+  async getTagCapabilities(): Promise<BookmarkTagCapabilities> {
+    const browserName = await this.detectBrowserName()
+
+    return {
+      backend: "custom",
+      nativeSupported: false,
+      browser: browserName,
+      reason:
+        "Browser bookmark APIs do not expose native bookmark tags. Silo uses its own tag metadata for cross-browser support.",
+    }
+  }
 
   // Tag CRUD operations
   async getAllTags(): Promise<BookmarkTag[]> {
@@ -310,6 +327,35 @@ export class TagService {
       "#999999", // Gray
       "#333333", // Dark Gray
     ]
+  }
+
+  private async detectBrowserName(): Promise<
+    BookmarkTagCapabilities["browser"]
+  > {
+    try {
+      const runtimeWithBrowserInfo =
+        browser.runtime as typeof browser.runtime & {
+          getBrowserInfo?: () => Promise<{ name?: string }>
+        }
+
+      const info = runtimeWithBrowserInfo.getBrowserInfo
+        ? await runtimeWithBrowserInfo.getBrowserInfo()
+        : null
+      const name = info?.name?.toLowerCase() || ""
+
+      if (name.includes("firefox")) return "firefox"
+      if (name.includes("edg")) return "edge"
+      if (name.includes("chrome") || name.includes("chromium")) return "chrome"
+    } catch {
+      // Ignore and try fallback below.
+    }
+
+    const ua =
+      typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : ""
+    if (ua.includes("firefox")) return "firefox"
+    if (ua.includes("edg")) return "edge"
+    if (ua.includes("chrome") || ua.includes("chromium")) return "chrome"
+    return "unknown"
   }
 }
 

@@ -6,6 +6,13 @@ export interface BookmarkTag {
   modified: number
 }
 
+export interface BookmarkTagCapabilities {
+  backend: "custom" | "native"
+  nativeSupported: boolean
+  browser: "firefox" | "chrome" | "edge" | "unknown"
+  reason?: string
+}
+
 // This is the metadata we store on top of Firefox bookmarks
 // The bookmarkId references the Firefox bookmark ID
 export interface BookmarkMetadata {

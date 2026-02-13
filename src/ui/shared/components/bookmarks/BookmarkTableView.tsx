@@ -32,7 +32,8 @@ export function BookmarkTableView({
   const selectedBookmarks = useSelectedBookmarks()
   const tags = useBookmarkTags()
   const containers = useContainers()
-  const { selectBookmark, checkRuleMatch, loadBookmarks } = useBookmarkActions()
+  const { selectBookmark, clearSelection, checkRuleMatch, loadBookmarks } =
+    useBookmarkActions()
 
   const [modalState, setModalState] = React.useState<{
     isOpen: boolean
@@ -77,12 +78,11 @@ export function BookmarkTableView({
       selectedBookmarks.has(bookmark.id),
     )
     if (allSelected) {
-      bookmarks.forEach((bookmark) => selectBookmark(bookmark.id, false))
+      clearSelection()
     } else {
+      clearSelection()
       bookmarks.forEach((bookmark) => {
-        if (!selectedBookmarks.has(bookmark.id)) {
-          selectBookmark(bookmark.id, true)
-        }
+        selectBookmark(bookmark.id, true)
       })
     }
   }

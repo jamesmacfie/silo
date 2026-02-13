@@ -4,6 +4,7 @@ import {
   useBookmarkActions,
   useBookmarkSearchState,
   useBookmarkTags,
+  useTagCapabilities,
 } from "../../stores/bookmarkStore"
 import { Card } from "../Card"
 import { ContainerSelector } from "../ContainerSelector"
@@ -21,6 +22,7 @@ export function BookmarkFilters({
 }: BookmarkFiltersProps): JSX.Element {
   const { filters } = useBookmarkSearchState()
   const tags = useBookmarkTags()
+  const tagCapabilities = useTagCapabilities()
   const { setFilters } = useBookmarkActions()
 
   const handleTagToggle = (tagId: string) => {
@@ -121,6 +123,12 @@ export function BookmarkFilters({
                 )
               })}
             </div>
+          )}
+
+          {tagCapabilities && !tagCapabilities.nativeSupported && (
+            <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
+              {tagCapabilities.reason}
+            </p>
           )}
         </div>
 

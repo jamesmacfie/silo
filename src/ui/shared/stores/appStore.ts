@@ -36,6 +36,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
         await Promise.all([
           useContainerStore.getState().actions.load(),
           useRuleStore.getState().actions.load(),
+          useBookmarkStore.getState().actions.loadTagCapabilities(),
           useBookmarkStore.getState().actions.loadTags(),
           useBookmarkStore.getState().actions.loadBookmarks(),
         ])

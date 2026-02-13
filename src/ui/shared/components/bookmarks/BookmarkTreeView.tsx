@@ -222,25 +222,13 @@ export function BookmarkTreeView({
     try {
       if (overBookmark.type === "folder") {
         // Moving into a folder
-        console.log(
-          `Moving bookmark ${draggedBookmark.title} into folder ${overBookmark.title}`,
-        )
         await moveBookmark(draggedBookmark.id, overBookmark.id)
       } else if (draggedBookmark.parentId === overBookmark.parentId) {
         // Reordering within the same parent
-        console.log(
-          `Reordering bookmark ${draggedBookmark.title} relative to ${overBookmark.title}`,
-        )
-
         const findSiblings = (
           bookmarks: Bookmark[],
-          parentId?: string,
+          parentId: string,
         ): Bookmark[] => {
-          if (!parentId) {
-            // Root level - get all root children
-            return bookmarks.flatMap((root) => root.children || [])
-          }
-
           for (const bookmark of bookmarks) {
             if (bookmark.id === parentId && bookmark.children) {
               return bookmark.children
@@ -253,7 +241,12 @@ export function BookmarkTreeView({
           return []
         }
 
-        const siblings = findSiblings(bookmarksTree, draggedBookmark.parentId)
+        const parentId = draggedBookmark.parentId
+        if (!parentId) {
+          return
+        }
+
+        const siblings = findSiblings(bookmarksTree, parentId)
         const draggedIndex = siblings.findIndex(
           (s) => s.id === draggedBookmark.id,
         )
@@ -269,14 +262,11 @@ export function BookmarkTreeView({
           newOrder.splice(overIndex, 0, draggedItem)
 
           await reorderBookmarks(
-            draggedBookmark.parentId || "root",
+            parentId,
             newOrder.map((b) => b.id),
           )
         }
       } else {
-        console.log(
-          `Moving bookmark ${draggedBookmark.title} to different parent context`,
-        )
         // Different parent - move to the over item's parent at the over item's position
         await moveBookmark(
           draggedBookmark.id,
@@ -284,8 +274,7 @@ export function BookmarkTreeView({
           overBookmark.index,
         )
       }
-    } catch (error) {
-      console.error("Failed to handle drag and drop:", error)
+    } catch (_error) {
       // Error state is already set in the store actions
       // Could add toast notification here if available
     }

@@ -10,6 +10,7 @@ import type {
   BookmarkSearchFilters,
   BookmarkSortOptions,
   BookmarkTag,
+  BookmarkTagCapabilities,
 } from "@/shared/types"
 
 interface BookmarkState {
@@ -17,6 +18,7 @@ interface BookmarkState {
   bookmarks: Bookmark[]
   flatBookmarks: Bookmark[] // Flattened for table view
   tags: BookmarkTag[]
+  tagCapabilities?: BookmarkTagCapabilities
 
   // UI State
   view: "table" | "tree"
@@ -44,6 +46,7 @@ interface BookmarkState {
     // Data loading
     loadBookmarks: () => Promise<void>
     loadTags: () => Promise<void>
+    loadTagCapabilities: () => Promise<void>
     refreshAll: () => Promise<void>
 
     // Tag operations
@@ -204,6 +207,7 @@ export const useBookmarkStore = create<BookmarkState>()(
     bookmarks: [],
     flatBookmarks: [],
     tags: [],
+    tagCapabilities: undefined,
     view: "table",
     selectedBookmarks: new Set(),
     selectedFolders: new Set(),
@@ -282,9 +286,31 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
+      loadTagCapabilities: async () => {
+        try {
+          const response = await browser.runtime.sendMessage({
+            type: MESSAGE_TYPES.GET_TAG_CAPABILITIES,
+          })
+
+          if (!response?.success) {
+            throw new Error(
+              response?.error || "Failed to fetch tag capabilities",
+            )
+          }
+
+          set({
+            tagCapabilities: response.data,
+          })
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : "Unknown error",
+          })
+        }
+      },
+
       refreshAll: async () => {
-        const { loadBookmarks, loadTags } = get().actions
-        await Promise.all([loadBookmarks(), loadTags()])
+        const { loadBookmarks, loadTags, loadTagCapabilities } = get().actions
+        await Promise.all([loadBookmarks(), loadTags(), loadTagCapabilities()])
       },
 
       createTag: async (tag) => {
@@ -959,6 +985,8 @@ export const useFilteredBookmarks = () => {
 }
 
 export const useBookmarkTags = () => useBookmarkStore((state) => state.tags)
+export const useTagCapabilities = () =>
+  useBookmarkStore((state) => state.tagCapabilities)
 export const useBookmarkView = () => useBookmarkStore((state) => state.view)
 export const useSelectedBookmarks = () =>
   useBookmarkStore((state) => state.selectedBookmarks)

@@ -19,6 +19,7 @@ export {
   useBookmarkView,
   useFilteredBookmarks,
   useSelectedBookmarks,
+  useTagCapabilities,
 } from "./bookmarkStore"
 export * from "./containerStore"
 // Re-export common hooks for convenience

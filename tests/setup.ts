@@ -1,5 +1,8 @@
 import "@testing-library/jest-dom"
 
+// Ensure React 18 treats this as an act-enabled test environment.
+;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+
 // Mock webextension-polyfill
 jest.mock("webextension-polyfill", () => ({
   __esModule: true,

@@ -23,6 +23,7 @@ import {
   useBookmarkActions,
   useBookmarkTags,
   useFilteredBookmarks,
+  useTagCapabilities,
 } from "../shared/stores/bookmarkStore"
 import { BookmarksModal } from "./BookmarksModal"
 import { TagModal } from "./TagModal"
@@ -43,6 +44,7 @@ const PAGE_DESCRIPTION =
 
 export function TagsPage() {
   const tags = useBookmarkTags()
+  const tagCapabilities = useTagCapabilities()
   const allBookmarks = useFilteredBookmarks()
   const {
     createTag: _createTag,
@@ -379,6 +381,12 @@ export function TagsPage() {
           </Button>
         }
       />
+
+      {tagCapabilities && !tagCapabilities.nativeSupported && (
+        <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          {tagCapabilities.reason}
+        </div>
+      )}
 
       <ToolBar
         searchValue={searchQuery}

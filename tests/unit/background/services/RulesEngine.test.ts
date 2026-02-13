@@ -1,6 +1,6 @@
 import { RulesEngine } from "@/background/services/RulesEngine"
 import storageService from "@/background/services/StorageService"
-import urlMatcher from "@/background/utils/matcher"
+import * as urlMatcher from "@/background/utils/matcher"
 import {
   type CreateRuleRequest,
   MatchType,

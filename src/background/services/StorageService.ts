@@ -52,6 +52,8 @@ const RuleSchema = z.object({
 
 export class StorageService {
   private readonly CURRENT_VERSION = "2.0.0"
+  private readonly hasOwnKey = (obj: object, key: string): boolean =>
+    Object.getOwnPropertyDescriptor(obj, key) !== undefined
 
   async migrate(): Promise<void> {
     const version = await this.getVersion()
@@ -124,7 +126,7 @@ export class StorageService {
   // Local storage operations
   async get<T>(key: string): Promise<T | null> {
     const result = await browser.storage.local.get(key)
-    return result[key] || null
+    return this.hasOwnKey(result, key) ? ((result[key] as T) ?? null) : null
   }
 
   async set<T>(key: string, value: T): Promise<void> {
@@ -143,7 +145,7 @@ export class StorageService {
   async syncGet<T>(key: string): Promise<T | null> {
     try {
       const result = await browser.storage.sync.get(key)
-      return result[key] || null
+      return this.hasOwnKey(result, key) ? ((result[key] as T) ?? null) : null
     } catch {
       return null
     }

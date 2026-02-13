@@ -2,6 +2,7 @@ import React from "react"
 import browser from "webextension-polyfill"
 import type { Container } from "@/shared/types"
 import { MatchType, RuleType } from "@/shared/types"
+import { colorToCss, iconToEmoji } from "@/shared/utils/containerHelpers"
 import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
 import {
   useContainerActions,
@@ -33,12 +34,25 @@ async function getActiveTab(): Promise<browser.Tabs.Tab | null> {
   }
 }
 
+function getDisplayHost(url?: string): string {
+  if (!url) {
+    return "—"
+  }
+
+  try {
+    return new URL(url).host || "—"
+  } catch {
+    return "—"
+  }
+}
+
 export function PopupApp(_props: Props): JSX.Element {
   const containersData = useContainers()
   const { load: refetchContainers, create: createContainer } =
     useContainerActions()
   const { create: createRule } = useRuleActions()
   const isLoading = useContainerLoading()
+
   const containers: Container[] = React.useMemo(() => {
     return [NO_CONTAINER_OPTION, ...containersData]
   }, [containersData])
@@ -49,59 +63,146 @@ export function PopupApp(_props: Props): JSX.Element {
   const [currentContainerName, setCurrentContainerName] =
     React.useState<string>("—")
   const [status, setStatus] = React.useState<string>("")
+  const [isSelectorOpen, setIsSelectorOpen] = React.useState(false)
+  const [containerQuery, setContainerQuery] = React.useState("")
+  const selectorRef = React.useRef<HTMLDivElement>(null)
+  const isMountedRef = React.useRef(true)
+  const hasUserChosenContainerRef = React.useRef(false)
+
+  const selectedContainer = React.useMemo(
+    () =>
+      containers.find(
+        (container) => container.cookieStoreId === selectedCookieStoreId,
+      ) || NO_CONTAINER_OPTION,
+    [containers, selectedCookieStoreId],
+  )
+
+  const filteredContainers = React.useMemo(() => {
+    const trimmedQuery = containerQuery.trim().toLowerCase()
+    if (!trimmedQuery) {
+      return containers
+    }
+
+    return containers.filter((container) =>
+      container.name.toLowerCase().includes(trimmedQuery),
+    )
+  }, [containers, containerQuery])
 
   React.useEffect(() => {
     if (
-      containers.length &&
-      !containers.find((c) => c.cookieStoreId === selectedCookieStoreId)
+      containers.length > 0 &&
+      !containers.find(
+        (container) => container.cookieStoreId === selectedCookieStoreId,
+      )
     ) {
       setSelectedCookieStoreId(containers[0].cookieStoreId)
     }
-    return
   }, [containers, selectedCookieStoreId])
+
+  React.useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  React.useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        selectorRef.current &&
+        !selectorRef.current.contains(event.target as Node)
+      ) {
+        setIsSelectorOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown)
+    }
+  }, [])
 
   const updateContextInfo = React.useCallback(async () => {
     try {
       const tab = await getActiveTab()
-      if (tab?.url) {
-        const url = new URL(tab.url as string)
-        setCurrentHost(url.host || "—")
-        const cookieStoreId = tab.cookieStoreId
-        if (cookieStoreId && browser.contextualIdentities?.get) {
-          try {
-            const ci = await browser.contextualIdentities.get(cookieStoreId)
-            setCurrentContainerName(
-              ci?.name ||
-                (cookieStoreId === "firefox-default" ? "No Container" : "—"),
-            )
-          } catch {
-            setCurrentContainerName(
-              cookieStoreId === "firefox-default" ? "No Container" : "—",
-            )
+      if (!tab) {
+        if (isMountedRef.current) {
+          setCurrentHost("—")
+          setCurrentContainerName("—")
+        }
+        return
+      }
+
+      if (isMountedRef.current) {
+        setCurrentHost(getDisplayHost(tab.url))
+      }
+
+      const cookieStoreId = tab.cookieStoreId
+      if (!cookieStoreId) {
+        if (isMountedRef.current) {
+          setCurrentContainerName("No Container")
+        }
+        return
+      }
+
+      const knownContainer = containersData.find(
+        (container) => container.cookieStoreId === cookieStoreId,
+      )
+      if (knownContainer) {
+        if (isMountedRef.current) {
+          setCurrentContainerName(knownContainer.name)
+        }
+
+        if (
+          !hasUserChosenContainerRef.current &&
+          selectedCookieStoreId === "firefox-default"
+        ) {
+          setSelectedCookieStoreId(knownContainer.cookieStoreId)
+        }
+        return
+      }
+
+      if (cookieStoreId === "firefox-default") {
+        if (isMountedRef.current) {
+          setCurrentContainerName("No Container")
+        }
+        return
+      }
+
+      if (browser.contextualIdentities?.get) {
+        try {
+          const identity = await browser.contextualIdentities.get(cookieStoreId)
+          if (isMountedRef.current) {
+            setCurrentContainerName(identity?.name || "Unknown")
           }
-        } else {
-          setCurrentContainerName(
-            cookieStoreId === "firefox-default" ? "No Container" : "—",
-          )
+          return
+        } catch {
+          if (isMountedRef.current) {
+            setCurrentContainerName("Unknown")
+          }
         }
       }
     } catch {
-      // ignore
+      if (isMountedRef.current) {
+        setCurrentHost("—")
+        setCurrentContainerName("—")
+      }
     }
-    return
-  }, [])
+  }, [containersData, selectedCookieStoreId])
 
   React.useEffect(() => {
-    updateContextInfo()
-    return
+    void updateContextInfo()
   }, [updateContextInfo])
 
   const onRefresh = React.useCallback(async () => {
-    setStatus("Refreshing…")
-    await refetchContainers()
-    await updateContextInfo()
-    setStatus("")
-    return
+    try {
+      setStatus("Refreshing…")
+      await refetchContainers()
+      await updateContextInfo()
+      setStatus("")
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      setStatus(`Refresh failed: ${message}`)
+    }
   }, [refetchContainers, updateContextInfo])
 
   const openInSelectedContainer = React.useCallback(async () => {
@@ -111,6 +212,13 @@ export function PopupApp(_props: Props): JSX.Element {
         setStatus("No active tab")
         return
       }
+
+      const currentCookieStoreId = tab.cookieStoreId || "firefox-default"
+      if (currentCookieStoreId === selectedCookieStoreId) {
+        setStatus(`Already in ${selectedContainer.name}`)
+        return
+      }
+
       const isNoContainer = selectedCookieStoreId === "firefox-default"
       await browser.runtime.sendMessage({
         type: "OPEN_IN_CONTAINER",
@@ -121,39 +229,43 @@ export function PopupApp(_props: Props): JSX.Element {
           closeTabId: tab.id,
         },
       })
-      setStatus(`Opened in ${isNoContainer ? "No Container" : "container"}`)
-      return
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setStatus(`Failed: ${msg}`)
-      return
+      setStatus(`Opened in ${selectedContainer.name}`)
+      await updateContextInfo()
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      setStatus(`Failed: ${message}`)
     }
-  }, [selectedCookieStoreId])
+  }, [selectedCookieStoreId, selectedContainer.name, updateContextInfo])
 
   const createTemporaryContainer = React.useCallback(async () => {
     try {
       const name = `Temp ${new Date().toLocaleTimeString()}`
       const created = await createContainer({ name, temporary: true })
       if (created?.cookieStoreId) {
+        hasUserChosenContainerRef.current = true
         setSelectedCookieStoreId(created.cookieStoreId)
       }
       setStatus("Temporary container created")
-      return
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setStatus(`Failed to create temp: ${msg}`)
-      return
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      setStatus(`Failed to create temp: ${message}`)
     }
   }, [createContainer])
 
   const quickAddCurrentDomain = React.useCallback(async () => {
     try {
+      if (selectedCookieStoreId === "firefox-default") {
+        setStatus("Select a container before creating a domain rule")
+        return
+      }
+
       const tab = await getActiveTab()
       if (!tab?.url) {
         setStatus("No active tab")
         return
       }
-      const { hostname } = new URL(tab.url as string)
+
+      const { hostname } = new URL(tab.url)
       await createRule({
         containerId: selectedCookieStoreId,
         pattern: hostname,
@@ -163,12 +275,10 @@ export function PopupApp(_props: Props): JSX.Element {
         enabled: true,
         metadata: { source: "user" },
       })
-      setStatus(`Added rule for ${hostname}`)
-      return
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setStatus(`Failed to add rule: ${msg}`)
-      return
+      setStatus(`Added include rule for ${hostname}`)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      setStatus(`Failed to add rule: ${message}`)
     }
   }, [selectedCookieStoreId, createRule])
 
@@ -179,38 +289,36 @@ export function PopupApp(_props: Props): JSX.Element {
         setStatus("No active tab")
         return
       }
-      const title = tab.title || new URL(tab.url as string).hostname
-      const urlObj = new URL(tab.url as string)
-      // Clean existing silo parameters
-      urlObj.searchParams.delete("silo")
-      // Add silo parameter based on selected container (not current tab container)
+
+      const title = tab.title || new URL(tab.url).hostname
+      const url = new URL(tab.url)
+      url.searchParams.delete("silo")
+
       if (
         selectedCookieStoreId &&
         selectedCookieStoreId !== "firefox-default"
       ) {
-        urlObj.searchParams.append("silo", selectedCookieStoreId)
+        url.searchParams.set("silo", selectedCookieStoreId)
       }
-      await browser.bookmarks.create({ title, url: urlObj.toString() })
-      const containerName =
-        containers.find((c) => c.cookieStoreId === selectedCookieStoreId)
-          ?.name || "No Container"
-      setStatus(`Bookmarked for ${containerName}`)
-      return
-    } catch (_e) {
+
+      await browser.bookmarks.create({ title, url: url.toString() })
+      setStatus(`Bookmarked for ${selectedContainer.name}`)
+    } catch {
       setStatus("Failed to create bookmark")
-      return
     }
-  }, [selectedCookieStoreId, containers])
+  }, [selectedCookieStoreId, selectedContainer.name])
 
   const onManageContainers = React.useCallback(async () => {
-    // Use getURL to get the proper extension URL for the options page
-    const optionsUrl = browser.runtime.getURL("options_ui/page.html")
-    await browser.tabs.create({ url: optionsUrl })
+    if (typeof browser.runtime.openOptionsPage === "function") {
+      await browser.runtime.openOptionsPage()
+    } else {
+      const optionsUrl = browser.runtime.getURL("options.html")
+      await browser.tabs.create({ url: optionsUrl })
+    }
+
     setTimeout(() => {
       window.close()
-      return
     }, 50)
-    return
   }, [])
 
   return (
@@ -226,103 +334,141 @@ export function PopupApp(_props: Props): JSX.Element {
             className="ghost"
             title="Refresh"
             type="button"
-            onClick={() => {
-              onRefresh()
-              return
-            }}
+            onClick={() => void onRefresh()}
           >
             {isLoading ? "Refreshing…" : "Refresh"}
           </button>
         </div>
       </div>
 
-      <div id="contextInfo" className="context">
-        Tab:{" "}
-        <b>
-          <span>{currentHost}</span>
-        </b>
-        <span className="ml-2">
-          Current:{" "}
-          <b>
-            <span>{currentContainerName}</span>
-          </b>
-        </span>
+      <div className="context">
+        <div className="context-row">
+          <span className="context-label">Site</span>
+          <b>{currentHost}</b>
+        </div>
+        <div className="context-row">
+          <span className="context-label">Current</span>
+          <b>{currentContainerName}</b>
+        </div>
       </div>
 
-      <label htmlFor="containerSelect">Container</label>
-      <select
-        id="containerSelect"
-        className="select"
-        value={selectedCookieStoreId}
-        onChange={(e) => {
-          setSelectedCookieStoreId(e.target.value)
-          return
-        }}
-      >
-        {containers.map((c) => (
-          <option key={c.cookieStoreId} value={c.cookieStoreId}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+      <label className="section-label" htmlFor="containerSearch">
+        Target container
+      </label>
+      <div className="selector" ref={selectorRef}>
+        <button
+          type="button"
+          className="selector-trigger"
+          onClick={() => setIsSelectorOpen((open) => !open)}
+          aria-expanded={isSelectorOpen}
+          aria-haspopup="listbox"
+        >
+          <div className="selector-value">
+            <span
+              className="container-dot"
+              style={{ backgroundColor: colorToCss(selectedContainer.color) }}
+            />
+            <span className="container-icon">
+              {iconToEmoji(selectedContainer.icon)}
+            </span>
+            <span className="container-name">{selectedContainer.name}</span>
+          </div>
+          <span className="selector-arrow">{isSelectorOpen ? "▴" : "▾"}</span>
+        </button>
 
-      <div className="row mt-2">
+        {isSelectorOpen && (
+          <div className="selector-panel">
+            <input
+              id="containerSearch"
+              className="selector-search"
+              type="text"
+              placeholder="Search containers..."
+              value={containerQuery}
+              onChange={(event) => setContainerQuery(event.target.value)}
+            />
+            <div className="selector-list" role="listbox">
+              {filteredContainers.length === 0 && (
+                <div className="selector-empty">No matching containers</div>
+              )}
+              {filteredContainers.map((container) => (
+                <button
+                  key={container.cookieStoreId}
+                  type="button"
+                  className={`selector-option ${
+                    container.cookieStoreId === selectedCookieStoreId
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    hasUserChosenContainerRef.current = true
+                    setSelectedCookieStoreId(container.cookieStoreId)
+                    setIsSelectorOpen(false)
+                    setContainerQuery("")
+                  }}
+                  role="option"
+                  aria-selected={
+                    container.cookieStoreId === selectedCookieStoreId
+                  }
+                >
+                  <span
+                    className="container-dot"
+                    style={{ backgroundColor: colorToCss(container.color) }}
+                  />
+                  <span className="container-icon">
+                    {iconToEmoji(container.icon)}
+                  </span>
+                  <span className="container-name">{container.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button
+        className="btn primary"
+        type="button"
+        onClick={() => void openInSelectedContainer()}
+      >
+        Open This Tab In {selectedContainer.name}
+      </button>
+
+      <div className="actions-grid">
         <button
-          className="btn flex-1"
+          className="ghost action-button"
+          title="Add an include rule for this domain"
           type="button"
-          onClick={() => {
-            openInSelectedContainer()
-            return
-          }}
+          onClick={() => void quickAddCurrentDomain()}
         >
-          Open in container…
+          + Domain Rule
         </button>
         <button
-          className="ghost small"
-          title="Add a rule for the current domain"
-          type="button"
-          onClick={() => {
-            quickAddCurrentDomain()
-            return
-          }}
-        >
-          + Add domain
-        </button>
-        <button
-          className="ghost small"
+          className="ghost action-button"
           title="Create temporary container"
           type="button"
-          onClick={() => {
-            createTemporaryContainer()
-            return
-          }}
+          onClick={() => void createTemporaryContainer()}
         >
-          + Temp
+          + Temporary
         </button>
         <button
-          className="ghost small"
-          title="Create a bookmark for this page in the current container"
+          className="ghost action-button"
+          title="Create a bookmark for this page in the target container"
           type="button"
-          onClick={() => {
-            bookmarkCurrentTab()
-            return
-          }}
+          onClick={() => void bookmarkCurrentTab()}
         >
-          ⭐︎ Bookmark
+          Bookmark
         </button>
       </div>
 
-      <div id="status" className="status">
-        {status}
-      </div>
+      <div className="status">{status}</div>
+
       <div className="footerLink">
         <a
           className="link"
           href="/options.html"
-          onClick={(e) => {
-            e.preventDefault()
-            onManageContainers()
-            return
+          onClick={(event) => {
+            event.preventDefault()
+            void onManageContainers()
           }}
         >
           Manage Containers →

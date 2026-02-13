@@ -8,17 +8,28 @@ import statsService from "../services/StatsService"
 export class TabEventListener {
   private tabContainerMap = new Map<number, string>()
   private log = logger.withContext("TabEventListener")
+  private isRegistered = false
+  private readonly onTabCreated = this.handleTabCreated.bind(this)
+  private readonly onTabRemoved = this.handleTabRemoved.bind(this)
+  private readonly onTabActivated = this.handleTabActivated.bind(this)
+  private readonly onTabUpdated = this.handleTabUpdated.bind(this)
 
   /**
    * Register all tab event listeners
    */
   register(): void {
+    if (this.isRegistered) {
+      this.log.debug("Tab event listeners already registered")
+      return
+    }
+
     this.log.info("Registering tab event listeners")
 
-    browser.tabs.onCreated.addListener(this.handleTabCreated.bind(this))
-    browser.tabs.onRemoved.addListener(this.handleTabRemoved.bind(this))
-    browser.tabs.onActivated.addListener(this.handleTabActivated.bind(this))
-    browser.tabs.onUpdated.addListener(this.handleTabUpdated.bind(this))
+    browser.tabs.onCreated.addListener(this.onTabCreated)
+    browser.tabs.onRemoved.addListener(this.onTabRemoved)
+    browser.tabs.onActivated.addListener(this.onTabActivated)
+    browser.tabs.onUpdated.addListener(this.onTabUpdated)
+    this.isRegistered = true
 
     this.log.info("Tab event listeners registered successfully")
   }

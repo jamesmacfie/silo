@@ -1,34 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:extension.js.org)",
-      "Bash(mkdir:*)",
-      "Bash(npm *)",
-      "Bash(npm run dev:*)",
-      "Bash(mv:*)",
-      "Bash(rm:*)",
-      "Bash(cp:*)",
-      "Bash(npm run build:*)",
-      "Bash(node:*)",
-      "Bash(yarn type-check)",
-      "Bash(npm run test:*)",
-      "Bash(grep:*)",
-      "mcp__sequential-thinking__sequentialthinking",
-      "Bash(true)",
-      "Bash(npm test:*)",
-      "Bash(npm run type-check:*)",
-      "mcp__playwright__browser_navigate",
-      "Bash(find:*)",
-      "Bash(yarn test:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run lint)",
-      "Bash(npm run lint:*)",
-      "Bash(npx eslint:*)",
-      "WebFetch(domain:developer.mozilla.org)",
-      "Bash(yarn fmt)",
-      "Bash(yarn biome check:*)"
+      "Skill(superpowers:using-superpowers)",
+      "Bash(cat:*)",
+      "Skill(superpowers:brainstorming)"
     ],
     "deny": [],
+    "ask": [],
     "defaultMode": "acceptEdits"
   }
 }

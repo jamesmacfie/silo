@@ -13,6 +13,9 @@ export class ContainerManager {
 
   constructor() {
     this.setupEventListeners()
+    void this.cleanupTemporaryContainers().catch((error) => {
+      this.log.warn("Initial temporary container cleanup failed", error)
+    })
   }
 
   private setupEventListeners(): void {
@@ -35,9 +38,6 @@ export class ContainerManager {
         await this.syncWithFirefox()
       })
     }
-
-    // Clean up temporary containers on startup
-    this.cleanupTemporaryContainers()
   }
 
   async create(request: CreateContainerRequest): Promise<Container> {
@@ -290,7 +290,15 @@ export class ContainerManager {
   private async cleanupTemporaryContainers(): Promise<void> {
     this.log.info("Cleaning up temporary containers")
 
-    const containers = await this.storage.getContainers()
+    const storedContainers = await this.storage.getContainers()
+    const containers = Array.isArray(storedContainers) ? storedContainers : []
+
+    if (!Array.isArray(storedContainers)) {
+      this.log.warn("Invalid containers payload during cleanup", {
+        receivedType: typeof storedContainers,
+      })
+    }
+
     const temporaryContainers = containers.filter(
       (c) => c.temporary || c.metadata?.lifetime === "untilLastTab",
     )

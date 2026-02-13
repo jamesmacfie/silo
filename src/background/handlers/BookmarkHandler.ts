@@ -33,6 +33,7 @@ export class BookmarkHandler implements MessageHandler {
 
     // Bookmark tags
     MESSAGE_TYPES.GET_BOOKMARK_TAGS,
+    MESSAGE_TYPES.GET_TAG_CAPABILITIES,
     MESSAGE_TYPES.CREATE_BOOKMARK_TAG,
     MESSAGE_TYPES.UPDATE_BOOKMARK_TAG,
     MESSAGE_TYPES.DELETE_BOOKMARK_TAG,
@@ -93,6 +94,8 @@ export class BookmarkHandler implements MessageHandler {
       // Bookmark tags
       case MESSAGE_TYPES.GET_BOOKMARK_TAGS:
         return this.getBookmarkTags()
+      case MESSAGE_TYPES.GET_TAG_CAPABILITIES:
+        return this.getTagCapabilities()
       case MESSAGE_TYPES.CREATE_BOOKMARK_TAG:
         return this.createBookmarkTag(message)
       case MESSAGE_TYPES.UPDATE_BOOKMARK_TAG:
@@ -432,6 +435,22 @@ export class BookmarkHandler implements MessageHandler {
           error instanceof Error
             ? error.message
             : "Failed to get bookmark tags",
+      }
+    }
+  }
+
+  private async getTagCapabilities(): Promise<MessageResponse> {
+    try {
+      const capabilities = await tagService.getTagCapabilities()
+      return { success: true, data: capabilities }
+    } catch (error) {
+      this.log.error("Failed to get tag capabilities", error)
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get tag capabilities",
       }
     }
   }

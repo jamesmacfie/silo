@@ -1,59 +1,75 @@
 /** @jest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import browser from "webextension-polyfill"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import type { Container } from "@/shared/types"
 import { ContainerSelector } from "@/ui/popup/components/ContainerSelector"
-import { QueryProvider } from "@/ui/shared/providers/QueryProvider"
+import { useContainerLoading, useContainers } from "@/ui/shared/stores"
+
+jest.mock("@/ui/shared/stores", () => ({
+  useContainers: jest.fn(),
+  useContainerLoading: jest.fn(),
+}))
 
 describe("ContainerSelector", () => {
+  const mockUseContainers = useContainers as jest.MockedFunction<
+    typeof useContainers
+  >
+  const mockUseContainerLoading = useContainerLoading as jest.MockedFunction<
+    typeof useContainerLoading
+  >
+
+  const containers: Container[] = [
+    {
+      id: "1",
+      name: "Work",
+      icon: "briefcase",
+      color: "blue",
+      cookieStoreId: "firefox-container-1",
+      created: Date.now(),
+      modified: Date.now(),
+      temporary: false,
+      syncEnabled: true,
+    },
+    {
+      id: "2",
+      name: "Personal",
+      icon: "gift",
+      color: "red",
+      cookieStoreId: "firefox-container-2",
+      created: Date.now(),
+      modified: Date.now(),
+      temporary: false,
+      syncEnabled: true,
+    },
+  ]
+
   beforeEach(() => {
-    ;(browser.runtime.sendMessage as jest.Mock).mockReset()
+    jest.clearAllMocks()
+    mockUseContainerLoading.mockReturnValue(false)
+    mockUseContainers.mockReturnValue(containers)
   })
 
-  it("renders containers and handles select", async () => {
-    ;(browser.runtime.sendMessage as jest.Mock).mockResolvedValue({
-      success: true,
-      data: [
-        {
-          id: "1",
-          name: "Work",
-          icon: "briefcase",
-          color: "blue",
-          cookieStoreId: "fx-1",
-          created: 1,
-          modified: 1,
-          temporary: false,
-          syncEnabled: true,
-        },
-        {
-          id: "2",
-          name: "Personal",
-          icon: "gift",
-          color: "red",
-          cookieStoreId: "fx-2",
-          created: 1,
-          modified: 1,
-          temporary: false,
-          syncEnabled: true,
-        },
-      ],
-    })
+  it("renders loading state", () => {
+    mockUseContainerLoading.mockReturnValue(true)
 
+    render(<ContainerSelector onSelect={jest.fn()} />)
+    expect(screen.getByText("Loading…")).toBeInTheDocument()
+  })
+
+  it("renders containers and calls onSelect", async () => {
+    const user = userEvent.setup()
     const onSelect = jest.fn()
-    render(
-      <QueryProvider>
-        <ContainerSelector onSelect={onSelect} />
-      </QueryProvider>,
-    )
 
-    await waitFor(() => {
-      expect(screen.getByText("Work")).toBeInTheDocument()
-      expect(screen.getByText("Personal")).toBeInTheDocument()
-    })
+    render(<ContainerSelector onSelect={onSelect} />)
 
-    fireEvent.click(screen.getByText("Personal"))
+    expect(screen.getByRole("button", { name: "Work" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Personal" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Personal" }))
+
     expect(onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Personal" }),
+      expect.objectContaining({ cookieStoreId: "firefox-container-2" }),
     )
   })
 })

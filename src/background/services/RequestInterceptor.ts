@@ -13,6 +13,10 @@ export class RequestInterceptor {
   private isRegistered = false
   private log = logger.withContext("RequestInterceptor")
   private tabToContainer = new Map<number, string>()
+  private readonly onBeforeRequestListener = this.handleRequest.bind(this)
+  private readonly onTabUpdatedListener = this.handleTabUpdate.bind(this)
+  private readonly onTabCreatedListener = this.handleTabCreated.bind(this)
+  private readonly onTabRemovedListener = this.handleTabRemoved.bind(this)
 
   async register(): Promise<void> {
     if (this.isRegistered) {
@@ -27,7 +31,7 @@ export class RequestInterceptor {
       if (browser.webRequest?.onBeforeRequest) {
         try {
           browser.webRequest.onBeforeRequest.addListener(
-            this.handleRequest.bind(this),
+            this.onBeforeRequestListener,
             { urls: ["<all_urls>"], types: ["main_frame"] },
             ["blocking"],
           )
@@ -42,9 +46,9 @@ export class RequestInterceptor {
       }
 
       // Always register tab listeners as fallback
-      browser.tabs.onUpdated.addListener(this.handleTabUpdate.bind(this))
-      browser.tabs.onCreated.addListener(this.handleTabCreated.bind(this))
-      browser.tabs.onRemoved.addListener(this.handleTabRemoved.bind(this))
+      browser.tabs.onUpdated.addListener(this.onTabUpdatedListener)
+      browser.tabs.onCreated.addListener(this.onTabCreatedListener)
+      browser.tabs.onRemoved.addListener(this.onTabRemovedListener)
 
       this.isRegistered = true
       this.log.info("Request interceptor registered", {
@@ -64,10 +68,14 @@ export class RequestInterceptor {
     }
 
     try {
-      browser.webRequest.onBeforeRequest.removeListener(
-        this.handleRequest.bind(this),
-      )
-      browser.tabs.onUpdated.removeListener(this.handleTabUpdate.bind(this))
+      if (browser.webRequest?.onBeforeRequest) {
+        browser.webRequest.onBeforeRequest.removeListener(
+          this.onBeforeRequestListener,
+        )
+      }
+      browser.tabs.onUpdated.removeListener(this.onTabUpdatedListener)
+      browser.tabs.onCreated.removeListener(this.onTabCreatedListener)
+      browser.tabs.onRemoved.removeListener(this.onTabRemovedListener)
 
       this.isRegistered = false
       this.log.info("Request interceptor unregistered")

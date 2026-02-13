@@ -108,16 +108,15 @@ browser.runtime.onInstalled.addListener(async (details) => {
   await initializeExtension()
 })
 
+// Initialize eagerly so interception works even when startup events are missed.
+void initializeExtension()
+
 // Handle browser startup (if supported)
 if (browser.runtime.onStartup) {
   browser.runtime.onStartup.addListener(async () => {
     log.info("Browser startup detected")
     await initializeExtension()
   })
-} else {
-  // Fallback for environments without onStartup (like development)
-  log.info("Browser onStartup not supported, initializing immediately")
-  initializeExtension()
 }
 
 // Export for debugging/testing (if needed)

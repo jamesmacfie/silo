@@ -2,69 +2,110 @@
 
 This whole thing has been built with Claude Code. I've hardly checked the code at all so use at your own risk. Don't trust it just because the agent wrote "tests"
 
-> A modern Firefox WebExtension for automatic container management based on intelligent URL rules
+> Automatic container routing for Firefox -- assign websites to containers with rules, manage bookmarks with container context, and see how you use your containers.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
-
-Silo automatically opens websites in specific Firefox containers based on configurable rules, providing enhanced privacy, security, and organization for your browsing experience.
+[![TypeScript](https://img.shields.io/badge/TypeScript-ES2020-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
+[![Firefox](https://img.shields.io/badge/Firefox-91%2B-orange.svg)](https://www.mozilla.org/firefox/)
 
 <p align="center">
   <img src="./images/extension_128.png" alt="Silo Extension Icon" width="96" height="96" />
 </p>
 
+## Why Silo Exists
 
-## 🚀 Features
+Firefox Multi-Account Containers let you isolate websites into separate browsing contexts -- different cookies, sessions, and storage for each container. This is powerful for privacy, separating work from personal browsing, and managing multiple accounts on the same service. But Firefox gives you no way to automate it. Every time you open a site, you have to remember which container it belongs in and manually open it there.
 
-### 🎯 Advanced Rule System
-- **Multiple Rule Types**: Include, Exclude, and Restrict rules with priority support
-- **Flexible Pattern Matching**: Domain, exact URL, glob patterns, and regular expressions
-- **Smart Priority Resolution**: Higher priority rules override lower ones
-- **Real-time Rule Testing**: Interactive pattern tester for rule validation
+Silo fixes that. You write rules -- "open github.com in my Dev container", "restrict banking.com to my Finance container" -- and Silo intercepts every navigation to enforce them automatically. It also extends Firefox bookmarks with container associations and tags, gives you a statistics dashboard showing how you use your containers, and provides a full import/export system for moving your setup between browsers.
 
-### 📦 Container Management
-- **Full Container Control**: Create, edit, delete Firefox containers directly from the extension
-- **Temporary Containers**: Auto-delete containers when no tabs remain
-- **Visual Customization**: Custom icons, colors, and naming
-- **Deep Firefox Integration**: Seamless Firefox container API integration
+It's built for privacy-conscious users who use containers seriously: developers juggling staging and production environments, people with multiple accounts on the same service, or anyone who wants their browsing compartmentalized without the manual overhead.
 
-### 🔖 Bookmark Integration
-- **Container Bookmarks**: Save bookmarks with container associations using `?silo=container-id`
-- **Bulk Management**: Assign containers to bookmark folders
-- **URL Processing**: Clean URLs after container redirection
+## Features
 
-### 📊 Import/Export
-- **CSV Support**: Bulk import/export rules in CSV format
-- **Template Generation**: Generate CSV templates for easy bulk editing
-- **Missing Container Handling**: Automatically create containers during import
-- **Comprehensive Validation**: Error checking and reporting
+### Automatic Container Routing
 
-### 🎨 Modern UI
-- **React-based Interface**: Fast, responsive, modern design
-- **Theme Support**: Light, dark, and automatic system theme detection
-- **Real-time Updates**: Live data synchronization with React Query
-- **Responsive Design**: Optimized for both popup and full-page contexts
+- Rule engine with 4 match types: exact URL, domain (with subdomain and path support), glob, and regex
+- 3 rule types: Include (open in container), Exclude (break out of container), Restrict (force into container)
+- Priority-based resolution: Restrict > Exclude > Include
+- Inline prefix overrides: `@` for regex, `!` for glob
+- Interactive pattern tester for validating rules before saving
+- Duplicate rule detection and resolution
 
-## 🛠️ Technology Stack
+### Container Management
 
-- **Language**: TypeScript with strict mode
-- **UI Framework**: React 18 with hooks
-- **Styling**: Tailwind CSS with custom design system
-- **State Management**: React Query for server state
-- **Build System**: Custom esbuild configuration
-- **Testing**: Jest with React Testing Library
-- **Browser APIs**: Firefox WebExtension APIs
+- Full CRUD for Firefox containers with custom names, icons, and colors
+- Temporary containers that auto-delete when their last tab closes
+- Container templates for quick setup
+- Cookie clearing per container
+- Sync with Firefox's native container list
 
-## 📦 Installation
+### Bookmark Management
 
-### From Firefox Add-ons (Recommended)
-*Coming soon - extension will be published to Firefox Add-ons store*
+- Firefox bookmark integration with a metadata layer for container associations
+- Tag system with color-coded organization
+- Drag-and-drop reordering via hierarchical tree view
+- Table view for bulk operations
+- Fuzzy search across all bookmarks
+- Bulk actions: assign containers, assign tags, open in containers, delete
+
+### Import/Export
+
+- Rules (JSON) -- export and import rule sets with validation and preview
+- Containers (JSON) -- full container configuration
+- Tags (JSON) -- tag definitions with color mappings
+- Silo bookmarks (JSON) -- Firefox bookmarks with Silo metadata, container associations, and tags
+- Cross-browser bookmarks (Netscape HTML) -- standard format compatible with Chrome, Edge, Safari
+- Complete data backup (JSON) -- everything in one file for full system restore
+
+### Statistics Dashboard
+
+- Per-container usage: tabs opened, navigations, rule matches, time spent
+- Global aggregates and daily breakdowns
+- Container usage trends
+- Active tab tracking
+- Recent activity feed
+
+### Popup Interface
+
+- Quick container switching for the current tab
+- One-click domain rule creation
+- Temporary container creation
+- Container-aware bookmarking
+
+### Options Page
+
+Full-tab management interface with sections for: Dashboard, Containers, Rules, Bookmarks, Tags, Import/Export, and Settings.
+
+### Other
+
+- Theme support: light, dark, and auto (follows system)
+- Configurable notifications for rule matches, restrictions, and exclusions
+
+## Technology Stack
+
+| Category          | Technology                                                |
+|-------------------|-----------------------------------------------------------|
+| Language          | TypeScript (non-strict, ES2020)                           |
+| UI                | React 18                                                  |
+| State management  | Zustand                                                   |
+| Styling           | Tailwind CSS                                              |
+| Code quality      | Biome (format + lint)                                     |
+| Build             | esbuild + Extension CLI + Tailwind CLI                    |
+| Testing           | Jest + React Testing Library + Playwright                 |
+| Drag-and-drop     | @dnd-kit                                                  |
+| Search            | fuse.js                                                   |
+| Icons             | lucide-react                                              |
+| Validation        | zod                                                       |
+| Browser APIs      | webextension-polyfill                                     |
+
+## Installation
 
 ### Development Installation
+
 1. Clone the repository:
    ```bash
-   git clone https://github.com/silo/silo.git
+   git clone https://github.com/jamesmacfie/silo.git
    cd silo
    ```
 
@@ -84,185 +125,78 @@ Silo automatically opens websites in specific Firefox containers based on config
    - Click "Load Temporary Add-on"
    - Select `manifest.json` from the project directory
 
-## 🚀 Development
+## Development
 
 ### Prerequisites
-- Node.js 16+ 
-- npm or yarn
+
+- Node.js 16+
 - Firefox 91+
 
-### Development Commands
+### Commands
 
 ```bash
-# Start development server with hot reload
-npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Type checking
-npm run type-check
-
-# Lint code
-npm run lint
-
-# Auto-fix lint issues
-npm run lint:fix
+npm run dev            # Dev server with hot reload
+npm run build          # Production build
+npm run test           # Jest test suite
+npm run test:watch     # Watch mode
+npm run test:coverage  # Coverage report
+npm run test:e2e       # Playwright e2e tests
+npm run type-check     # TypeScript validation
+npm run fmt            # Biome format + lint (auto-fix)
+npm run fmt:check      # Biome check (no auto-fix)
 ```
 
-### Project Structure
+### Loading for Development
 
-```
-src/
-├── background/              # Background service worker
-│   ├── services/           # Core business logic
-│   └── utils/              # Background utilities
-├── ui/                     # React-based interfaces
-│   ├── popup/              # Extension popup
-│   ├── options/            # Settings page
-│   └── shared/             # Shared UI components
-└── shared/                 # Shared types and utilities
-    ├── types/              # TypeScript definitions
-    ├── constants/          # App constants
-    └── utils/              # Shared utilities
-```
+1. Run `npm run dev`
+2. Open `about:debugging` in Firefox
+3. Click "Load Temporary Add-on"
+4. Select `manifest.json`
+5. The popup is accessible from the toolbar icon; the options page opens in a full tab
 
-## 📖 Usage
+## Usage
 
-### Basic Usage
-1. **Install the extension** and pin it to your toolbar
-2. **Click the extension icon** to open the popup
-3. **Select a container** from the dropdown
-4. **Click "Open in container"** to open the current tab in the selected container
-5. **Use "+ Add domain"** to create a rule for the current domain
+### Quick Start
+
+1. Install the extension and pin it to your toolbar
+2. Click the Silo icon to open the popup
+3. Use "Add domain rule" to assign the current site to a container
+4. Navigate away and back -- Silo will automatically open the site in the correct container
 
 ### Creating Rules
-1. Open the **Options page** (click "Manage Containers" in popup)
-2. Navigate to the **Rules** section
-3. Click **"+ New Rule"**
-4. Configure:
-   - **Pattern**: URL pattern to match (e.g., `github.com`, `*.example.com`, `/admin/*`)
-   - **Match Type**: How to interpret the pattern (Domain, Exact, Glob, Regex)
-   - **Rule Type**: What action to take (Include, Exclude, Restrict)
-   - **Container**: Target container (not needed for Exclude rules)
-   - **Priority**: Rule precedence (higher numbers = higher priority)
 
-### Rule Types Explained
+1. Open the options page (click "Manage" in the popup, or right-click the icon)
+2. Go to the Rules section
+3. Click "New Rule" and configure:
+   - **Pattern**: the URL pattern to match (e.g., `github.com`, `*.example.com/admin/*`)
+   - **Match type**: Domain, Exact, Glob, or Regex
+   - **Rule type**: Include, Exclude, or Restrict
+   - **Container**: target container (not required for Exclude rules)
+   - **Priority**: higher numbers take precedence within the same rule type
 
-- **Include Rules**: Open matching URLs in the specified container (if not already in a container)
-- **Exclude Rules**: Break out of containers for matching URLs (open in default)
-- **Restrict Rules**: Force URLs to only open in the specified container (security)
+### Rule Types
 
-### Bulk Import
-1. Go to **Options > Import/Export**
-2. Download a **CSV template** or prepare your own
-3. Format: `pattern,container_name,match_type,rule_type,priority`
-4. **Import CSV** file with option to create missing containers
+- **Include**: Open matching URLs in the specified container when navigating from the default context. If already in a different container, the rule is ignored.
+- **Exclude**: Break out of any container for matching URLs -- they open in the default (no container) context.
+- **Restrict**: Force matching URLs into the specified container regardless of current context. This is the strongest rule type.
 
-## 🔧 Configuration
+### Managing Bookmarks
 
-### Container Templates
-Pre-configured container setups available:
-- **Work**: Blue briefcase icon, permanent
-- **Personal**: Purple gift icon, permanent  
-- **Banking**: Green dollar icon, temporary
-- **Social**: Pink fruit icon, permanent
-- **Dev**: Orange tree icon, permanent
+The Bookmarks section in the options page provides:
+- Tree view with drag-and-drop reordering
+- Table view for bulk operations
+- Tag assignment and filtering
+- Container association for each bookmark
+- Fuzzy search across all bookmarks
 
-### Advanced Settings
-- **Theme**: Light, dark, or auto (system)
-- **Keep Old Tabs**: Whether to close original tabs when redirecting
-- **Default Container**: Fallback container for unmatched URLs
-- **Performance Mode**: Optimizations for large rule sets
+### Import/Export
 
-## 🧪 Testing
+Go to the Import/Export section in the options page. Each data type (rules, containers, tags, bookmarks) can be exported and imported independently as JSON. For cross-browser bookmark portability, use the Netscape HTML format. For full system backup/restore, use the complete backup option.
 
-### Running Tests
-```bash
-# Run all tests
-npm test
+## Architecture
 
-# Run with coverage
-npm run test:coverage
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical architecture including layer diagrams, data flows, event bindings, storage schema, and the URL matching engine.
 
-# Run specific test file
-npm test StorageService.test.ts
-
-# Debug tests
-npm test -- --verbose
-```
-
-### Test Structure
-- **Unit Tests**: Service logic and utilities
-- **Component Tests**: React components and hooks
-- **Integration Tests**: Service interactions
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Extension not loading**
-- Check `manifest.json` syntax
-- Verify required permissions
-- Check browser console for errors
-
-**Rules not working**
-- Use the **Pattern Tester** in settings
-- Check rule priority order
-- Verify container exists and is active
-
-**UI not updating**
-- Check React Query cache
-- Refresh the popup/options page
-- Check browser developer tools
-
-### Debug Tools
-- **Settings Page**: Interceptor test tool
-- **Browser DevTools**: React and background script debugging
-- **about:debugging**: Extension inspection
-
-## 🤝 Contributing
-
-We welcome contributions! 
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass: `npm test`
-6. Commit with clear messages
-7. Push to your fork
-8. Open a Pull Request
-
-### Code Style
-- **TypeScript**: Strict mode with comprehensive types
-- **React**: Functional components with hooks
-- **Testing**: Required for new features
-- **Documentation**: JSDoc for public APIs
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Firefox Team**: For the excellent Contextual Identities API
-- **Extension.js**: For modern extension development tooling
-- **React Team**: For the amazing UI framework
-- **TypeScript Team**: For type safety and developer experience
-
-## 📞 Support
-
-- **Documentation**: Full documentation in [CLAUDE.md](CLAUDE.md)
-- **Issues**: [GitHub Issues](https://github.com/jamesmacfie/silo/issues)
-
----
-
-**Made with ❤️ for Firefox users who value privacy and organization**

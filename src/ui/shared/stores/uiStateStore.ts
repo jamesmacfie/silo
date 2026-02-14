@@ -18,7 +18,7 @@ interface RulesPageState extends BasePageState {
 }
 
 interface ContainersPageState extends BasePageState {
-  // Containers specific state if needed
+  selectedContainerId: string
 }
 
 interface BookmarksPageState {
@@ -115,9 +115,11 @@ const defaultPageStates: UIState["pages"] = {
     sortOrder: "asc",
     viewMode: "table",
     showFilters: false,
+    selectedContainerId: "",
     filters: {
       hasRules: "",
       color: "",
+      lifecycle: "",
     },
   },
   bookmarks: {

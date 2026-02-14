@@ -308,7 +308,7 @@ export function BulkActionsBar({
             <button
               onClick={clearSelection}
               disabled={isExecuting}
-              className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
               title="Clear selection"
             >
               <X className="w-5 h-5" />

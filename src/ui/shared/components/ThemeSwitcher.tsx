@@ -4,6 +4,27 @@ interface Props {
   compact?: boolean
 }
 
+const THEME_OPTIONS = [
+  {
+    value: "auto",
+    label: "Auto",
+    icon: "🌓",
+    description: "Match system preference",
+  },
+  {
+    value: "light",
+    label: "Light",
+    icon: "☀️",
+    description: "Light theme",
+  },
+  {
+    value: "dark",
+    label: "Dark",
+    icon: "🌙",
+    description: "Dark theme",
+  },
+] as const
+
 export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
   const { theme, setTheme, loading } = useTheme()
 
@@ -12,21 +33,41 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
   }
 
   if (compact) {
-    // Compact version for header/toolbar
     return (
       <div className="theme-switcher compact">
-        <select
-          value={theme}
-          onChange={(e) =>
-            setTheme(e.target.value as "light" | "dark" | "auto")
-          }
-          className="theme-select"
+        <div
+          role="radiogroup"
           aria-label="Theme"
+          className="inline-flex items-center rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900/80 p-0.5 shadow-sm"
         >
-          <option value="auto">🌓 Auto</option>
-          <option value="light">☀️ Light</option>
-          <option value="dark">🌙 Dark</option>
-        </select>
+          {THEME_OPTIONS.map((option) => {
+            const selected = theme === option.value
+            return (
+              <label
+                key={option.value}
+                title={option.label}
+                className={`h-7 min-w-7 px-1.5 rounded text-xs leading-none transition-colors cursor-pointer inline-flex items-center justify-center ${
+                  selected
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="theme-compact"
+                  value={option.value}
+                  checked={selected}
+                  onChange={() =>
+                    void setTheme(option.value as "auto" | "light" | "dark")
+                  }
+                  className="sr-only"
+                  aria-label={`Theme: ${option.label}`}
+                />
+                <span aria-hidden="true">{option.icon}</span>
+              </label>
+            )
+          })}
+        </div>
       </div>
     )
   }
@@ -40,26 +81,7 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
       </p>
 
       <div className="theme-options">
-        {[
-          {
-            value: "auto",
-            label: "Auto",
-            icon: "🌓",
-            description: "Match system preference",
-          },
-          {
-            value: "light",
-            label: "Light",
-            icon: "☀️",
-            description: "Light theme",
-          },
-          {
-            value: "dark",
-            label: "Dark",
-            icon: "🌙",
-            description: "Dark theme",
-          },
-        ].map((option) => (
+        {THEME_OPTIONS.map((option) => (
           <label
             key={option.value}
             className={`theme-option ${theme === option.value ? "selected" : ""}`}
@@ -109,21 +131,6 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
           margin: 0 0 1rem 0;
           color: var(--text-secondary, #6c757d);
           font-size: 0.9rem;
-        }
-
-        .theme-select {
-          padding: 0.5rem;
-          border: 1px solid var(--border, #dee2e6);
-          border-radius: 4px;
-          background: var(--background, #ffffff);
-          color: var(--text-primary, #212529);
-          font-size: 0.9rem;
-          cursor: pointer;
-        }
-
-        .theme-select:focus {
-          outline: none;
-          border-color: var(--primary, #4a90e2);
         }
 
         .theme-options {
@@ -184,12 +191,6 @@ export function ThemeSwitcher({ compact = false }: Props): JSX.Element {
         }
 
         /* Dark theme styles */
-        :root.dark .theme-select {
-          background: #2d2d2d;
-          border-color: #495057;
-          color: #e9ecef;
-        }
-
         :root.dark .theme-preview {
           background: #343a40;
           border-color: #495057;

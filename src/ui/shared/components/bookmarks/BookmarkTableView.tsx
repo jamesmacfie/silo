@@ -144,7 +144,7 @@ export function BookmarkTableView({
     return (
       <Card className={`bookmark-table-view ${className}`}>
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="text-gray-400 dark:text-gray-600 mb-4">
+          <div className="text-gray-500 dark:text-gray-400 mb-4">
             <Tag className="w-12 h-12" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -180,7 +180,7 @@ export function BookmarkTableView({
                       <div className="w-2 h-0.5 bg-white"></div>
                     </div>
                   ) : (
-                    <Square className="w-4 h-4 text-gray-400" />
+                    <Square className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   )}
                 </button>
               </th>
@@ -231,7 +231,7 @@ export function BookmarkTableView({
                       {isSelected ? (
                         <CheckSquare className="w-4 h-4 text-blue-500" />
                       ) : (
-                        <Square className="w-4 h-4 text-gray-400" />
+                        <Square className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       )}
                     </button>
                   </td>
@@ -248,7 +248,7 @@ export function BookmarkTableView({
                             href={bookmark.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                            className="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
                             title="Open bookmark"
                           >
                             <ExternalLink className="w-3 h-3" />
@@ -286,7 +286,7 @@ export function BookmarkTableView({
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 dark:text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           None
                         </span>
                       )}
@@ -303,13 +303,13 @@ export function BookmarkTableView({
                           return <TagBadge key={tagId} tag={tag} size="xs" />
                         })}
                         {bookmark.tags.length > 3 && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             +{bookmark.tags.length - 3} more
                           </span>
                         )}
                       </div>
                     ) : (
-                      <span className="text-sm text-gray-400 dark:text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         None
                       </span>
                     )}
@@ -334,14 +334,14 @@ export function BookmarkTableView({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEditBookmark(bookmark)}
-                        className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
+                        className="p-1 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 rounded"
                         title="Edit bookmark"
                       >
                         <Edit3 className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleDeleteBookmark(bookmark)}
-                        className="p-1 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 rounded"
+                        className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded"
                         title="Delete bookmark"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -351,7 +351,7 @@ export function BookmarkTableView({
                           href={bookmark.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
+                          className="p-1 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 rounded"
                           title="Open bookmark"
                         >
                           <ExternalLink className="w-3 h-3" />

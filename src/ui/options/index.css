@@ -46,13 +46,13 @@ body {
   @apply flex items-center gap-2 mb-4;
 }
 .brand .logo {
-  @apply w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg;
+  @apply w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg;
 }
 .nav {
   @apply flex flex-col gap-1.5;
 }
 .nav button {
-  @apply w-full text-left px-3 py-2 rounded-lg bg-transparent text-gray-700 border border-transparent hover:bg-gray-100 hover:border-gray-200;
+  @apply w-full text-left px-3 py-2 rounded-lg bg-transparent text-gray-700 border border-transparent hover:bg-gray-100 hover:border-gray-200 flex items-center justify-between gap-3;
 }
 .nav button.active {
   @apply bg-white border-gray-200 shadow-sm;

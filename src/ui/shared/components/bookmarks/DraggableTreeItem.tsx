@@ -129,7 +129,7 @@ export function DraggableTreeItem({
           <button
             {...attributes}
             {...listeners}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
             title="Drag to reorder"
           >
             <GripVertical className="w-3 h-3" />
@@ -142,7 +142,7 @@ export function DraggableTreeItem({
             {isExpanded ? (
               <FolderOpen className="w-4 h-4 text-blue-500" />
             ) : (
-              <Folder className="w-4 h-4 text-gray-500" />
+              <Folder className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             )}
           </button>
 
@@ -154,7 +154,7 @@ export function DraggableTreeItem({
             {isFolderSelected ? (
               <CheckSquare className="w-4 h-4 text-blue-500" />
             ) : (
-              <Square className="w-4 h-4 text-gray-400" />
+              <Square className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             )}
           </button>
 
@@ -169,7 +169,7 @@ export function DraggableTreeItem({
                 e.stopPropagation()
                 onCreateBookmark?.(bookmark.id)
               }}
-              className="p-1 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400 rounded"
+              className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded"
               title="Add bookmark here"
             >
               <Plus className="w-3 h-3" />
@@ -179,7 +179,7 @@ export function DraggableTreeItem({
                 e.stopPropagation()
                 onCreateFolder?.(bookmark.id)
               }}
-              className="p-1 text-gray-400 hover:text-green-600 dark:text-gray-500 dark:hover:text-green-400 rounded"
+              className="p-1 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded"
               title="Add folder here"
             >
               <Folder className="w-3 h-3" />
@@ -226,7 +226,7 @@ export function DraggableTreeItem({
         <button
           {...attributes}
           {...listeners}
-          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
           title="Drag to reorder"
         >
           <GripVertical className="w-3 h-3" />
@@ -239,7 +239,7 @@ export function DraggableTreeItem({
           {isSelected ? (
             <CheckSquare className="w-4 h-4 text-blue-500" />
           ) : (
-            <Square className="w-4 h-4 text-gray-400" />
+            <Square className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           )}
         </button>
 
@@ -279,7 +279,7 @@ export function DraggableTreeItem({
                   return <TagBadge key={tagId} tag={tag} size="xs" />
                 })}
                 {bookmark.tags.length > 2 && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     +{bookmark.tags.length - 2}
                   </span>
                 )}
@@ -292,14 +292,14 @@ export function DraggableTreeItem({
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onEditBookmark?.(bookmark)}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
+            className="p-1 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 rounded"
             title="Edit bookmark"
           >
             <Edit3 className="w-3 h-3" />
           </button>
           <button
             onClick={() => onDeleteBookmark?.(bookmark)}
-            className="p-1 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 rounded"
+            className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded"
             title="Delete bookmark"
           >
             <Trash2 className="w-3 h-3" />
@@ -308,7 +308,7 @@ export function DraggableTreeItem({
             href={bookmark.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded"
+            className="p-1 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 rounded"
             title="Open bookmark"
           >
             <ExternalLink className="w-3 h-3" />

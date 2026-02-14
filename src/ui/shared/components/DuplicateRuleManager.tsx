@@ -84,7 +84,7 @@ function DuplicateRuleGroup({
                     {rule.metadata.description}
                   </div>
                 )}
-                <div className="text-xs text-gray-500 dark:text-gray-500">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   Enabled: {rule.enabled ? "Yes" : "No"} | ID:{" "}
                   {rule.id.slice(0, 8)}...
                 </div>

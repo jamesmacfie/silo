@@ -68,14 +68,19 @@ It's built for privacy-conscious users who use containers seriously: developers 
 
 ### Popup Interface
 
-- Quick container switching for the current tab
-- One-click domain rule creation
-- Temporary container creation
-- Container-aware bookmarking
+- Workflow-first action panel focused on likely tasks
+- Quick actions: move current tab, open new tab in container, create site rule, temp container + open now, bookmark with container context
+- Searchable target-container picker with keyboard navigation
+- Keyboard shortcuts for speed (`/`, `1-5`, `Enter`, `m`, `r`, `?`)
 
 ### Options Page
 
 Full-tab management interface with sections for: Dashboard, Containers, Rules, Bookmarks, Tags, Import/Export, and Settings.
+
+- SaaS-style app shell with persistent sidebar navigation
+- Keyboard section switching (`1-7`)
+- Container management master-detail workflow with search, filtering, and quick actions
+- Container-page keyboard workflow (`/`, `j/k`, `n`, `e`, `c`, `Delete`, `r`)
 
 ### Other
 
@@ -160,8 +165,9 @@ npm run fmt:check      # Biome check (no auto-fix)
 
 1. Install the extension and pin it to your toolbar
 2. Click the Silo icon to open the popup
-3. Use "Add domain rule" to assign the current site to a container
-4. Navigate away and back -- Silo will automatically open the site in the correct container
+3. Pick a target container, choose the action tab you want (move/open/rule/temp/bookmark), then press `Enter`
+4. Open full management from the popup when you need deeper configuration
+5. Navigate away and back -- Silo will automatically open the site in the correct container
 
 ### Creating Rules
 
@@ -179,6 +185,25 @@ npm run fmt:check      # Biome check (no auto-fix)
 - **Include**: Open matching URLs in the specified container when navigating from the default context. If already in a different container, the rule is ignored.
 - **Exclude**: Break out of any container for matching URLs -- they open in the default (no container) context.
 - **Restrict**: Force matching URLs into the specified container regardless of current context. This is the strongest rule type.
+
+### Keyboard Workflows
+
+Popup:
+- `/` focus container search
+- `1-5` switch likely-action tabs
+- `Enter` execute selected action
+- `m` open management
+- `r` refresh popup context
+- `?` show/hide shortcut reference
+
+Container Management:
+- `/` focus search
+- `j` / `k` move selection through containers
+- `n` new container
+- `e` edit selected container
+- `c` clear selected container cookies
+- `Delete` / `Backspace` delete selected container
+- `r` jump to Rules filtered by selected container
 
 ### Managing Bookmarks
 

@@ -219,19 +219,15 @@ export class ContainerHandler implements MessageHandler {
     try {
       const { url, cookieStoreId, index, closeTabId } = (message.payload ||
         {}) as {
-        url: string
+        url?: string
         cookieStoreId?: string
         index?: number
         closeTabId?: number
       }
 
-      if (!url) {
-        return { success: false, error: "URL is required" }
-      }
-
       const createTabOptions: browser.Tabs.CreateCreatePropertiesType = {
-        url,
         active: true,
+        ...(url ? { url } : {}),
         ...(index !== undefined ? { index } : {}),
         ...(cookieStoreId ? { cookieStoreId } : {}),
       }
@@ -250,7 +246,7 @@ export class ContainerHandler implements MessageHandler {
       }
 
       this.log.info("URL opened in container", {
-        url: url.substring(0, 100), // Limit URL length in logs
+        url: url ? url.substring(0, 100) : "(new tab)", // Limit URL length in logs
         cookieStoreId,
         tabId: newTab.id,
       })

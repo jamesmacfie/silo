@@ -47,6 +47,50 @@ export function Modal({
   showCloseButton = true,
   className = "",
 }: ModalProps): JSX.Element | null {
+  const dialogRef = React.useRef<HTMLDivElement>(null)
+
+  const focusFirstFocusable = React.useCallback(() => {
+    if (!dialogRef.current) {
+      return
+    }
+
+    const firstFocusable = dialogRef.current.querySelector<HTMLElement>(
+      "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+    )
+
+    firstFocusable?.focus()
+  }, [])
+
+  const trapTabNavigation = React.useCallback((event: KeyboardEvent) => {
+    if (event.key !== "Tab" || !dialogRef.current) {
+      return
+    }
+
+    const focusable = Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>(
+        "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+      ),
+    ).filter((element) => !element.hasAttribute("disabled"))
+
+    if (focusable.length === 0) {
+      return
+    }
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+      return
+    }
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    }
+  }, [])
+
   // Handle escape key
   React.useEffect(() => {
     if (!isOpen) return
@@ -55,11 +99,13 @@ export function Modal({
       if (e.key === "Escape") {
         onClose()
       }
+
+      trapTabNavigation(e)
     }
 
     document.addEventListener("keydown", handleEscape)
     return () => document.removeEventListener("keydown", handleEscape)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, trapTabNavigation])
 
   // Prevent body scroll when modal is open
   React.useEffect(() => {
@@ -73,6 +119,18 @@ export function Modal({
       document.body.style.overflow = ""
     }
   }, [isOpen])
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      focusFirstFocusable()
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [focusFirstFocusable, isOpen])
 
   if (!isOpen) return null
 
@@ -97,6 +155,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        ref={dialogRef}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -109,7 +168,7 @@ export function Modal({
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-1 rounded-lg text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />

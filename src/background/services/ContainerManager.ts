@@ -7,9 +7,13 @@ import type { Container, CreateContainerRequest } from "@/shared/types"
 import { logger } from "@/shared/utils/logger"
 import StorageService from "./StorageService"
 
+const TEMP_CONTAINER_RETRY_DELAY_MS = 1500
+const TEMP_CONTAINER_MAX_RETRIES = 2
+
 export class ContainerManager {
   private storage = StorageService
   private log = logger.withContext("ContainerManager")
+  private tempCleanupTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor() {
     this.setupEventListeners()
@@ -36,6 +40,13 @@ export class ContainerManager {
       browser.contextualIdentities.onUpdated.addListener(async (changeInfo) => {
         this.log.info("Firefox container updated", changeInfo)
         await this.syncWithFirefox()
+      })
+    }
+
+    // Cleanup temporary containers when tabs close, even if other services miss events.
+    if (browser.tabs?.onRemoved?.addListener) {
+      browser.tabs.onRemoved.addListener(() => {
+        this.scheduleTemporaryCleanup()
       })
     }
   }
@@ -133,8 +144,20 @@ export class ContainerManager {
     try {
       await browser.contextualIdentities.remove(container.cookieStoreId)
     } catch (error) {
+      const stillExists = await this.firefoxContainerExists(
+        container.cookieStoreId,
+      )
+
+      if (stillExists) {
+        this.log.error("Failed to remove Firefox container", {
+          cookieStoreId: container.cookieStoreId,
+          error,
+        })
+        throw new Error(`Failed to remove Firefox container: ${error}`)
+      }
+
       this.log.warn(
-        "Failed to remove Firefox container (may already be deleted)",
+        "Failed to remove Firefox container (already deleted in Firefox)",
         error,
       )
     }
@@ -246,7 +269,7 @@ export class ContainerManager {
       // Container was deleted in Firefox, need to recreate or remove
       this.log.warn("Firefox container no longer exists", { container, error })
 
-      if (!container.temporary) {
+      if (!this.isTemporaryContainer(container)) {
         // Try to recreate the container
         try {
           const newFirefoxContainer = await browser.contextualIdentities.create(
@@ -288,10 +311,17 @@ export class ContainerManager {
   }
 
   private async cleanupTemporaryContainers(): Promise<void> {
+    await this.cleanupTemporaryContainersWithRetry(0)
+  }
+
+  private async cleanupTemporaryContainersWithRetry(
+    retryCount: number,
+  ): Promise<void> {
     this.log.info("Cleaning up temporary containers")
 
     const storedContainers = await this.storage.getContainers()
     const containers = Array.isArray(storedContainers) ? storedContainers : []
+    let needsRetry = false
 
     if (!Array.isArray(storedContainers)) {
       this.log.warn("Invalid containers payload during cleanup", {
@@ -299,8 +329,8 @@ export class ContainerManager {
       })
     }
 
-    const temporaryContainers = containers.filter(
-      (c) => c.temporary || c.metadata?.lifetime === "untilLastTab",
+    const temporaryContainers = containers.filter((c) =>
+      this.isTemporaryContainer(c),
     )
 
     for (const container of temporaryContainers) {
@@ -312,7 +342,20 @@ export class ContainerManager {
 
         if (tabs.length === 0) {
           this.log.info("Cleaning up empty temporary container", container)
-          await this.delete(container.id)
+          try {
+            await this.delete(container.id)
+          } catch (deleteError) {
+            needsRetry = true
+            this.log.warn(
+              "Failed to delete empty temporary container, will retry",
+              {
+                containerId: container.id,
+                cookieStoreId: container.cookieStoreId,
+                retryCount,
+                error: deleteError,
+              },
+            )
+          }
         }
       } catch (error) {
         this.log.error("Error checking temporary container", {
@@ -321,11 +364,58 @@ export class ContainerManager {
         })
       }
     }
+
+    if (needsRetry && retryCount < TEMP_CONTAINER_MAX_RETRIES) {
+      this.scheduleTemporaryCleanup(
+        retryCount + 1,
+        TEMP_CONTAINER_RETRY_DELAY_MS,
+      )
+    }
   }
 
   // Public method for external cleanup triggers
   async cleanupTemporaryContainersAsync(): Promise<void> {
     return this.cleanupTemporaryContainers()
+  }
+
+  private scheduleTemporaryCleanup(
+    retryCount = 0,
+    delayMs = TEMP_CONTAINER_RETRY_DELAY_MS,
+  ): void {
+    if (this.tempCleanupTimer) {
+      clearTimeout(this.tempCleanupTimer)
+    }
+
+    this.tempCleanupTimer = setTimeout(() => {
+      this.tempCleanupTimer = null
+      void this.cleanupTemporaryContainersWithRetry(retryCount).catch(
+        (error) => {
+          this.log.warn("Scheduled temporary container cleanup failed", error)
+        },
+      )
+    }, delayMs)
+  }
+
+  private async firefoxContainerExists(
+    cookieStoreId: string,
+  ): Promise<boolean> {
+    try {
+      await browser.contextualIdentities.get(cookieStoreId)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  private isTemporaryContainer(container: Container): boolean {
+    // Legacy fallback: old temp containers may only be identifiable by name.
+    if (container.name === "Temp" || container.name.startsWith("Temp ")) {
+      return true
+    }
+
+    return (
+      container.temporary || container.metadata?.lifetime === "untilLastTab"
+    )
   }
 
   async clearContainerCookies(id: string): Promise<void> {

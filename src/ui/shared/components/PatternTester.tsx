@@ -110,7 +110,9 @@ export function PatternTester({
             className="suggestion-btn"
             onClick={handleUseSuggestion}
           >
-            Switch to {suggestedMatchType}
+            {suggestedMatchType === "glob"
+              ? "Use glob matching"
+              : `Switch to ${suggestedMatchType}`}
           </button>
         </div>
       )}
@@ -176,46 +178,76 @@ export function PatternTester({
 
         .validation-message {
           padding: 0.75rem;
-          border-radius: 4px;
+          border-radius: 6px;
           margin-bottom: 1rem;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
-          gap: 1rem;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          line-height: 1.35;
+        }
+
+        .validation-message strong {
+          font-weight: 600;
         }
 
         .validation-message.error {
-          background: #fee;
-          border: 1px solid #fcc;
-          color: #c33;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #991b1b;
         }
 
         .validation-message.warning {
-          background: #fffbf0;
-          border: 1px solid #ffd700;
-          color: #856404;
+          background: #fffbeb;
+          border: 1px solid #fcd34d;
+          color: #92400e;
         }
 
         .validation-message.suggestion {
-          background: #e3f2fd;
-          border: 1px solid #90caf9;
-          color: #1565c0;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          color: #1d4ed8;
         }
 
         .suggestion-btn {
-          padding: 0.25rem 0.5rem;
-          background: currentColor;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          font-size: 0.85rem;
+          padding: 0.35rem 0.6rem;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          font-size: 0.8rem;
+          font-weight: 600;
           cursor: pointer;
-          opacity: 0.8;
           white-space: nowrap;
+          opacity: 1;
+          transition:
+            background-color 0.15s ease,
+            color 0.15s ease,
+            border-color 0.15s ease;
         }
 
-        .suggestion-btn:hover {
-          opacity: 1;
+        .validation-message.suggestion .suggestion-btn {
+          background: #1d4ed8;
+          color: #ffffff;
+          border-color: #1e40af;
+        }
+
+        .validation-message.suggestion .suggestion-btn:hover {
+          background: #1e40af;
+        }
+
+        .validation-message.error .suggestion-btn {
+          background: #b91c1c;
+          color: #ffffff;
+          border-color: #991b1b;
+        }
+
+        .validation-message.error .suggestion-btn:hover {
+          background: #991b1b;
+        }
+
+        .suggestion-btn:focus-visible {
+          outline: 2px solid #93c5fd;
+          outline-offset: 2px;
         }
 
         .test-section {
@@ -226,6 +258,7 @@ export function PatternTester({
           margin: 0 0 0.5rem 0;
           font-size: 0.9rem;
           font-weight: 600;
+          color: var(--text, #111827);
         }
 
         .test-controls {
@@ -287,6 +320,7 @@ export function PatternTester({
           margin: 0 0 0.5rem 0;
           font-size: 0.9rem;
           font-weight: 600;
+          color: var(--text, #111827);
         }
 
         .examples-list {
@@ -315,38 +349,63 @@ export function PatternTester({
 
         /* Dark theme adjustments */
         :root.dark .pattern-tester {
-          background: #343a40;
-          border-color: #495057;
+          background: #1f2937;
+          border-color: #374151;
         }
 
         :root.dark .test-url-input {
-          background: #2d2d2d;
-          border-color: #495057;
-          color: #e9ecef;
+          background: #111827;
+          border-color: #374151;
+          color: #f3f4f6;
         }
 
         :root.dark .example-btn {
-          background: #2d2d2d;
-          border-color: #495057;
-          color: #e9ecef;
+          background: #111827;
+          border-color: #374151;
+          color: #f3f4f6;
+        }
+
+        :root.dark .test-section h4,
+        :root.dark .examples-section h4 {
+          color: #f3f4f6;
         }
 
         :root.dark .validation-message.error {
-          background: #5a1e1e;
-          border-color: #8b2635;
-          color: #f5c6cb;
+          background: #7f1d1d;
+          border-color: #b91c1c;
+          color: #fecaca;
         }
 
         :root.dark .validation-message.warning {
-          background: #4a3c00;
-          border-color: #856404;
-          color: #fff3cd;
+          background: #78350f;
+          border-color: #b45309;
+          color: #fed7aa;
         }
 
         :root.dark .validation-message.suggestion {
-          background: #1a2a4a;
-          border-color: #3f6ab7;
-          color: #cce7ff;
+          background: #1e3a8a;
+          border-color: #3b82f6;
+          color: #dbeafe;
+        }
+
+        :root.dark .validation-message.suggestion .suggestion-btn {
+          background: #93c5fd;
+          border-color: #60a5fa;
+          color: #0f172a;
+        }
+
+        :root.dark .validation-message.suggestion .suggestion-btn:hover {
+          background: #bfdbfe;
+        }
+
+        :root.dark .validation-message.error .suggestion-btn {
+          background: #fecaca;
+          border-color: #fca5a5;
+          color: #7f1d1d;
+        }
+
+        :root.dark .validation-message.error .suggestion-btn:hover {
+          background: #fee2e2;
         }
 
         :root.dark .test-result.match {

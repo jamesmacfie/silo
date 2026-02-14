@@ -101,7 +101,7 @@ export function RuleCard({
             </span>
           )}
           {rule.ruleType === "exclude" && !container && (
-            <span className="no-container-badge bg-gray-100 border-gray-300 text-gray-500 px-2 py-1 rounded-full text-xs font-medium border italic">
+            <span className="no-container-badge bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 px-2 py-1 rounded-full text-xs font-medium border italic">
               No Container
             </span>
           )}
@@ -113,7 +113,7 @@ export function RuleCard({
 
       <div className="card-content flex-1">
         {rule.metadata?.description && (
-          <div className="rule-description text-sm text-gray-500">
+          <div className="rule-description text-sm text-gray-500 dark:text-gray-400">
             {rule.metadata.description}
           </div>
         )}

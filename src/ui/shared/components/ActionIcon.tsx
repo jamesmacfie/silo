@@ -62,7 +62,7 @@ export function ActionIcon({
     : "cursor-pointer"
 
   const combinedClassName =
-    `${baseStyles} text-gray-400 dark:text-gray-500 ${actionColors} ${disabledStyles} ${className}`.trim()
+    `${baseStyles} text-gray-500 dark:text-gray-400 ${actionColors} ${disabledStyles} ${className}`.trim()
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
@@ -73,9 +73,11 @@ export function ActionIcon({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       className={combinedClassName}
       title={title}
+      aria-label={title}
       disabled={disabled}
     >
       <Icon className="w-4 h-4" />

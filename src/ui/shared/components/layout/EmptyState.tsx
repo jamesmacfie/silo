@@ -32,7 +32,7 @@ export function EmptyState({
     >
       <div className="flex flex-col items-center justify-center py-16 px-6">
         {icon && (
-          <div className="text-gray-400 dark:text-gray-600 mb-4">{icon}</div>
+          <div className="text-gray-500 dark:text-gray-400 mb-4">{icon}</div>
         )}
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 text-center">
           {displayTitle}

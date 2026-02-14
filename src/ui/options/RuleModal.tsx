@@ -1,3 +1,4 @@
+import { Filter, Search, Shield, Tag, X } from "lucide-react"
 import React from "react"
 import { MatchType, type Rule, RuleType } from "@/shared/types"
 import { validatePattern } from "@/shared/utils/patternValidator"
@@ -31,28 +32,61 @@ interface Props {
   onSuccess: () => void
 }
 
-const MATCH_TYPE_OPTIONS = [
-  { value: MatchType.EXACT, label: "Exact URL" },
-  { value: MatchType.DOMAIN, label: "Domain" },
-  { value: MatchType.GLOB, label: "Glob Pattern" },
-  { value: MatchType.REGEX, label: "Regex Pattern" },
+const MATCH_TYPE_OPTIONS: Array<{
+  value: MatchType
+  label: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+}> = [
+  {
+    value: MatchType.EXACT,
+    label: "Exact URL",
+    description: "Full URL must match",
+    icon: Search,
+  },
+  {
+    value: MatchType.DOMAIN,
+    label: "Domain",
+    description: "Match host/domain",
+    icon: Tag,
+  },
+  {
+    value: MatchType.GLOB,
+    label: "Glob",
+    description: "Use * wildcards",
+    icon: Filter,
+  },
+  {
+    value: MatchType.REGEX,
+    label: "Regex",
+    description: "Advanced pattern",
+    icon: Shield,
+  },
 ]
 
-const RULE_TYPE_OPTIONS = [
+const RULE_TYPE_OPTIONS: Array<{
+  value: RuleType
+  label: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+}> = [
   {
     value: RuleType.INCLUDE,
     label: "Include",
     description: "Open URLs in this container",
+    icon: Search,
   },
   {
     value: RuleType.EXCLUDE,
     label: "Exclude",
     description: "Break out of containers for this URL",
+    icon: X,
   },
   {
     value: RuleType.RESTRICT,
     label: "Restrict",
     description: "Only allow this URL in this container",
+    icon: Shield,
   },
 ]
 
@@ -212,45 +246,77 @@ export function RuleModal({
 
       <ModalFormRow>
         <ModalLabel htmlFor="matchType">Match Type</ModalLabel>
-        <ModalSelect
-          id="matchType"
-          value={matchType}
-          onChange={(e) => setMatchType(e.target.value as MatchType)}
-        >
-          {MATCH_TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </ModalSelect>
+        <div id="matchType" className="grid grid-cols-2 gap-2">
+          {MATCH_TYPE_OPTIONS.map((option) => {
+            const Icon = option.icon
+            const isSelected = matchType === option.value
+
+            return (
+              <label
+                key={option.value}
+                className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-left transition-colors cursor-pointer ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="matchType"
+                  value={option.value}
+                  checked={isSelected}
+                  onChange={() => setMatchType(option.value)}
+                  className="sr-only"
+                />
+                <Icon className="w-4 h-4 mt-0.5 shrink-0" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">
+                    {option.label}
+                  </span>
+                  <span className="block text-xs opacity-80">
+                    {option.description}
+                  </span>
+                </span>
+              </label>
+            )
+          })}
+        </div>
       </ModalFormRow>
 
       <ModalFormRow>
         <ModalLabel>Rule Type</ModalLabel>
-        <div className="space-y-2">
-          {RULE_TYPE_OPTIONS.map((option) => (
-            <label
-              key={option.value}
-              className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-            >
-              <input
-                type="radio"
-                name="ruleType"
-                value={option.value}
-                checked={ruleType === option.value}
-                onChange={(e) => setRuleType(e.target.value as RuleType)}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-gray-100">
-                  {option.label}
+        <div className="grid grid-cols-3 gap-2">
+          {RULE_TYPE_OPTIONS.map((option) => {
+            const Icon = option.icon
+            const isSelected = ruleType === option.value
+
+            return (
+              <label
+                key={option.value}
+                className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 text-left transition-colors cursor-pointer ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="ruleType"
+                  value={option.value}
+                  checked={isSelected}
+                  onChange={() => setRuleType(option.value)}
+                  className="sr-only"
+                />
+                <div className="flex items-center gap-2">
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="text-sm font-medium">{option.label}</span>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-xs opacity-80 leading-relaxed">
                   {option.description}
-                </div>
-              </div>
-            </label>
-          ))}
+                </span>
+              </label>
+            )
+          })}
         </div>
       </ModalFormRow>
 

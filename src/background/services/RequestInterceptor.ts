@@ -473,16 +473,18 @@ export class RequestInterceptor {
       const containerId = this.tabToContainer.get(tabId)
       if (containerId) {
         await this.recordStatSafely(containerId, "close")
-
-        // Trigger cleanup of temporary containers after tab is closed
-        setTimeout(async () => {
-          try {
-            await this.containerManager.cleanupTemporaryContainersAsync()
-          } catch (error) {
-            this.log.warn("Failed to cleanup temporary containers", { error })
-          }
-        }, TEMP_CONTAINER_CLEANUP_DELAY_MS)
       }
+
+      // Always trigger temp container cleanup; mapping can be missing after
+      // restarts or for tabs created before listeners were attached.
+      setTimeout(async () => {
+        try {
+          await this.containerManager.cleanupTemporaryContainersAsync()
+        } catch (error) {
+          this.log.warn("Failed to cleanup temporary containers", { error })
+        }
+      }, TEMP_CONTAINER_CLEANUP_DELAY_MS)
+
       this.tabToContainer.delete(tabId)
     } catch (error) {
       this.log.warn("Failed to handle tab removed", { error })

@@ -363,7 +363,7 @@ export function BookmarkTreeView({
     return (
       <Card className={`bookmark-tree-view ${className}`}>
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="text-gray-400 dark:text-gray-600 mb-4">
+          <div className="text-gray-500 dark:text-gray-400 mb-4">
             <Folder className="w-12 h-12" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -460,7 +460,7 @@ export function BookmarkTreeView({
             <div className="bg-white dark:bg-gray-800 shadow-lg rounded p-2 opacity-90 border">
               <div className="flex items-center gap-2">
                 {draggedItem.type === "folder" ? (
-                  <Folder className="w-4 h-4 text-gray-500" />
+                  <Folder className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 ) : null}
                 <span className="text-sm font-medium">{draggedItem.title}</span>
               </div>

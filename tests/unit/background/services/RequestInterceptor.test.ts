@@ -1028,9 +1028,17 @@ describe("RequestInterceptor", () => {
     })
 
     it("should handle unknown tabs gracefully", async () => {
+      mockContainerManager.cleanupTemporaryContainersAsync = jest
+        .fn()
+        .mockResolvedValue(undefined)
+
       await (requestInterceptor as any).handleTabRemoved(999, {})
 
       expect(mockStorageService.recordStat).not.toHaveBeenCalled()
+      jest.advanceTimersByTime(1000)
+      expect(
+        mockContainerManager.cleanupTemporaryContainersAsync,
+      ).toHaveBeenCalled()
     })
 
     it("should handle cleanup errors", async () => {

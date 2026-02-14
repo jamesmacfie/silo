@@ -141,7 +141,7 @@ export function BookmarksModal({
                             )
                           })}
                           {bookmark.tags.length > 3 && (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               +{bookmark.tags.length - 3}
                             </span>
                           )}
@@ -153,7 +153,7 @@ export function BookmarksModal({
                         {container ? (
                           <ContainerBadge container={container} size="xs" />
                         ) : (
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             None
                           </span>
                         )}
@@ -166,7 +166,7 @@ export function BookmarksModal({
                             href={bookmark.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded transition-colors"
+                            className="inline-flex items-center justify-center p-2 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 rounded transition-colors"
                             title="Open bookmark"
                           >
                             <Eye className="w-4 h-4" />

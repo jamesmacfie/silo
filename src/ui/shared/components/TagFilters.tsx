@@ -63,7 +63,7 @@ export function TagFilters({
           )}
           <button
             onClick={onClose}
-            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             title="Close filters"
           >
             <X className="w-5 h-5" />

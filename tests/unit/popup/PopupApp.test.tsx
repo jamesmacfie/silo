@@ -5,18 +5,11 @@ import userEvent from "@testing-library/user-event"
 import browser from "webextension-polyfill"
 import type { Container } from "@/shared/types"
 import { PopupApp } from "@/ui/popup/components/PopupApp"
-import {
-  useContainerActions,
-  useContainerLoading,
-  useContainers,
-  useRuleActions,
-} from "@/ui/shared/stores"
+import { useContainerActions, useContainers } from "@/ui/shared/stores"
 
 jest.mock("@/ui/shared/stores", () => ({
   useContainers: jest.fn(),
   useContainerActions: jest.fn(),
-  useContainerLoading: jest.fn(),
-  useRuleActions: jest.fn(),
 }))
 
 jest.mock("@/ui/shared/components/ThemeSwitcher", () => ({
@@ -24,17 +17,13 @@ jest.mock("@/ui/shared/components/ThemeSwitcher", () => ({
 }))
 
 describe("PopupApp", () => {
+  let closeSpy: jest.SpyInstance
+
   const mockUseContainers = useContainers as jest.MockedFunction<
     typeof useContainers
   >
   const mockUseContainerActions = useContainerActions as jest.MockedFunction<
     typeof useContainerActions
-  >
-  const mockUseContainerLoading = useContainerLoading as jest.MockedFunction<
-    typeof useContainerLoading
-  >
-  const mockUseRuleActions = useRuleActions as jest.MockedFunction<
-    typeof useRuleActions
   >
 
   const containers: Container[] = [
@@ -49,24 +38,39 @@ describe("PopupApp", () => {
       temporary: false,
       syncEnabled: true,
     },
+    {
+      id: "personal",
+      name: "Personal",
+      icon: "user",
+      color: "orange",
+      cookieStoreId: "firefox-container-personal",
+      created: Date.now(),
+      modified: Date.now(),
+      temporary: false,
+      syncEnabled: true,
+    },
   ]
+
+  const createContainerMock = jest.fn()
+  const loadContainersMock = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
+    closeSpy = jest.spyOn(window, "close").mockImplementation(() => {})
+
+    createContainerMock.mockResolvedValue({
+      ...containers[0],
+      id: "temp",
+      name: "Temp example.com",
+      cookieStoreId: "firefox-container-temp",
+      temporary: true,
+    })
+    loadContainersMock.mockResolvedValue(undefined)
 
     mockUseContainers.mockReturnValue(containers)
-    mockUseContainerLoading.mockReturnValue(false)
     mockUseContainerActions.mockReturnValue({
-      load: jest.fn().mockResolvedValue(undefined),
-      create: jest.fn().mockResolvedValue({
-        ...containers[0],
-        id: "temp",
-        name: "Temp",
-        cookieStoreId: "firefox-container-temp",
-      }),
-    } as any)
-    mockUseRuleActions.mockReturnValue({
-      create: jest.fn().mockResolvedValue(undefined),
+      create: createContainerMock,
+      load: loadContainersMock,
     } as any)
 
     ;(browser.tabs.query as jest.Mock).mockResolvedValue([
@@ -78,63 +82,66 @@ describe("PopupApp", () => {
         index: 0,
       },
     ])
+
     ;(browser.runtime.sendMessage as jest.Mock).mockResolvedValue({
       success: true,
     })
-    ;(browser.bookmarks.create as jest.Mock).mockResolvedValue({
-      id: "bookmark-1",
-    })
+
     ;(browser.contextualIdentities.get as jest.Mock).mockRejectedValue(
       new Error("missing"),
     )
-    ;(browser.runtime as any).openOptionsPage = jest
-      .fn()
-      .mockResolvedValue(undefined)
+
+    ;(browser.tabs.create as jest.Mock).mockResolvedValue({ id: 333 })
+
+    ;(browser.runtime.getManifest as jest.Mock).mockReturnValue({
+      version: "2.0.0",
+      options_ui: { page: "options_ui/page.html" },
+    })
   })
 
-  it("renders context and current site", async () => {
+  afterEach(() => {
+    closeSpy.mockRestore()
+  })
+
+  it("renders simplified actions and current tab context", async () => {
     render(<PopupApp />)
 
-    expect(screen.getByRole("heading", { name: "Silo" })).toBeInTheDocument()
-    expect(screen.getByText("Target container")).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Silo Quick Open" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /open current tab in container/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /open new tab in container/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /open in new temp container/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText("1")).toBeInTheDocument()
+    expect(screen.getByText("2")).toBeInTheDocument()
+    expect(screen.getByText("3")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /^work$/i })).toBeNull()
 
     await waitFor(() => {
       expect(screen.getByText("example.com")).toBeInTheDocument()
     })
-  })
 
-  it("prefills the selected container from the current tab when possible", async () => {
-    ;(browser.tabs.query as jest.Mock).mockResolvedValue([
-      {
-        id: 123,
-        url: "https://example.com/path",
-        title: "Example",
-        cookieStoreId: "firefox-container-work",
-        index: 0,
-      },
-    ])
-
-    render(<PopupApp />)
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /open this tab in work/i }),
-      ).toBeInTheDocument()
+    expect(loadContainersMock).toHaveBeenCalled()
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+      type: "SYNC_CONTAINERS",
     })
   })
 
-  it("opens the current tab in the selected container", async () => {
+  it("opens the current tab in the chosen container", async () => {
     const user = userEvent.setup()
     render(<PopupApp />)
 
-    const trigger = document.querySelector(".selector-trigger")
-    expect(trigger).not.toBeNull()
-    await user.click(trigger as HTMLButtonElement)
-    await user.click(screen.getByRole("option", { name: /work/i }))
-
     await user.click(
-      screen.getByRole("button", { name: /open this tab in work/i }),
+      screen.getByRole("button", { name: /open current tab in container/i }),
     )
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: /work/i }))
 
     await waitFor(() => {
       expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
@@ -149,25 +156,206 @@ describe("PopupApp", () => {
     })
   })
 
-  it("blocks creating a domain rule when no container is selected", async () => {
+  it("opens a new tab for current-tab action when page URL cannot be moved", async () => {
     const user = userEvent.setup()
+    ;(browser.tabs.query as jest.Mock).mockResolvedValue([
+      {
+        id: 987,
+        url: "about:debugging#/runtime/this-firefox",
+        title: "Debug",
+        cookieStoreId: "firefox-default",
+        index: 2,
+      },
+    ])
+
     render(<PopupApp />)
 
-    await user.click(screen.getByRole("button", { name: /\+ domain rule/i }))
-
-    expect(
-      screen.getByText("Select a container before creating a domain rule"),
-    ).toBeInTheDocument()
-  })
-
-  it("opens the options page from the footer link", async () => {
-    const user = userEvent.setup()
-    render(<PopupApp />)
-
-    await user.click(screen.getByRole("link", { name: /manage containers/i }))
+    await user.click(
+      screen.getByRole("button", { name: /open current tab in container/i }),
+    )
+    await user.click(screen.getByRole("button", { name: /work/i }))
 
     await waitFor(() => {
-      expect((browser.runtime as any).openOptionsPage).toHaveBeenCalled()
+      expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+        type: "OPEN_IN_CONTAINER",
+        payload: {
+          cookieStoreId: "firefox-container-work",
+          index: 3,
+        },
+      })
+    })
+  })
+
+  it("opens a new tab in the chosen container", async () => {
+    const user = userEvent.setup()
+    render(<PopupApp />)
+
+    await user.click(
+      screen.getByRole("button", { name: /open new tab in container/i }),
+    )
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: /work/i }))
+
+    await waitFor(() => {
+      expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+        type: "OPEN_IN_CONTAINER",
+        payload: {
+          cookieStoreId: "firefox-container-work",
+        },
+      })
+    })
+
+    expect(closeSpy).toHaveBeenCalled()
+  })
+
+  it("focuses search and opens first fuzzy match on Enter", async () => {
+    const user = userEvent.setup()
+    render(<PopupApp />)
+
+    await user.click(
+      screen.getByRole("button", { name: /open new tab in container/i }),
+    )
+
+    const searchInput = screen.getByPlaceholderText(/search containers\.\.\./i)
+    await waitFor(() => {
+      expect(searchInput).toHaveFocus()
+    })
+
+    await user.type(searchInput, "wrk{enter}")
+
+    await waitFor(() => {
+      expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+        type: "OPEN_IN_CONTAINER",
+        payload: {
+          cookieStoreId: "firefox-container-work",
+        },
+      })
+    })
+  })
+
+  it("supports arrow-key selection in results and Enter opens selected container", async () => {
+    const user = userEvent.setup()
+    render(<PopupApp />)
+
+    await user.click(
+      screen.getByRole("button", { name: /open new tab in container/i }),
+    )
+
+    const searchInput = screen.getByPlaceholderText(/search containers\.\.\./i)
+    await waitFor(() => {
+      expect(searchInput).toHaveFocus()
+    })
+
+    expect(screen.getByRole("button", { name: /no container/i })).toHaveClass(
+      "selected",
+    )
+
+    await user.keyboard("{ArrowDown}")
+    expect(screen.getByRole("button", { name: /personal/i })).toHaveClass(
+      "selected",
+    )
+
+    await user.keyboard("{Enter}")
+
+    await waitFor(() => {
+      expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+        type: "OPEN_IN_CONTAINER",
+        payload: {
+          cookieStoreId: "firefox-container-personal",
+        },
+      })
+    })
+  })
+
+  it("supports keyboard shortcuts 1 2 and 3 on the home actions", async () => {
+    const user = userEvent.setup()
+    render(<PopupApp />)
+
+    await user.keyboard("1")
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: /back/i }))
+
+    await user.keyboard("2")
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: /back/i }))
+
+    await user.keyboard("3")
+
+    await waitFor(() => {
+      expect(createContainerMock).toHaveBeenCalled()
+    })
+  })
+
+  it("creates a temp container and opens the current tab in it", async () => {
+    const user = userEvent.setup()
+    render(<PopupApp />)
+
+    await user.click(
+      screen.getByRole("button", { name: /open in new temp container/i }),
+    )
+
+    await waitFor(() => {
+      expect(createContainerMock).toHaveBeenCalledWith({
+        name: "Temp example.com",
+        temporary: true,
+        metadata: {
+          lifetime: "untilLastTab",
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+        type: "OPEN_IN_CONTAINER",
+        payload: {
+          url: "https://example.com/path",
+          cookieStoreId: "firefox-container-temp",
+          index: 1,
+          closeTabId: 123,
+        },
+      })
+    })
+  })
+
+  it("opens temp container with a blank new tab when current URL is restricted", async () => {
+    const user = userEvent.setup()
+    ;(browser.tabs.query as jest.Mock).mockResolvedValue([
+      {
+        id: 777,
+        url: "about:debugging#/runtime/this-firefox",
+        title: "Debug",
+        cookieStoreId: "firefox-default",
+        index: 4,
+      },
+    ])
+
+    render(<PopupApp />)
+
+    await user.click(
+      screen.getByRole("button", { name: /open in new temp container/i }),
+    )
+
+    await waitFor(() => {
+      expect(browser.runtime.sendMessage).toHaveBeenCalledWith({
+        type: "OPEN_IN_CONTAINER",
+        payload: {
+          cookieStoreId: "firefox-container-temp",
+          index: 5,
+        },
+      })
+    })
+  })
+
+  it("opens management page from popup footer", async () => {
+    const user = userEvent.setup()
+    render(<PopupApp />)
+
+    await user.click(screen.getByRole("button", { name: /open management/i }))
+
+    await waitFor(() => {
+      expect(browser.tabs.create).toHaveBeenCalledWith({
+        url: expect.stringContaining("options_ui/page.html?page=containers"),
+      })
     })
   })
 })

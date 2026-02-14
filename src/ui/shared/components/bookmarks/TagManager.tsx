@@ -108,7 +108,7 @@ export function TagManager({
         </h3>
         <button
           onClick={onClose}
-          className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           title="Close tag manager"
         >
           <X className="w-5 h-5" />
@@ -244,14 +244,14 @@ export function TagManager({
                   onClick={() =>
                     setEditingTag(editingTag === tag.id ? null : tag.id)
                   }
-                  className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded transition-colors"
+                  className="p-1 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 rounded transition-colors"
                   title="Edit tag name"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDeleteTag(tag.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded transition-colors"
+                  className="p-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 rounded transition-colors"
                   title="Delete tag"
                 >
                   <Trash2 className="w-4 h-4" />

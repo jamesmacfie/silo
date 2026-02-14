@@ -29,6 +29,15 @@
     "page": "src/options/index.html",
     "open_in_tab": true
   },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "Alt+Shift+S"
+      },
+      "description": "Open Silo popup"
+    }
+  },
   "permissions": [
     "storage",
     "tabs",

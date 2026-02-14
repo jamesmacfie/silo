@@ -74,6 +74,11 @@ describe("ContainerManager", () => {
 
     global.browser.tabs = {
       query: jest.fn(),
+      onRemoved: {
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        hasListener: jest.fn(),
+      },
     } as any
 
     // Set up default mocks that will be called during construction
@@ -304,7 +309,7 @@ describe("ContainerManager", () => {
       )
     })
 
-    it("should continue even if Firefox container removal fails", async () => {
+    it("should continue when Firefox container is already missing", async () => {
       mockStorageService.getContainers = jest
         .fn()
         .mockResolvedValue([mockContainer])
@@ -315,13 +320,34 @@ describe("ContainerManager", () => {
       ;(browser.contextualIdentities.remove as jest.Mock).mockRejectedValue(
         new Error("Already deleted"),
       )
+      ;(browser.contextualIdentities.get as jest.Mock).mockRejectedValue(
+        new Error("Not found"),
+      )
 
-      // Should not throw
       await containerManager.delete(mockContainer.id)
 
       expect(mockStorageService.removeContainer).toHaveBeenCalledWith(
         mockContainer.id,
       )
+    })
+
+    it("should fail deletion when Firefox container still exists", async () => {
+      mockStorageService.getContainers = jest
+        .fn()
+        .mockResolvedValue([mockContainer])
+      mockStorageService.removeContainer = jest.fn()
+      mockStorageService.getRules = jest.fn().mockResolvedValue([])
+      ;(browser.contextualIdentities.remove as jest.Mock).mockRejectedValue(
+        new Error("Container still has tabs"),
+      )
+      ;(browser.contextualIdentities.get as jest.Mock).mockResolvedValue(
+        mockFirefoxContainer,
+      )
+
+      await expect(containerManager.delete(mockContainer.id)).rejects.toThrow(
+        "Failed to remove Firefox container",
+      )
+      expect(mockStorageService.removeContainer).not.toHaveBeenCalled()
     })
 
     it("should throw error if container not found", async () => {
@@ -544,6 +570,39 @@ describe("ContainerManager", () => {
         ).cleanupTemporaryContainers(),
       ).resolves.not.toThrow()
     })
+
+    it("should remove empty name-based Temp containers", async () => {
+      const tempByNameContainer = {
+        ...mockContainer,
+        id: "temp-by-name-1",
+        name: "Temp",
+        temporary: false,
+        metadata: { lifetime: "permanent" as const },
+      }
+
+      mockStorageService.getContainers = jest
+        .fn()
+        .mockResolvedValue([tempByNameContainer])
+      mockStorageService.removeContainer = jest
+        .fn()
+        .mockResolvedValue(undefined)
+      mockStorageService.getRules = jest.fn().mockResolvedValue([])
+      ;(browser.tabs.query as jest.Mock).mockResolvedValue([])
+      ;(browser.contextualIdentities.remove as jest.Mock).mockResolvedValue(
+        undefined,
+      )
+
+      const deleteSpy = jest.spyOn(containerManager, "delete")
+
+      await (
+        containerManager as unknown as {
+          cleanupTemporaryContainers: () => Promise<void>
+        }
+      ).cleanupTemporaryContainers()
+
+      expect(deleteSpy).toHaveBeenCalledWith(tempByNameContainer.id)
+      deleteSpy.mockRestore()
+    })
   })
 
   describe("mapToFirefoxContainer", () => {
@@ -610,6 +669,31 @@ describe("ContainerManager", () => {
       expect(mockStorageService.removeContainer).toHaveBeenCalledWith(
         tempContainer.id,
       )
+    })
+
+    it("should remove name-based Temp container when Firefox container missing", async () => {
+      const tempByNameContainer = {
+        ...mockContainer,
+        name: "Temp",
+        temporary: false,
+        metadata: { lifetime: "permanent" as const },
+      }
+
+      ;(browser.contextualIdentities.get as jest.Mock).mockRejectedValue(
+        new Error("Container not found"),
+      )
+      mockStorageService.removeContainer = jest
+        .fn()
+        .mockResolvedValue(undefined)
+
+      await expect(
+        containerManager.mapToFirefoxContainer(tempByNameContainer),
+      ).rejects.toThrow("Temporary container no longer exists and was removed")
+
+      expect(mockStorageService.removeContainer).toHaveBeenCalledWith(
+        tempByNameContainer.id,
+      )
+      expect(browser.contextualIdentities.create).not.toHaveBeenCalled()
     })
 
     it("should throw error when recreation fails", async () => {

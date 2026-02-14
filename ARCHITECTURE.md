@@ -204,6 +204,45 @@ Metadata layer (BOOKMARK_METADATA storage key):
   - customIcon: string      -- override icon
 ```
 
+### 7. Popup Workflow Actions
+
+```
+PopupApp (src/ui/popup/components/PopupApp.tsx)
+  -> Load active tab context + containers
+  -> User selects target container
+  -> User picks one of 5 likely actions:
+     1. move-current  -> OPEN_IN_CONTAINER + close current tab
+     2. open-new      -> OPEN_IN_CONTAINER with normalized URL/query
+     3. create-rule   -> CREATE_RULE (include + domain match)
+     4. temp-now      -> CREATE_CONTAINER (temporary) + OPEN_IN_CONTAINER
+     5. bookmark      -> browser.bookmarks.create(url with optional ?silo=)
+  -> Status feedback via aria-live output
+```
+
+Keyboard bindings in popup:
+- `/` focus container search
+- `1-5` switch action tabs
+- `Enter` execute selected action
+- `m` open options management (deep link)
+- `r` refresh context and containers
+- `?` toggle shortcut help
+
+### 8. Options Navigation + Deep-Link Context
+
+```
+options/index.tsx
+  -> readPageFromUrl() reads ?page=...
+  -> applyUrlContext() reads optional ?container=...
+     - page=containers -> uiState.pages.containers.selectedContainerId
+     - page=rules      -> uiState.pages.rules.filters.container
+  -> Sidebar navigation updates URL via pushState
+  -> ContainersPage can navigate to Rules with selected container filter
+```
+
+Keyboard bindings in options:
+- Global: `1-7` switch major sections
+- Containers page: `/`, `j/k`, `n`, `e`, `c`, `Delete`, `r`
+
 ## Event Bindings
 
 | Browser Event                        | Listener                    | Purpose                                          |

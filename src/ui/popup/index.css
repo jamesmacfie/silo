@@ -24,20 +24,8 @@ body {
   @apply flex items-start justify-between gap-3 mb-4;
 }
 
-.brand-wrap {
-  @apply flex items-center gap-2.5;
-}
-
-.brand-mark {
-  @apply w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 shadow-md;
-}
-
-.brand-title {
-  @apply text-sm font-semibold leading-tight;
-}
-
-.brand-subtitle {
-  @apply text-xs text-gray-600 dark:text-slate-300;
+.brand-icon {
+  @apply w-9 h-9 rounded-lg shadow-sm shrink-0;
 }
 
 .header-controls {

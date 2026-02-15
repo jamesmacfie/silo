@@ -322,7 +322,7 @@ export class RequestInterceptor {
 
       await browser.notifications.create({
         type: "basic",
-        iconUrl: browser.runtime.getURL("images/extension_48.png"),
+        iconUrl: browser.runtime.getURL("images/icon_48.png"),
         title: "Domain Restricted",
         message: `${new URL(url).hostname} can only be opened in "${containerName}" container.`,
       })
@@ -335,7 +335,7 @@ export class RequestInterceptor {
     try {
       await browser.notifications.create({
         type: "basic",
-        iconUrl: browser.runtime.getURL("images/extension_48.png"),
+        iconUrl: browser.runtime.getURL("images/icon_48.png"),
         title: "Opened Outside Containers",
         message: `${new URL(url).hostname} was opened outside of containers due to an EXCLUDE rule.`,
       })

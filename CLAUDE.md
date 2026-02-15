@@ -6,6 +6,7 @@ Firefox WebExtension for automatic container management. TypeScript + React 18 +
 
 - **[README.md](README.md)** -- Project overview, feature list, installation, usage guide, and technology stack. Start here for what Silo is and how to use it.
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** -- System layer diagram, data flows (URL interception, message passing, rule evaluation, stats pipeline, bookmark CRUD), event bindings map, handler registration table, Zustand store architecture, storage schema, and URL matching engine internals.
+- **[AGENTS.md](AGENTS.md)** -- Symlink to this file; keep edits here so both stay in sync.
 
 ## Coding Style
 
@@ -48,7 +49,11 @@ UI stores call `messagingService.sendMessage(type, payload)` which sends via `br
 
 ### Handler Pattern
 
-Each handler implements `{ canHandle(type): boolean, handle(message): Promise<MessageResponse> }`. Handlers define a `handledTypes` array and check membership. 11 handlers registered in order in `src/background/index.ts`.
+Each handler implements `{ canHandle(type): boolean, handle(message): Promise<MessageResponse> }`. Handlers define a `handledTypes` array and check membership. 11 handlers are registered in `src/background/index.ts` in this order: `SystemHandler`, `PreferenceHandler`, `ContainerHandler`, `RuleHandler`, `StatsHandler`, `BookmarkHandler`, `BackupHandler`, `ImportExportHandler`, `TemplateHandler`, `CategoryHandler`, `SyncHandler`.
+
+Important status notes:
+- `SyncHandler` message types exist but currently return `"Sync not implemented"`.
+- `ImportExportHandler` supports rules/containers/tags + templates, but bookmark export/import handlers currently return not-implemented responses.
 
 ### Service Singletons
 
@@ -76,6 +81,8 @@ Firefox bookmark API provides core bookmark data. Silo adds a metadata layer in 
 4. Default container (if configured)
 5. No action
 
+INCLUDE rules only redirect from default context. If already inside a different non-default container, INCLUDE rules are ignored.
+
 ### Initialization Sequence
 
 `AppInitializer.initialize()`: migrate storage -> sync containers with Firefox -> register request interceptor -> sync bookmark associations. Each step is fault-tolerant.
@@ -83,6 +90,13 @@ Firefox bookmark API provides core bookmark data. Silo adds a metadata layer in 
 ### Cross-Store Effects
 
 Deleting a container triggers cleanup of related rules. `appStore` aggregates loading/error state from all domain stores. Theme changes propagate to document class.
+
+## Current UI Status
+
+- Popup currently has 3 primary actions: open current tab in container, open new tab in container, open in new temporary container.
+- Options UI pages are: Dashboard, Containers, Rules, Bookmarks, Tags, Import/Export, Settings.
+- Settings page currently exposes theme switching and Firefox shortcut management helper (open `about:addons` + refresh command state).
+- Import/Export UI includes bookmark sections, but bookmark import/export handlers are placeholders right now.
 
 ## Adding New Features
 
@@ -100,7 +114,7 @@ Deleting a container triggers cleanup of related rules. `appStore` aggregates lo
 1. Create page component in `src/ui/options/MyPage.tsx`
 2. Use layout components from `src/ui/shared/components/layout/`
 3. Connect to stores via selector hooks
-4. Add route in the options app router
+4. Add `PageKey`, nav item, and render branch in `src/ui/options/index.tsx`
 
 ### Add a Message Type
 
@@ -134,7 +148,11 @@ Deleting a container triggers cleanup of related rules. `appStore` aggregates lo
 | Zustand stores           | `src/ui/shared/stores/`                        |
 | Layout components        | `src/ui/shared/components/layout/`             |
 | Bookmark components      | `src/ui/shared/components/bookmarks/`          |
-| Import/export UI         | `src/ui/options/ImportExportPage.tsx`           |
+| Import/export UI         | `src/ui/options/ImportExportPage.tsx`          |
+| Options shell/nav        | `src/ui/options/index.tsx`                     |
+| Popup workflows          | `src/ui/popup/components/PopupApp.tsx`         |
+| Container preset wizard  | `src/ui/options/ContainerPresetWizard.tsx`     |
+| Preset rule catalog      | `src/shared/utils/containerRulePresets.ts`     |
 | Bookmark format utils    | `src/shared/utils/bookmarkFormats.ts`          |
 
 ## Commands
@@ -143,6 +161,7 @@ Deleting a container triggers cleanup of related rules. `appStore` aggregates lo
 npm run dev            # Dev server with hot reload
 npm run build          # Production build (esbuild + Tailwind + Extension CLI)
 npm run test           # Jest test suite
+npm run test:watch     # Jest watch mode
 npm run test:coverage  # Coverage report
 npm run test:e2e       # Playwright e2e tests
 npm run type-check     # TypeScript validation (tsc --noEmit)

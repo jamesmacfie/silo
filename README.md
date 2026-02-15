@@ -10,14 +10,14 @@ This whole thing has been built with Claude Code. I've hardly checked the code a
 [![Firefox](https://img.shields.io/badge/Firefox-91%2B-orange.svg)](https://www.mozilla.org/firefox/)
 
 <p align="center">
-  <img src="./images/extension_128.png" alt="Silo Extension Icon" width="96" height="96" />
+  <img src="./images/icon_128.png" alt="Silo Extension Icon" width="96" height="96" />
 </p>
 
 ## Why Silo Exists
 
 Firefox Multi-Account Containers let you isolate websites into separate browsing contexts -- different cookies, sessions, and storage for each container. This is powerful for privacy, separating work from personal browsing, and managing multiple accounts on the same service. But Firefox gives you no way to automate it. Every time you open a site, you have to remember which container it belongs in and manually open it there.
 
-Silo fixes that. You write rules -- "open github.com in my Dev container", "restrict banking.com to my Finance container" -- and Silo intercepts every navigation to enforce them automatically. It also extends Firefox bookmarks with container associations and tags, gives you a statistics dashboard showing how you use your containers, and provides a full import/export system for moving your setup between browsers.
+Silo fixes that. You write rules -- "open github.com in my Dev container", "restrict banking.com to my Finance container" -- and Silo intercepts every navigation to enforce them automatically. It also extends Firefox bookmarks with container associations and tags, gives you a statistics dashboard showing how you use your containers, and provides import/export tooling for rules, containers, tags, and complete backups.
 
 It's built for privacy-conscious users who use containers seriously: developers juggling staging and production environments, people with multiple accounts on the same service, or anyone who wants their browsing compartmentalized without the manual overhead.
 
@@ -36,7 +36,7 @@ It's built for privacy-conscious users who use containers seriously: developers 
 
 - Full CRUD for Firefox containers with custom names, icons, and colors
 - Temporary containers that auto-delete when their last tab closes
-- Container templates for quick setup
+- Preset wizard for quick setup of common ecosystems (Facebook, Google, Discord, Amazon, X/Twitter, TikTok, YouTube, Microsoft)
 - Cookie clearing per container
 - Sync with Firefox's native container list
 
@@ -51,12 +51,11 @@ It's built for privacy-conscious users who use containers seriously: developers 
 
 ### Import/Export
 
-- Rules (JSON) -- export and import rule sets with validation and preview
-- Containers (JSON) -- full container configuration
-- Tags (JSON) -- tag definitions with color mappings
-- Silo bookmarks (JSON) -- Firefox bookmarks with Silo metadata, container associations, and tags
-- Cross-browser bookmarks (Netscape HTML) -- standard format compatible with Chrome, Edge, Safari
-- Complete data backup (JSON) -- everything in one file for full system restore
+- Rules (JSON) -- export/import with preview, validation, and template download
+- Containers (JSON) -- full container configuration import/export
+- Tags (JSON) -- tag definitions import/export
+- Complete data backup (JSON) -- backup/restore for containers, rules, preferences, categories, and stats
+- Bookmarks (Silo JSON and cross-browser HTML) -- UI is present, but backend import/export handlers are currently not implemented
 
 ### Statistics Dashboard
 
@@ -69,9 +68,9 @@ It's built for privacy-conscious users who use containers seriously: developers 
 ### Popup Interface
 
 - Workflow-first action panel focused on likely tasks
-- Quick actions: move current tab, open new tab in container, create site rule, temp container + open now, bookmark with container context
-- Searchable target-container picker with keyboard navigation
-- Keyboard shortcuts for speed (`/`, `1-5`, `Enter`, `m`, `r`, `?`)
+- Quick actions: open current tab in container, open new tab in container, open in new temporary container
+- Searchable target-container picker with arrow/enter keyboard navigation
+- Keyboard shortcuts for speed (`1`, `2`, `3` on home; `↑`/`↓` + `Enter` in picker)
 
 ### Options Page
 
@@ -85,7 +84,12 @@ Full-tab management interface with sections for: Dashboard, Containers, Rules, B
 ### Other
 
 - Theme support: light, dark, and auto (follows system)
-- Configurable notifications for rule matches, restrictions, and exclusions
+- Settings page includes theme switching and Firefox shortcut management helper
+
+### Current Limitations
+
+- Sync operations (`SYNC_PUSH`, `SYNC_PULL`, `GET_SYNC_STATE`) are stubbed and currently return "Sync not implemented"
+- Bookmark import/export sections in Import/Export currently call placeholder handlers and are not yet functional
 
 ## Technology Stack
 
@@ -165,7 +169,7 @@ npm run fmt:check      # Biome check (no auto-fix)
 
 1. Install the extension and pin it to your toolbar
 2. Click the Silo icon to open the popup
-3. Pick a target container, choose the action tab you want (move/open/rule/temp/bookmark), then press `Enter`
+3. Choose one of the three popup actions (`1` current tab, `2` new tab, `3` new temp container), then select a container when prompted
 4. Open full management from the popup when you need deeper configuration
 5. Navigate away and back -- Silo will automatically open the site in the correct container
 
@@ -189,12 +193,11 @@ npm run fmt:check      # Biome check (no auto-fix)
 ### Keyboard Workflows
 
 Popup:
-- `/` focus container search
-- `1-5` switch likely-action tabs
-- `Enter` execute selected action
-- `m` open management
-- `r` refresh popup context
-- `?` show/hide shortcut reference
+- `1` open current tab in chosen container
+- `2` open new tab in chosen container
+- `3` open current context in a new temporary container
+- `ArrowUp` / `ArrowDown` move through search results in the container picker
+- `Enter` confirm selected container in the picker
 
 Container Management:
 - `/` focus search
@@ -216,7 +219,9 @@ The Bookmarks section in the options page provides:
 
 ### Import/Export
 
-Go to the Import/Export section in the options page. Each data type (rules, containers, tags, bookmarks) can be exported and imported independently as JSON. For cross-browser bookmark portability, use the Netscape HTML format. For full system backup/restore, use the complete backup option.
+Go to the Import/Export section in the options page.
+- Working now: Rules JSON, Containers JSON, Tags JSON, and Complete Data backup/restore
+- Not yet implemented: Bookmarks (Silo JSON) and Bookmarks (cross-browser HTML)
 
 ## Architecture
 

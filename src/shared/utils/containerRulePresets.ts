@@ -1,4 +1,4 @@
-import { MatchType, RuleType, type Container, type Rule } from "@/shared/types"
+import { type Container, MatchType, type Rule, RuleType } from "@/shared/types"
 
 interface PresetSeed {
   id: string
@@ -112,7 +112,6 @@ const PRESET_SEEDS: PresetSeed[] = [
     },
     domains: [
       "amazon.com",
-      "amazon.*",
       "aws.amazon.com",
       "amazonaws.com",
       "primevideo.com",
@@ -196,46 +195,27 @@ function makeStableRuleId(value: string): string {
   return normalized || "rule"
 }
 
-function buildGlobPatterns(domain: string): string[] {
-  const normalizedDomain = domain.trim().toLowerCase()
-
-  if (!normalizedDomain) {
-    return []
-  }
-
-  if (normalizedDomain.startsWith("*.")) {
-    const baseDomain = normalizedDomain.slice(2)
-    return [`*://${baseDomain}/*`, `*://*.${baseDomain}/*`]
-  }
-
-  return [`*://${normalizedDomain}/*`, `*://*.${normalizedDomain}/*`]
-}
-
 function buildPresetRules(seed: PresetSeed): ContainerRulePresetRule[] {
   const seenPatterns = new Set<string>()
   const rules: ContainerRulePresetRule[] = []
 
   for (const domain of seed.domains) {
-    const patterns = buildGlobPatterns(domain)
-
-    for (const pattern of patterns) {
-      const normalizedPattern = pattern.trim().toLowerCase()
-      if (!normalizedPattern || seenPatterns.has(normalizedPattern)) {
-        continue
-      }
-
-      seenPatterns.add(normalizedPattern)
-
-      rules.push({
-        id: makeStableRuleId(`${seed.id}-${pattern}`),
-        domain,
-        pattern,
-        matchType: MatchType.GLOB,
-        ruleType: RuleType.INCLUDE,
-        priority: DEFAULT_RULE_PRIORITY,
-        description: `${seed.label} web property (${domain})`,
-      })
+    const normalizedDomain = domain.trim().toLowerCase()
+    if (!normalizedDomain || seenPatterns.has(normalizedDomain)) {
+      continue
     }
+
+    seenPatterns.add(normalizedDomain)
+
+    rules.push({
+      id: makeStableRuleId(`${seed.id}-${normalizedDomain}`),
+      domain: normalizedDomain,
+      pattern: normalizedDomain,
+      matchType: MatchType.DOMAIN,
+      ruleType: RuleType.INCLUDE,
+      priority: DEFAULT_RULE_PRIORITY,
+      description: `${seed.label} web property (${normalizedDomain})`,
+    })
   }
 
   return rules
@@ -256,6 +236,48 @@ export type RuleIdentity = Pick<
 export function createRuleIdentityKey(rule: RuleIdentity): string {
   const containerId = rule.containerId || ""
   return `${rule.pattern.trim().toLowerCase()}|${rule.matchType}|${rule.ruleType}|${containerId}`
+}
+
+export function getPresetRuleIdentityKeys(
+  rule: Pick<ContainerRulePresetRule, "pattern" | "matchType" | "ruleType">,
+  containerId: string,
+): string[] {
+  const keys = new Set<string>([
+    createRuleIdentityKey({
+      pattern: rule.pattern,
+      matchType: rule.matchType,
+      ruleType: rule.ruleType,
+      containerId,
+    }),
+  ])
+
+  if (rule.matchType !== MatchType.DOMAIN) {
+    return Array.from(keys)
+  }
+
+  const normalizedPattern = rule.pattern.trim().toLowerCase()
+  if (!normalizedPattern) {
+    return Array.from(keys)
+  }
+
+  const baseDomain = normalizedPattern.startsWith("*.")
+    ? normalizedPattern.slice(2)
+    : normalizedPattern
+
+  const legacyGlobPatterns = [`*://${baseDomain}/*`, `*://*.${baseDomain}/*`]
+
+  for (const pattern of legacyGlobPatterns) {
+    keys.add(
+      createRuleIdentityKey({
+        pattern,
+        matchType: MatchType.GLOB,
+        ruleType: rule.ruleType,
+        containerId,
+      }),
+    )
+  }
+
+  return Array.from(keys)
 }
 
 export function buildRuleIdentitySet(rules: Rule[]): Set<string> {

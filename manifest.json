@@ -5,10 +5,10 @@
   "name": "Silo",
   "description": "Automatically open websites in Firefox containers based on configurable rules",
   "icons": {
-    "16": "images/extension_16.png",
-    "32": "images/extension_32.png",
-    "48": "images/extension_48.png",
-    "128": "images/extension_128.png"
+    "16": "images/icon_16.png",
+    "32": "images/icon_32.png",
+    "48": "images/icon_48.png",
+    "128": "images/icon_128.png"
   },
   "author": "Silo Team",
   "background": {
@@ -19,10 +19,10 @@
     "default_popup": "popup.html",
     "default_title": "Silo",
     "default_icon": {
-      "16": "images/extension_16.png",
-      "32": "images/extension_32.png",
-      "48": "images/extension_48.png",
-      "128": "images/extension_128.png"
+      "16": "images/icon_16.png",
+      "32": "images/icon_32.png",
+      "48": "images/icon_48.png",
+      "128": "images/icon_128.png"
     }
   },
   "options_ui": {

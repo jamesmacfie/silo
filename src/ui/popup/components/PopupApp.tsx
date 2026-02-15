@@ -534,13 +534,11 @@ export function PopupApp(): JSX.Element {
   return (
     <div className="popup-shell">
       <header className="popup-header">
-        <div className="brand-wrap">
-          <div className="brand-mark" />
-          <div>
-            <h1 className="brand-title">Silo Quick Open</h1>
-            <p className="brand-subtitle">Simple container actions</p>
-          </div>
-        </div>
+        <img
+          src={browser.runtime.getURL("images/icon_128.png")}
+          alt="Silo"
+          className="brand-icon"
+        />
         <div className="header-controls">
           <ThemeSwitcher compact />
         </div>

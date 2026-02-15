@@ -10,6 +10,7 @@ import {
   Plus,
   RefreshCw,
   Shield,
+  Sparkles,
   Trash2,
 } from "lucide-react"
 import React from "react"
@@ -31,6 +32,7 @@ import {
   useRules,
 } from "../shared/stores"
 import { ContainerModal } from "./ContainerModal"
+import { ContainerPresetWizard } from "./ContainerPresetWizard"
 
 type ContainerSort = "name" | "rules" | "modified" | "created"
 
@@ -111,6 +113,7 @@ export function ContainersPage({
   }>({ isOpen: false, mode: "create" })
 
   const [isSyncing, setIsSyncing] = React.useState(false)
+  const [isPresetWizardOpen, setIsPresetWizardOpen] = React.useState(false)
 
   const containerRuleCounts = React.useMemo(() => {
     const counts = new Map<string, number>()
@@ -442,6 +445,13 @@ export function ContainersPage({
                 className={`w-4 h-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
               />
               Sync
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsPresetWizardOpen(true)}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Presets
             </Button>
             <Button onClick={openCreateContainerModal}>
               <Plus className="w-4 h-4 mr-2" />
@@ -840,6 +850,14 @@ export function ContainersPage({
         }
         onClose={closeContainerModal}
         onSuccess={syncContainers}
+      />
+
+      <ContainerPresetWizard
+        isOpen={isPresetWizardOpen}
+        containers={containers}
+        rules={rules}
+        onClose={() => setIsPresetWizardOpen(false)}
+        onComplete={syncContainers}
       />
     </PageLayout>
   )

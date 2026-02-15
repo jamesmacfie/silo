@@ -128,7 +128,7 @@ describe("RequestInterceptor", () => {
     global.browser.runtime = {
       getURL: jest
         .fn()
-        .mockReturnValue("chrome-extension://abc/images/extension_48.png"),
+        .mockReturnValue("chrome-extension://abc/images/icon_48.png"),
     } as any
   })
 
@@ -482,7 +482,6 @@ describe("RequestInterceptor", () => {
       mockStorageService.getPreferences = jest.fn().mockResolvedValue({
         keepOldTabs: false,
       })
-
       ;(browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 })
 
       await (requestInterceptor as any).handleRedirect(
@@ -506,7 +505,6 @@ describe("RequestInterceptor", () => {
       mockStorageService.getPreferences = jest.fn().mockResolvedValue({
         keepOldTabs: true,
       })
-
       ;(browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 })
 
       await (requestInterceptor as any).handleRedirect(
@@ -588,7 +586,6 @@ describe("RequestInterceptor", () => {
         keepOldTabs: false,
         notifications: { showOnExclude: true },
       })
-
       ;(browser.tabs.create as jest.Mock).mockResolvedValue({ id: 2 })
 
       await (requestInterceptor as any).handleExclude(
@@ -600,7 +597,7 @@ describe("RequestInterceptor", () => {
 
       expect(browser.notifications.create).toHaveBeenCalledWith({
         type: "basic",
-        iconUrl: "chrome-extension://abc/images/extension_48.png",
+        iconUrl: "chrome-extension://abc/images/icon_48.png",
         title: "Opened Outside Containers",
         message:
           "example.com was opened outside of containers due to an EXCLUDE rule.",
@@ -661,7 +658,7 @@ describe("RequestInterceptor", () => {
 
       expect(browser.notifications.create).toHaveBeenCalledWith({
         type: "basic",
-        iconUrl: "chrome-extension://abc/images/extension_48.png",
+        iconUrl: "chrome-extension://abc/images/icon_48.png",
         title: "Domain Restricted",
         message:
           'example.com can only be opened in "Work Container" container.',
@@ -696,7 +693,7 @@ describe("RequestInterceptor", () => {
 
       expect(browser.notifications.create).toHaveBeenCalledWith({
         type: "basic",
-        iconUrl: "chrome-extension://abc/images/extension_48.png",
+        iconUrl: "chrome-extension://abc/images/icon_48.png",
         title: "Domain Restricted",
         message:
           'example.com can only be opened in "Work Container" container.',
@@ -743,7 +740,7 @@ describe("RequestInterceptor", () => {
 
       expect(browser.notifications.create).toHaveBeenCalledWith({
         type: "basic",
-        iconUrl: "chrome-extension://abc/images/extension_48.png",
+        iconUrl: "chrome-extension://abc/images/icon_48.png",
         title: "Opened Outside Containers",
         message:
           "example.com was opened outside of containers due to an EXCLUDE rule.",

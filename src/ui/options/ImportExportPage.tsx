@@ -36,16 +36,8 @@ const SECTIONS: ImportExportSection[] = [
     fileExtension: "json",
   },
   {
-    title: "Tags",
-    description: "Export bookmark tags with colors and metadata",
-    exportType: "EXPORT_TAGS",
-    importType: "IMPORT_TAGS",
-    fileExtension: "json",
-  },
-  {
     title: "Bookmarks (Silo Format)",
-    description:
-      "Export bookmarks with container associations, tags, and metadata",
+    description: "Export bookmarks with container associations and metadata",
     exportType: "EXPORT_BOOKMARKS_SILO",
     importType: "IMPORT_BOOKMARKS_SILO",
     fileExtension: "json",
@@ -61,7 +53,7 @@ const SECTIONS: ImportExportSection[] = [
   {
     title: "Complete Data",
     description:
-      "Full backup including all containers, rules, bookmarks, tags, and settings",
+      "Full backup including all containers, rules, bookmarks, and settings",
     exportType: "BACKUP_DATA",
     importType: "RESTORE_DATA",
     fileExtension: "json",
@@ -347,7 +339,7 @@ function ImportExportSectionComponent({
                 checked={createMissing}
                 onChange={(e) => setCreateMissing(e.target.checked)}
               />
-              Create missing containers/tags automatically
+              Create missing containers automatically
             </label>
           </div>
 
@@ -380,11 +372,6 @@ function ImportExportSectionComponent({
             {importResult.containers && (
               <div className="px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
                 <strong>{importResult.containers.length}</strong> containers
-              </div>
-            )}
-            {importResult.tags && (
-              <div className="px-3 py-1 bg-purple-100 dark:bg-purple-900 rounded-full">
-                <strong>{importResult.tags.length}</strong> tags
               </div>
             )}
             {importResult.bookmarks && (
@@ -478,7 +465,6 @@ export function ImportExportPage({
       if (result.rules) message += ` - ${result.rules.length} rules`
       if (result.containers)
         message += ` - ${result.containers.length} containers`
-      if (result.tags) message += ` - ${result.tags.length} tags`
       if (result.bookmarks) message += ` - ${result.bookmarks.length} bookmarks`
       if (result.warnings?.length > 0)
         message += ` with ${result.warnings.length} warnings`
@@ -519,10 +505,10 @@ export function ImportExportPage({
 
       <div className="mb-6">
         <p className="text-gray-600 dark:text-gray-400">
-          Import and export your Silo data including containers, rules,
-          bookmarks, and tags. Use the cross-browser format to move bookmarks
-          between different browsers, or the Silo format to preserve all
-          metadata and associations.
+          Import and export your Silo data including containers, rules, and
+          bookmarks. Use the cross-browser format to move bookmarks between
+          different browsers, or the Silo format to preserve all metadata and
+          associations.
         </p>
       </div>
 

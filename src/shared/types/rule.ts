@@ -24,7 +24,6 @@ export interface Rule {
   metadata: {
     description?: string
     source?: "user" | "bookmark" | "import"
-    tags?: string[]
   }
 }
 
@@ -38,7 +37,6 @@ export interface CreateRuleRequest {
   metadata?: {
     description?: string
     source?: "user" | "bookmark" | "import"
-    tags?: string[]
   }
 }
 

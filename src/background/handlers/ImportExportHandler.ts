@@ -1,4 +1,4 @@
-import { MESSAGE_TYPES, STORAGE_KEYS } from "@/shared/constants"
+import { MESSAGE_TYPES } from "@/shared/constants"
 import { logger } from "@/shared/utils/logger"
 import type { Message, MessageResponse } from "@/shared/utils/messaging"
 import type { MessageHandler } from "../MessageRouter"
@@ -18,8 +18,6 @@ export class ImportExportHandler implements MessageHandler {
     MESSAGE_TYPES.GENERATE_TEMPLATE,
     MESSAGE_TYPES.EXPORT_CONTAINERS,
     MESSAGE_TYPES.IMPORT_CONTAINERS,
-    MESSAGE_TYPES.EXPORT_TAGS,
-    MESSAGE_TYPES.IMPORT_TAGS,
     MESSAGE_TYPES.EXPORT_BOOKMARKS_SILO,
     MESSAGE_TYPES.IMPORT_BOOKMARKS_SILO,
     MESSAGE_TYPES.EXPORT_BOOKMARKS_STANDARD,
@@ -48,12 +46,6 @@ export class ImportExportHandler implements MessageHandler {
 
       case MESSAGE_TYPES.IMPORT_CONTAINERS:
         return this.importContainers(message)
-
-      case MESSAGE_TYPES.EXPORT_TAGS:
-        return this.exportTags(message)
-
-      case MESSAGE_TYPES.IMPORT_TAGS:
-        return this.importTags(message)
 
       case MESSAGE_TYPES.EXPORT_BOOKMARKS_SILO:
         return this.exportBookmarksSilo(message)
@@ -246,18 +238,6 @@ export class ImportExportHandler implements MessageHandler {
           ]
           break
 
-        case "IMPORT_TAGS":
-          template = [
-            {
-              name: "Important",
-              color: "#ff0000",
-              metadata: {
-                description: "Tag for important bookmarks",
-              },
-            },
-          ]
-          break
-
         default:
           template = {}
           break
@@ -369,80 +349,6 @@ export class ImportExportHandler implements MessageHandler {
           error instanceof Error
             ? error.message
             : "Failed to import containers",
-      }
-    }
-  }
-
-  /**
-   * Export bookmark tags to JSON format
-   */
-  private async exportTags(_message: Message): Promise<MessageResponse> {
-    try {
-      const tags = ((await storageService.get(STORAGE_KEYS.BOOKMARK_TAGS)) ||
-        []) as any[]
-
-      this.log.info("Tags export completed", {
-        tagsCount: tags.length,
-      })
-
-      return { success: true, data: tags }
-    } catch (error) {
-      this.log.error("Failed to export tags", error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to export tags",
-      }
-    }
-  }
-
-  /**
-   * Import bookmark tags from JSON format
-   */
-  private async importTags(message: Message): Promise<MessageResponse> {
-    try {
-      const { data, preview } = (message.payload || {}) as {
-        data: any[]
-        preview?: boolean
-      }
-
-      if (!data || !Array.isArray(data)) {
-        return {
-          success: false,
-          error: "Tags data is required and must be an array",
-        }
-      }
-
-      if (preview) {
-        return {
-          success: true,
-          data: {
-            tags: data,
-            errors: [],
-            warnings: [],
-          },
-        }
-      }
-
-      // Import tags
-      await storageService.set(STORAGE_KEYS.BOOKMARK_TAGS, data)
-
-      this.log.info("Tags import completed", {
-        tagsCount: data.length,
-      })
-
-      return {
-        success: true,
-        data: {
-          tags: data,
-          importedCount: data.length,
-          errors: [],
-        },
-      }
-    } catch (error) {
-      this.log.error("Failed to import tags", error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to import tags",
       }
     }
   }

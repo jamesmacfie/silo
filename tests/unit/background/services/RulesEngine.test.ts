@@ -30,7 +30,6 @@ describe("RulesEngine", () => {
     metadata: {
       description: "GitHub rule",
       source: "user",
-      tags: ["dev"],
     },
   }
 
@@ -102,7 +101,6 @@ describe("RulesEngine", () => {
         metadata: {
           description: "Test rule",
           source: "user",
-          tags: ["test"],
         },
       }
 
@@ -131,7 +129,6 @@ describe("RulesEngine", () => {
       expect(result.priority).toBe(1)
       expect(result.enabled).toBe(true)
       expect(result.metadata.source).toBe("user")
-      expect(result.metadata.tags).toEqual([])
     })
 
     it("should normalize EXCLUDE rules to have no containerId", async () => {

@@ -46,7 +46,6 @@ const RuleSchema = z.object({
   metadata: z.object({
     description: z.string().optional(),
     source: z.enum(["user", "bookmark", "import"]).optional(),
-    tags: z.array(z.string()).optional(),
   }),
 })
 

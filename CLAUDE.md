@@ -53,7 +53,7 @@ Each handler implements `{ canHandle(type): boolean, handle(message): Promise<Me
 
 Important status notes:
 - `SyncHandler` message types exist but currently return `"Sync not implemented"`.
-- `ImportExportHandler` supports rules/containers/tags + templates, but bookmark export/import handlers currently return not-implemented responses.
+- `ImportExportHandler` supports rules/containers + templates, but bookmark export/import handlers currently return not-implemented responses.
 
 ### Service Singletons
 
@@ -61,7 +61,7 @@ Services are module-level singleton instances exported as default: `export defau
 
 ### Dual-Layer Bookmark Model
 
-Firefox bookmark API provides core bookmark data. Silo adds a metadata layer in `browser.storage.local` (key: `bookmarkMetadata`) for container associations, tags, and notes.
+Firefox bookmark API provides core bookmark data. Silo adds a metadata layer in `browser.storage.local` (key: `bookmarkMetadata`) for container associations and notes.
 
 ### Stats Pipeline
 
@@ -94,7 +94,7 @@ Deleting a container triggers cleanup of related rules. `appStore` aggregates lo
 ## Current UI Status
 
 - Popup currently has 3 primary actions: open current tab in container, open new tab in container, open in new temporary container.
-- Options UI pages are: Dashboard, Containers, Rules, Bookmarks, Tags, Import/Export, Settings.
+- Options UI pages are: Dashboard, Containers, Rules, Bookmarks, Import/Export, Settings.
 - Settings page currently exposes theme switching and Firefox shortcut management helper (open `about:addons` + refresh command state).
 - Import/Export UI includes bookmark sections, but bookmark import/export handlers are placeholders right now.
 

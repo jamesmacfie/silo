@@ -2,7 +2,6 @@ import {
   Check,
   Container as ContainerIcon,
   ExternalLink,
-  Tag,
   Trash2,
   X,
 } from "lucide-react"
@@ -10,7 +9,6 @@ import React from "react"
 import type { BookmarkBulkAction, Container } from "@/shared/types"
 import {
   useBookmarkActions,
-  useBookmarkTags,
   useSelectedBookmarks,
   useSelectedFolders,
 } from "../../stores/bookmarkStore"
@@ -27,11 +25,9 @@ export function BulkActionsBar({
 }: BulkActionsBarProps): JSX.Element {
   const selectedBookmarks = useSelectedBookmarks()
   const selectedFolders = useSelectedFolders()
-  const tags = useBookmarkTags()
   const { executeBulkAction, clearSelection, deleteFolders } =
     useBookmarkActions()
 
-  const [showTagMenu, setShowTagMenu] = React.useState(false)
   const [showContainerMenu, setShowContainerMenu] = React.useState(false)
   const [isExecuting, setIsExecuting] = React.useState(false)
 
@@ -73,12 +69,10 @@ export function BulkActionsBar({
     try {
       setIsExecuting(true)
 
-      // Delete folders first (which will delete their contents)
       if (hasFolders) {
         await deleteFolders(selectedFolderIds)
       }
 
-      // Then delete individual bookmarks if any
       if (hasBookmarks) {
         await handleBulkAction({
           type: "delete",
@@ -92,28 +86,10 @@ export function BulkActionsBar({
     }
   }
 
-  const handleAssignTag = async (tagId: string) => {
-    await handleBulkAction({
-      type: "assignTag",
-      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
-      payload: { tagId },
-    })
-    setShowTagMenu(false)
-  }
-
-  const _handleRemoveTag = async (tagId: string) => {
-    await handleBulkAction({
-      type: "removeTag",
-      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
-      payload: { tagId },
-    })
-    setShowTagMenu(false)
-  }
-
   const handleAssignContainer = async (containerId: string) => {
     await handleBulkAction({
       type: "assignContainer",
-      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
+      bookmarkIds: selectedBookmarkIds,
       payload: { containerId },
     })
     setShowContainerMenu(false)
@@ -122,14 +98,14 @@ export function BulkActionsBar({
   const handleRemoveContainer = async () => {
     await handleBulkAction({
       type: "removeContainer",
-      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
+      bookmarkIds: selectedBookmarkIds,
     })
   }
 
   const handleOpenInContainer = async (containerId: string) => {
     await handleBulkAction({
       type: "openInContainer",
-      bookmarkIds: selectedBookmarkIds, // Will be enhanced in executeBulkAction to include folder bookmarks
+      bookmarkIds: selectedBookmarkIds,
       payload: { containerId },
     })
     setShowContainerMenu(false)
@@ -156,57 +132,6 @@ export function BulkActionsBar({
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Tag Actions */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowTagMenu(!showTagMenu)}
-                    disabled={isExecuting}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors disabled:opacity-50"
-                    title="Tag actions"
-                  >
-                    <Tag className="w-4 h-4" />
-                    Tags
-                  </button>
-
-                  {showTagMenu && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setShowTagMenu(false)}
-                      />
-                      <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20">
-                        <div className="p-2">
-                          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                            Assign Tags
-                          </div>
-                          <div className="max-h-32 overflow-y-auto space-y-1">
-                            {tags.length === 0 ? (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 italic p-2">
-                                No tags available
-                              </p>
-                            ) : (
-                              tags.map((tag) => (
-                                <button
-                                  key={tag.id}
-                                  onClick={() => handleAssignTag(tag.id)}
-                                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-left rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                                >
-                                  <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: tag.color }}
-                                  />
-                                  <span className="flex-1">{tag.name}</span>
-                                </button>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Container Actions */}
                 <div className="relative">
                   <button
                     onClick={() => setShowContainerMenu(!showContainerMenu)}
@@ -291,7 +216,6 @@ export function BulkActionsBar({
                   )}
                 </div>
 
-                {/* Delete Action */}
                 <button
                   onClick={handleDelete}
                   disabled={isExecuting}
@@ -304,7 +228,6 @@ export function BulkActionsBar({
               </div>
             </div>
 
-            {/* Close Button */}
             <button
               onClick={clearSelection}
               disabled={isExecuting}
@@ -329,7 +252,6 @@ export function BulkActionsBar({
           position: relative;
         }
 
-        /* Animation */
         .fixed.bottom-4 {
           animation: slideUp 0.3s ease-out;
         }
@@ -345,13 +267,12 @@ export function BulkActionsBar({
           }
         }
 
-        /* Mobile responsive adjustments */
         @media (max-width: 640px) {
           .flex.items-center.gap-2 {
             flex-wrap: wrap;
             gap: 0.5rem;
           }
-          
+
           .fixed.bottom-4.left-4.right-4 {
             left: 1rem;
             right: 1rem;

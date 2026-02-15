@@ -20,7 +20,6 @@ import {
   useBookmarkError,
   useBookmarkLoading,
   useBookmarkStore,
-  useBookmarkTags,
   useSelectedBookmarks,
   useSelectedFolders,
 } from "../../stores/bookmarkStore"
@@ -40,7 +39,6 @@ export function BookmarkTreeView({
   const selectedBookmarks = useSelectedBookmarks()
   const selectedFolders = useSelectedFolders()
   const containers = useContainers()
-  const tags = useBookmarkTags()
   const {
     toggleFolder,
     selectBookmark,
@@ -273,7 +271,7 @@ export function BookmarkTreeView({
     const isExpanded = expandedFolders.has(bookmark.id)
     const isHighlighted = newlyCreatedItems.has(bookmark.id)
 
-    // Get container and tag information for bookmarks
+    // Get container information for bookmarks
     const container = bookmark.containerId
       ? getContainer(bookmark.containerId)
       : null
@@ -344,7 +342,6 @@ export function BookmarkTreeView({
           setItemRef={setItemRef}
           container={container}
           suggestedContainer={suggestedContainer}
-          tags={tags}
           onToggleFolder={toggleFolder}
           onSelectBookmark={selectBookmark}
           onToggleFolderSelection={toggleFolderSelection}

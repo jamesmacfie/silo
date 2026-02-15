@@ -13,7 +13,6 @@ describe("bookmarkFormats", () => {
       title: "Bookmarks Toolbar",
       type: "folder",
       index: 0,
-      tags: [],
       children: [
         {
           id: "1",
@@ -21,7 +20,6 @@ describe("bookmarkFormats", () => {
           url: "https://example.com",
           type: "bookmark",
           index: 0,
-          tags: [],
         },
       ],
     },

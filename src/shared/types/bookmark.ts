@@ -1,24 +1,8 @@
-export interface BookmarkTag {
-  id: string
-  name: string
-  color: string // hex color
-  created: number
-  modified: number
-}
-
-export interface BookmarkTagCapabilities {
-  backend: "custom" | "native"
-  nativeSupported: boolean
-  browser: "firefox" | "chrome" | "edge" | "unknown"
-  reason?: string
-}
-
 // This is the metadata we store on top of Firefox bookmarks
 // The bookmarkId references the Firefox bookmark ID
 export interface BookmarkMetadata {
   bookmarkId: string // Firefox bookmark ID - this is the key
   containerId?: string // Container association
-  tags: string[] // Tag IDs
   autoOpen: boolean // Auto-open in container
   metadata: {
     description?: string
@@ -34,7 +18,6 @@ export interface BookmarkMetadata {
 export interface FolderMetadata {
   folderId: string // Firefox folder bookmark ID
   containerId?: string // Default container for bookmarks in this folder
-  tags?: string[] // Default tags for bookmarks in this folder
   inheritSettings?: boolean // Whether child bookmarks inherit these settings
   created: number
   modified: number
@@ -55,7 +38,6 @@ export interface Bookmark {
 
   // Our metadata
   containerId?: string
-  tags: string[]
   autoOpen?: boolean
   description?: string
   lastAccessed?: number
@@ -68,16 +50,9 @@ export interface Bookmark {
 }
 
 export interface BookmarkBulkAction {
-  type:
-    | "delete"
-    | "assignTag"
-    | "removeTag"
-    | "assignContainer"
-    | "removeContainer"
-    | "openInContainer"
+  type: "delete" | "assignContainer" | "removeContainer" | "openInContainer"
   bookmarkIds: string[]
   payload?: {
-    tagId?: string
     containerId?: string
   }
 }
@@ -85,15 +60,12 @@ export interface BookmarkBulkAction {
 export interface BookmarkImportData {
   bookmarks: Partial<BookmarkMetadata>[]
   folders: Partial<FolderMetadata>[]
-  tags: Partial<BookmarkTag>[]
-  createMissingTags?: boolean
   createMissingContainers?: boolean
   mergeStrategy?: "overwrite" | "skip" | "merge"
 }
 
 export interface BookmarkExportOptions {
   includeHeaders?: boolean
-  includeTags?: boolean
   includeContainers?: boolean
   includeFolders?: boolean
   includeMetadata?: boolean
@@ -102,7 +74,6 @@ export interface BookmarkExportOptions {
 
 export interface BookmarkSearchFilters {
   query?: string
-  tags?: string[]
   containers?: string[]
   folders?: string[]
   dateRange?: {
@@ -112,14 +83,7 @@ export interface BookmarkSearchFilters {
 }
 
 export interface BookmarkSortOptions {
-  field:
-    | "title"
-    | "url"
-    | "created"
-    | "modified"
-    | "position"
-    | "container"
-    | "tags"
+  field: "title" | "url" | "created" | "modified" | "position" | "container"
   order: "asc" | "desc"
 }
 
@@ -129,5 +93,4 @@ export interface BookmarkMigrationData {
   to: "metadata"
   bookmarks: BookmarkMetadata[]
   folders: FolderMetadata[]
-  tags: BookmarkTag[]
 }

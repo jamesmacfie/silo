@@ -1,10 +1,10 @@
 import {
   AlertCircle,
+  Bookmark as BookmarkIcon,
   CheckSquare,
   Edit3,
   ExternalLink,
   Square,
-  Tag,
   Trash2,
 } from "lucide-react"
 import React from "react"
@@ -13,13 +13,11 @@ import { BookmarkModal } from "../../../options/BookmarkModal"
 import { useContainers } from "../../stores"
 import {
   useBookmarkActions,
-  useBookmarkTags,
   useFilteredBookmarks,
   useSelectedBookmarks,
 } from "../../stores/bookmarkStore"
 import { Card } from "../Card"
 import { ContainerBadge } from "../ContainerBadge"
-import { TagBadge } from "../TagBadge"
 
 interface BookmarkTableViewProps {
   className?: string
@@ -30,7 +28,6 @@ export function BookmarkTableView({
 }: BookmarkTableViewProps): JSX.Element {
   const bookmarks = useFilteredBookmarks()
   const selectedBookmarks = useSelectedBookmarks()
-  const tags = useBookmarkTags()
   const containers = useContainers()
   const { selectBookmark, clearSelection, checkRuleMatch, loadBookmarks } =
     useBookmarkActions()
@@ -119,7 +116,6 @@ export function BookmarkTableView({
     loadBookmarks()
   }
 
-  const getTag = (tagId: string) => tags.find((tag) => tag.id === tagId)
   const getContainer = (containerId: string) =>
     containers.find((c) => c.cookieStoreId === containerId)
 
@@ -145,7 +141,7 @@ export function BookmarkTableView({
       <Card className={`bookmark-table-view ${className}`}>
         <div className="flex flex-col items-center justify-center py-12">
           <div className="text-gray-500 dark:text-gray-400 mb-4">
-            <Tag className="w-12 h-12" />
+            <BookmarkIcon className="w-12 h-12" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             No bookmarks found
@@ -189,9 +185,6 @@ export function BookmarkTableView({
               </th>
               <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
                 Container
-              </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
-                Tags
               </th>
               <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
                 Folder
@@ -291,28 +284,6 @@ export function BookmarkTableView({
                         </span>
                       )}
                     </div>
-                  </td>
-
-                  {/* Tags */}
-                  <td className="py-3 px-4">
-                    {bookmark.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 max-w-xs">
-                        {bookmark.tags.slice(0, 3).map((tagId) => {
-                          const tag = getTag(tagId)
-                          if (!tag) return null
-                          return <TagBadge key={tagId} tag={tag} size="xs" />
-                        })}
-                        {bookmark.tags.length > 3 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            +{bookmark.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        None
-                      </span>
-                    )}
                   </td>
 
                   {/* Folder */}

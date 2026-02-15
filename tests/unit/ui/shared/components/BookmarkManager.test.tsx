@@ -69,7 +69,6 @@ describe("BookmarkManager", () => {
   >
 
   const loadBookmarks = jest.fn().mockResolvedValue(undefined)
-  const loadTags = jest.fn().mockResolvedValue(undefined)
   const setView = jest.fn()
 
   beforeEach(() => {
@@ -80,7 +79,6 @@ describe("BookmarkManager", () => {
     mockUseSelectedBookmarks.mockReturnValue(new Set())
     mockUseBookmarkLoading.mockReturnValue({
       bookmarks: false,
-      tags: false,
       bulkOperation: false,
       dragOperation: false,
     })
@@ -95,7 +93,6 @@ describe("BookmarkManager", () => {
       refreshAll: jest.fn().mockResolvedValue(undefined),
       clearError: jest.fn(),
       loadBookmarks,
-      loadTags,
     } as any)
   })
 
@@ -106,7 +103,6 @@ describe("BookmarkManager", () => {
     expect(screen.getByTestId("bookmark-search")).toBeInTheDocument()
     expect(screen.getByTestId("bookmark-table")).toBeInTheDocument()
     expect(loadBookmarks).toHaveBeenCalled()
-    expect(loadTags).toHaveBeenCalled()
   })
 
   it("switches to tree view from the toggle", async () => {

@@ -1,4 +1,4 @@
-import type { Bookmark, BookmarkTag } from "@/shared/types"
+import type { Bookmark } from "@/shared/types"
 
 /**
  * Cross-browser bookmark formats utilities
@@ -242,7 +242,6 @@ export function parseChromeFormat(
 export function convertStandardToSilo(
   standardBookmarks: StandardBookmarkFolder[],
   containerMap?: Map<string, string>, // URL pattern -> container ID
-  defaultTags?: BookmarkTag[],
 ): Bookmark[] {
   let idCounter = 1
 
@@ -257,7 +256,6 @@ export function convertStandardToSilo(
       index: 0,
       parentId,
       dateAdded: node.dateAdded,
-      tags: [],
       autoOpen: false,
     }
 
@@ -281,11 +279,6 @@ export function convertStandardToSilo(
         childBookmark.index = index
         return childBookmark
       })
-    }
-
-    // Add default tags if specified
-    if (defaultTags && defaultTags.length > 0) {
-      bookmark.tags = defaultTags.map((tag) => tag.id)
     }
 
     return bookmark
@@ -315,21 +308,18 @@ export interface BookmarkExportFormats {
   chrome: ChromeBookmarkFormat
   silo: {
     bookmarks: Bookmark[]
-    tags: BookmarkTag[]
     metadata: Record<string, any>
   }
 }
 
 export function exportBookmarksAllFormats(
   bookmarks: Bookmark[],
-  tags: BookmarkTag[] = [],
 ): BookmarkExportFormats {
   return {
     netscape: exportToNetscapeFormat(bookmarks),
     chrome: exportToChromeFormat(bookmarks),
     silo: {
       bookmarks,
-      tags,
       metadata: {
         exportDate: new Date().toISOString(),
         version: "1.0",

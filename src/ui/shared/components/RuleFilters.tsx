@@ -1,4 +1,4 @@
-import { Shield, Tag, X } from "lucide-react"
+import { Circle, Shield, X } from "lucide-react"
 import type { Container } from "@/shared/types"
 import { Card } from "./Card"
 import { ContainerSelector } from "./ContainerSelector"
@@ -12,11 +12,9 @@ interface RuleFiltersProps {
     container: string
     ruleType: string
     enabled: string | null
-    tags: string[]
   }
   onChange: (key: string, value: any) => void
   onClear: () => void
-  availableTags: string[]
 }
 
 const RULE_TYPES = [
@@ -58,7 +56,6 @@ export function RuleFilters({
   filters,
   onChange,
   onClear,
-  availableTags,
 }: RuleFiltersProps): JSX.Element {
   const handleContainerToggle = (containerId: string) => {
     onChange("container", filters.container === containerId ? "" : containerId)
@@ -72,19 +69,8 @@ export function RuleFilters({
     onChange("enabled", filters.enabled === enabled ? null : enabled)
   }
 
-  const handleTagToggle = (tag: string) => {
-    const currentTags = filters.tags || []
-    const newTags = currentTags.includes(tag)
-      ? currentTags.filter((t) => t !== tag)
-      : [...currentTags, tag]
-    onChange("tags", newTags)
-  }
-
   const hasActiveFilters =
-    filters.container ||
-    filters.ruleType ||
-    filters.enabled !== null ||
-    (filters.tags && filters.tags.length > 0)
+    filters.container || filters.ruleType || filters.enabled !== null
 
   return (
     <Card className={`rule-filters ${className}`}>
@@ -112,7 +98,6 @@ export function RuleFilters({
       </div>
 
       <div className="space-y-6">
-        {/* Rule Type Filter */}
         <FilterButton
           options={RULE_TYPES}
           selectedValues={filters.ruleType ? [filters.ruleType] : []}
@@ -122,17 +107,15 @@ export function RuleFilters({
           title="Rule Type"
         />
 
-        {/* Status Filter */}
         <FilterButton
           options={ENABLED_OPTIONS}
           selectedValues={filters.enabled !== null ? [filters.enabled] : []}
           onToggle={handleEnabledToggle}
           multiSelect={false}
-          icon={<Tag className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+          icon={<Circle className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
           title="Status"
         />
 
-        {/* Containers Filter */}
         <ContainerSelector
           containers={containers}
           selectedContainers={filters.container ? [filters.container] : []}
@@ -140,19 +123,6 @@ export function RuleFilters({
           multiSelect={false}
         />
 
-        {/* Tags Filter */}
-        {availableTags.length > 0 && (
-          <FilterButton
-            options={availableTags.map((tag) => ({ value: tag, label: tag }))}
-            selectedValues={filters.tags || []}
-            onToggle={handleTagToggle}
-            multiSelect={true}
-            icon={<Tag className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
-            title="Tags"
-          />
-        )}
-
-        {/* Active Filters Summary */}
         {hasActiveFilters && (
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -201,24 +171,6 @@ export function RuleFilters({
                   </span>
                 </div>
               )}
-
-              {filters.tags && filters.tags.length > 0 && (
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Tags:
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {filters.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-block px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -240,7 +192,6 @@ export function RuleFilters({
           }
         }
 
-        /* Mobile responsive adjustments */
         @media (max-width: 640px) {
           .grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-3 {
             grid-template-columns: 1fr;

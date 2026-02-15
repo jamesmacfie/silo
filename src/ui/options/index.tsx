@@ -7,7 +7,6 @@ import { ContainersPage } from "@/ui/options/ContainersPage"
 import { Dashboard } from "@/ui/options/Dashboard"
 import { ImportExportPage } from "@/ui/options/ImportExportPage"
 import { RulesPage } from "@/ui/options/RulesPage"
-import { TagsPage } from "@/ui/options/TagsPage"
 import { PageHeader } from "@/ui/shared/components/PageHeader"
 import { ThemeSwitcher } from "@/ui/shared/components/ThemeSwitcher"
 import {
@@ -21,7 +20,6 @@ type PageKey =
   | "containers"
   | "rules"
   | "bookmarks"
-  | "tags"
   | "import-export"
   | "settings"
 
@@ -30,9 +28,8 @@ const NAV_ITEMS: Array<{ key: PageKey; label: string; shortcut: string }> = [
   { key: "containers", label: "Containers", shortcut: "2" },
   { key: "rules", label: "Rules", shortcut: "3" },
   { key: "bookmarks", label: "Bookmarks", shortcut: "4" },
-  { key: "tags", label: "Tags", shortcut: "5" },
-  { key: "import-export", label: "Import/Export", shortcut: "6" },
-  { key: "settings", label: "Settings", shortcut: "7" },
+  { key: "import-export", label: "Import/Export", shortcut: "5" },
+  { key: "settings", label: "Settings", shortcut: "6" },
 ]
 
 const PAGE_KEYS = new Set(NAV_ITEMS.map((item) => item.key))
@@ -87,7 +84,7 @@ function Sidebar(props: {
         <h1>Silo</h1>
       </div>
 
-      <div className="small mb-3">Press 1-7 to navigate</div>
+      <div className="small mb-3">Press 1-6 to navigate</div>
 
       <nav className="nav">
         {NAV_ITEMS.map((item) => (
@@ -265,7 +262,7 @@ function OptionsApp(): JSX.Element {
         return
       }
 
-      if (event.key >= "1" && event.key <= "7") {
+      if (event.key >= "1" && event.key <= "6") {
         const navItem = NAV_ITEMS[Number(event.key) - 1]
         if (navItem) {
           event.preventDefault()
@@ -288,7 +285,6 @@ function OptionsApp(): JSX.Element {
         )}
         {page === "rules" && <RulesPage />}
         {page === "bookmarks" && <BookmarksPage />}
-        {page === "tags" && <TagsPage />}
         {page === "import-export" && <ImportExportPage />}
         {page === "settings" && <SettingsPage />}
       </Content>

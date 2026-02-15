@@ -29,16 +29,15 @@ This document describes the internal architecture of the Silo Firefox extension.
           v
 +------------------------------------------------------+
 |  Service Layer                                       |
-|  7 singleton services (module-level exports)         |
+|  6 singleton services (module-level exports)         |
 |  StorageService, ContainerManager, RulesEngine,      |
-|  RequestInterceptor, BookmarkService, StatsService,  |
-|  TagService                                          |
+|  RequestInterceptor, BookmarkService, StatsService   |
 +------------------------------------------------------+
           |  browser.storage.local / Firefox APIs
           v
 +------------------------------------------------------+
 |  Storage Layer                                       |
-|  browser.storage.local (16 keys)                     |
+|  browser.storage.local (15 keys)                     |
 |  browser.contextualIdentities                        |
 |  browser.bookmarks                                   |
 |  browser.webRequest                                  |
@@ -67,9 +66,9 @@ MessageHandler interface:
 | 3     | ContainerHandler     | GET/CREATE/UPDATE/DELETE_CONTAINER, SYNC_CONTAINERS, CLEAR_CONTAINER_COOKIES, OPEN_IN_CONTAINER |
 | 4     | RuleHandler          | GET/CREATE/UPDATE/DELETE_RULE, EVALUATE_URL                      |
 | 5     | StatsHandler         | GET_STATS, RESET_STATS, GET_GLOBAL_STATS, GET_DAILY_STATS, GET_ACTIVE_TABS, GET_RECENT_ACTIVITY, GET_CONTAINER_TRENDS, RECORD_STAT_EVENT |
-| 6     | BookmarkHandler      | 25+ bookmark CRUD, tag, folder, and bulk operation message types |
+| 6     | BookmarkHandler      | Bookmark CRUD, folder, and bulk operation message types          |
 | 7     | BackupHandler        | BACKUP_DATA, RESTORE_DATA                                        |
-| 8     | ImportExportHandler  | EXPORT/IMPORT_RULES, EXPORT/IMPORT_CONTAINERS, EXPORT/IMPORT_TAGS, EXPORT/IMPORT_BOOKMARKS_SILO, EXPORT/IMPORT_BOOKMARKS_STANDARD, GENERATE_TEMPLATE |
+| 8     | ImportExportHandler  | EXPORT/IMPORT_RULES, EXPORT/IMPORT_CONTAINERS, EXPORT/IMPORT_BOOKMARKS_SILO, EXPORT/IMPORT_BOOKMARKS_STANDARD, GENERATE_TEMPLATE |
 | 9     | TemplateHandler      | GET/SAVE/DELETE/APPLY_TEMPLATE, EXPORT/IMPORT_CONTAINER          |
 | 10    | CategoryHandler      | GET/ADD/RENAME/DELETE_CATEGORY                                   |
 | 11    | SyncHandler          | SYNC_PUSH, SYNC_PULL, GET_SYNC_STATE                            |
@@ -88,7 +87,6 @@ All services are module-level singletons exported as default from their files.
 | RequestInterceptor   | `src/background/services/RequestInterceptor.ts` | webRequest.onBeforeRequest listener, tab event listeners, URL interception and redirect |
 | BookmarkService      | `src/background/services/BookmarkService.ts` | Firefox bookmark API CRUD, metadata layer, bulk operations                             |
 | StatsService         | `src/background/services/StatsService.ts`    | Event recording, session tracking, trend analysis, activity logging                    |
-| TagService           | `src/background/services/TagService.ts`      | Tag CRUD, color assignment, bulk tag operations                                        |
 
 Additionally, `BookmarkIntegration` (`src/background/services/BookmarkIntegration.ts`) handles legacy bookmark-container associations and `?silo=` URL parameter processing.
 
@@ -194,12 +192,11 @@ UI: useBookmarkActions().create(data)
   -> BookmarkHandler
      -> BookmarkService
         1. browser.bookmarks.create(nativeData)  -- Firefox bookmark API
-        2. Store metadata in BOOKMARK_METADATA    -- container, tags, custom props
+        2. Store metadata in BOOKMARK_METADATA    -- container + custom props
         3. Return merged bookmark (native + metadata)
 
 Metadata layer (BOOKMARK_METADATA storage key):
   - containerId: string     -- associated container
-  - tags: string[]          -- tag IDs
   - notes: string           -- user notes
   - customIcon: string      -- override icon
 ```
@@ -240,7 +237,7 @@ options/index.tsx
 ```
 
 Keyboard bindings in options:
-- Global: `1-7` switch major sections
+- Global: `1-6` switch major sections
 - Containers page: `/`, `j/k`, `n`, `e`, `c`, `Delete`, `r`
 
 ## Event Bindings
@@ -270,11 +267,11 @@ Eight stores manage UI state, each following the same pattern: state + actions +
 | appStore           | `stores/appStore.ts`          | Initialization state, cross-store orchestration     | `useAppInitialization`, `useGlobalErrors`, `useGlobalLoading` |
 | containerStore     | `stores/containerStore.ts`    | Container list, loading, error                      | `useContainers`, `useContainerActions`, `useContainerLoading` |
 | ruleStore          | `stores/ruleStore.ts`         | Rule list, loading, error                           | `useRules`, `useRuleActions`, `useRuleLoading`       |
-| bookmarkStore      | `stores/bookmarkStore.ts`     | Bookmarks, tags, search, selection, view mode       | `useFilteredBookmarks`, `useBookmarkActions`, `useBookmarkTags`, `useSelectedBookmarks` |
+| bookmarkStore      | `stores/bookmarkStore.ts`     | Bookmarks, search, selection, view mode             | `useFilteredBookmarks`, `useBookmarkActions`, `useSelectedBookmarks` |
 | statsStore         | `stores/statsStore.ts`        | Per-container stats, global stats, trends, activity | `useStats`, `useGlobalStats`, `useDailyStats`, `useTrends`, `useRecentActivity` |
 | themeStore         | `stores/themeStore.ts`        | Theme mode, system preference detection             | `useTheme`, `useThemeEffects`                        |
 | preferencesStore   | `stores/preferencesStore.ts`  | User preferences                                   | `usePreferences`, `usePreferencesActions`            |
-| uiStateStore       | `stores/uiStateStore.ts`      | Search queries, filters, pagination, view modes     | `useRulesPageState`, `useContainersPageState`, `useBookmarksPageState`, `useTagsPageState` |
+| uiStateStore       | `stores/uiStateStore.ts`      | Search queries, filters, pagination, view modes     | `useRulesPageState`, `useContainersPageState`, `useBookmarksPageState` |
 
 ### Store Patterns
 
@@ -293,7 +290,6 @@ All data is persisted in `browser.storage.local` under these keys (defined in `s
 | `preferences`      | `Preferences`             | User settings (theme, notifications, etc.)     |
 | `bookmarks`        | `BookmarkAssociation[]`   | Legacy bookmark-container associations         |
 | `bookmarkMetadata` | `Record<id, Metadata>`    | Metadata layer on Firefox bookmarks            |
-| `bookmarkTags`     | `Tag[]`                   | Tag definitions with colors                    |
 | `folderMetadata`   | `Record<id, FolderMeta>`  | Folder-level settings                          |
 | `syncState`        | `SyncState`               | Sync coordination state                        |
 | `cache`            | `CacheData`               | Temporary cached data                          |
@@ -336,7 +332,7 @@ src/
 │   │   └── AppInitializer.ts       # 4-step startup sequence
 │   ├── listeners/
 │   │   └── TabEventListener.ts     # Stats-focused tab event tracking
-│   ├── services/                   # 7 singleton services + BookmarkIntegration
+│   ├── services/                   # 6 singleton services + BookmarkIntegration
 │   └── utils/
 │       └── matcher.ts              # URL pattern matching
 ├── popup/                          # Popup HTML entry point

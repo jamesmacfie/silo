@@ -17,7 +17,7 @@ This whole thing has been built with Claude Code. I've hardly checked the code a
 
 Firefox Multi-Account Containers let you isolate websites into separate browsing contexts -- different cookies, sessions, and storage for each container. This is powerful for privacy, separating work from personal browsing, and managing multiple accounts on the same service. But Firefox gives you no way to automate it. Every time you open a site, you have to remember which container it belongs in and manually open it there.
 
-Silo fixes that. You write rules -- "open github.com in my Dev container", "restrict banking.com to my Finance container" -- and Silo intercepts every navigation to enforce them automatically. It also extends Firefox bookmarks with container associations and tags, gives you a statistics dashboard showing how you use your containers, and provides import/export tooling for rules, containers, tags, and complete backups.
+Silo fixes that. You write rules -- "open github.com in my Dev container", "restrict banking.com to my Finance container" -- and Silo intercepts every navigation to enforce them automatically. It also extends Firefox bookmarks with container associations, gives you a statistics dashboard showing how you use your containers, and provides import/export tooling for rules, containers, and complete backups.
 
 It's built for privacy-conscious users who use containers seriously: developers juggling staging and production environments, people with multiple accounts on the same service, or anyone who wants their browsing compartmentalized without the manual overhead.
 
@@ -43,17 +43,15 @@ It's built for privacy-conscious users who use containers seriously: developers 
 ### Bookmark Management
 
 - Firefox bookmark integration with a metadata layer for container associations
-- Tag system with color-coded organization
 - Drag-and-drop reordering via hierarchical tree view
 - Table view for bulk operations
 - Fuzzy search across all bookmarks
-- Bulk actions: assign containers, assign tags, open in containers, delete
+- Bulk actions: assign containers, open in containers, delete
 
 ### Import/Export
 
 - Rules (JSON) -- export/import with preview, validation, and template download
 - Containers (JSON) -- full container configuration import/export
-- Tags (JSON) -- tag definitions import/export
 - Complete data backup (JSON) -- backup/restore for containers, rules, preferences, categories, and stats
 - Bookmarks (Silo JSON and cross-browser HTML) -- UI is present, but backend import/export handlers are currently not implemented
 
@@ -74,10 +72,10 @@ It's built for privacy-conscious users who use containers seriously: developers 
 
 ### Options Page
 
-Full-tab management interface with sections for: Dashboard, Containers, Rules, Bookmarks, Tags, Import/Export, and Settings.
+Full-tab management interface with sections for: Dashboard, Containers, Rules, Bookmarks, Import/Export, and Settings.
 
 - SaaS-style app shell with persistent sidebar navigation
-- Keyboard section switching (`1-7`)
+- Keyboard section switching (`1-6`)
 - Container management master-detail workflow with search, filtering, and quick actions
 - Container-page keyboard workflow (`/`, `j/k`, `n`, `e`, `c`, `Delete`, `r`)
 
@@ -213,14 +211,13 @@ Container Management:
 The Bookmarks section in the options page provides:
 - Tree view with drag-and-drop reordering
 - Table view for bulk operations
-- Tag assignment and filtering
 - Container association for each bookmark
 - Fuzzy search across all bookmarks
 
 ### Import/Export
 
 Go to the Import/Export section in the options page.
-- Working now: Rules JSON, Containers JSON, Tags JSON, and Complete Data backup/restore
+- Working now: Rules JSON, Containers JSON, and Complete Data backup/restore
 - Not yet implemented: Bookmarks (Silo JSON) and Bookmarks (cross-browser HTML)
 
 ## Architecture

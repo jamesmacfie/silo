@@ -35,7 +35,6 @@ export class RulesEngine {
       metadata: {
         description: request.metadata?.description,
         source: request.metadata?.source || "user",
-        tags: request.metadata?.tags || [],
       },
     }
 

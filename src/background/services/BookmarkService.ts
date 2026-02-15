@@ -10,11 +10,9 @@ import { flattenBookmarkTree } from "@/shared/utils/bookmarkTree"
 import { logger } from "@/shared/utils/logger"
 import rulesEngine from "./RulesEngine"
 import storageService from "./StorageService"
-import tagService from "./TagService"
 
 export class BookmarkService {
   private storage = storageService
-  private tags = tagService
   private rules = rulesEngine
   private log = logger.withContext("BookmarkService")
 
@@ -88,7 +86,6 @@ export class BookmarkService {
 
         // Our metadata
         containerId: metadata?.containerId || folderMeta?.containerId,
-        tags: metadata?.tags || [],
         autoOpen: metadata?.autoOpen,
         description: metadata?.metadata.description,
         lastAccessed: metadata?.metadata.lastAccessed,
@@ -147,14 +144,52 @@ export class BookmarkService {
     bookmarkId: string,
     updates: Partial<BookmarkMetadata>,
   ): Promise<void> {
-    await this.tags.setBookmarkMetadata(bookmarkId, updates)
+    await this.setBookmarkMetadata(bookmarkId, updates)
     this.log.info("Updated bookmark metadata", { bookmarkId, updates })
   }
 
   async getBookmarkMetadata(
     bookmarkId: string,
   ): Promise<BookmarkMetadata | null> {
-    return await this.tags.getBookmarkMetadata(bookmarkId)
+    const allMetadata =
+      (await this.storage.get<BookmarkMetadata[]>(
+        STORAGE_KEYS.BOOKMARK_METADATA,
+      )) || []
+    return allMetadata.find((m) => m.bookmarkId === bookmarkId) || null
+  }
+
+  private async setBookmarkMetadata(
+    bookmarkId: string,
+    updates: Partial<BookmarkMetadata>,
+  ): Promise<void> {
+    const allMetadata =
+      (await this.storage.get<BookmarkMetadata[]>(
+        STORAGE_KEYS.BOOKMARK_METADATA,
+      )) || []
+    const existingIndex = allMetadata.findIndex(
+      (m) => m.bookmarkId === bookmarkId,
+    )
+    const now = Date.now()
+
+    if (existingIndex >= 0) {
+      allMetadata[existingIndex] = {
+        ...allMetadata[existingIndex],
+        ...updates,
+        bookmarkId,
+        modified: now,
+      }
+    } else {
+      allMetadata.push({
+        bookmarkId,
+        autoOpen: false,
+        metadata: {},
+        created: now,
+        modified: now,
+        ...updates,
+      })
+    }
+
+    await this.storage.set(STORAGE_KEYS.BOOKMARK_METADATA, allMetadata)
   }
 
   // Container associations
@@ -169,17 +204,8 @@ export class BookmarkService {
     const metadata = await this.getBookmarkMetadata(bookmarkId)
     if (metadata) {
       const { containerId: _, ...rest } = metadata
-      await this.tags.setBookmarkMetadata(bookmarkId, rest)
+      await this.setBookmarkMetadata(bookmarkId, rest)
     }
-  }
-
-  // Tag operations
-  async addTag(bookmarkId: string, tagId: string): Promise<void> {
-    await this.tags.addTagToBookmark(bookmarkId, tagId)
-  }
-
-  async removeTag(bookmarkId: string, tagId: string): Promise<void> {
-    await this.tags.removeTagFromBookmark(bookmarkId, tagId)
   }
 
   // Bulk operations
@@ -196,18 +222,6 @@ export class BookmarkService {
           } catch (error) {
             this.log.warn("Failed to delete bookmark", { id, error })
           }
-        }
-        break
-
-      case "assignTag":
-        if (payload?.tagId) {
-          await this.tags.bulkAddTag(bookmarkIds, payload.tagId)
-        }
-        break
-
-      case "removeTag":
-        if (payload?.tagId) {
-          await this.tags.bulkRemoveTag(bookmarkIds, payload.tagId)
         }
         break
 
@@ -254,7 +268,6 @@ export class BookmarkService {
   async searchBookmarks(
     query: string,
     filters?: {
-      tags?: string[]
       containers?: string[]
       folders?: string[]
     },
@@ -274,14 +287,6 @@ export class BookmarkService {
         if (!matchesTitle && !matchesUrl && !matchesDescription) {
           return false
         }
-      }
-
-      // Tag filter
-      if (filters?.tags && filters.tags.length > 0) {
-        const hasMatchingTag = filters.tags.some((tagId) =>
-          bookmark.tags.includes(tagId),
-        )
-        if (!hasMatchingTag) return false
       }
 
       // Container filter
@@ -446,10 +451,9 @@ export class BookmarkService {
     url: string
     parentId?: string
     containerId?: string
-    tags?: string[]
   }): Promise<Bookmark> {
     try {
-      const { title, url, parentId, containerId, tags = [] } = options
+      const { title, url, parentId, containerId } = options
 
       // Create the bookmark in Firefox
       const firefoxBookmark = await browser.bookmarks.create({
@@ -458,19 +462,18 @@ export class BookmarkService {
         parentId: parentId || "unfiled_____", // Default to other bookmarks
       })
 
-      // Create our metadata if container or tags are specified
-      if (containerId || tags.length > 0) {
+      // Create our metadata if a container is specified
+      if (containerId) {
         const metadata: BookmarkMetadata = {
           bookmarkId: firefoxBookmark.id,
           containerId,
-          tags,
           autoOpen: false,
           metadata: {},
           created: Date.now(),
           modified: Date.now(),
         }
 
-        await this.tags.setBookmarkMetadata(firefoxBookmark.id, metadata)
+        await this.setBookmarkMetadata(firefoxBookmark.id, metadata)
       }
 
       this.log.info("Created bookmark", {
@@ -478,7 +481,6 @@ export class BookmarkService {
         title,
         parentId,
         containerId,
-        tagCount: tags.length,
       })
 
       // Convert to our bookmark format
@@ -491,7 +493,6 @@ export class BookmarkService {
         dateAdded: firefoxBookmark.dateAdded,
         type: "bookmark",
         containerId,
-        tags,
         autoOpen: false,
       }
 
@@ -532,7 +533,6 @@ export class BookmarkService {
         dateAdded: firefoxFolder.dateAdded,
         type: "folder",
         containerId: undefined,
-        tags: [],
         autoOpen: false,
         children: [],
       }
@@ -557,7 +557,6 @@ export class BookmarkService {
         metadata.push({
           bookmarkId: legacy.bookmarkId,
           containerId: legacy.containerId,
-          tags: [], // No tags in legacy
           autoOpen: legacy.autoOpen,
           metadata: {},
           created: legacy.created || Date.now(),

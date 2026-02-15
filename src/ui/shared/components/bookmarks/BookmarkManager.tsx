@@ -30,7 +30,7 @@ export function BookmarkManager({
   const searchState = useBookmarkSearchState()
   const containers = useContainers()
 
-  const { setView, refreshAll, clearError, loadBookmarks, loadTags } =
+  const { setView, refreshAll, clearError, loadBookmarks } =
     useBookmarkActions()
 
   // State for modals and panels
@@ -39,10 +39,10 @@ export function BookmarkManager({
   // Initialize data on mount
   React.useEffect(() => {
     const initialize = async () => {
-      await Promise.all([loadBookmarks(), loadTags()])
+      await loadBookmarks()
     }
     initialize()
-  }, [loadBookmarks, loadTags])
+  }, [loadBookmarks])
 
   const handleRefresh = React.useCallback(async () => {
     await refreshAll()
@@ -51,7 +51,6 @@ export function BookmarkManager({
   const hasActiveFilters = React.useMemo(() => {
     return (
       searchState.query ||
-      (searchState.filters.tags && searchState.filters.tags.length > 0) ||
       (searchState.filters.containers &&
         searchState.filters.containers.length > 0)
     )
@@ -68,7 +67,7 @@ export function BookmarkManager({
             Bookmark Manager
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage your bookmarks with tags, containers, and advanced search
+            Manage your bookmarks with containers and advanced search
           </p>
         </div>
 
@@ -114,7 +113,7 @@ export function BookmarkManager({
 
           <button
             onClick={handleRefresh}
-            disabled={loading.bookmarks || loading.tags}
+            disabled={loading.bookmarks}
             className="px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh"
           >
@@ -167,7 +166,7 @@ export function BookmarkManager({
       )}
 
       {/* Loading State */}
-      {(loading.bookmarks || loading.tags) && (
+      {loading.bookmarks && (
         <Card className="mb-4">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -179,7 +178,7 @@ export function BookmarkManager({
       )}
 
       {/* Main Content */}
-      {!loading.bookmarks && !loading.tags && !error && (
+      {!loading.bookmarks && !error && (
         <div className="bookmark-content">
           {view === "table" ? <BookmarkTableView /> : <BookmarkTreeView />}
         </div>

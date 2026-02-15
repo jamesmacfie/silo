@@ -29,7 +29,7 @@ import {
 import { BookmarkModal } from "./BookmarkModal"
 
 const PAGE_DESCRIPTION =
-  "Manage your bookmarks with tags, containers, and advanced search. Organize bookmarks across different containers and apply tags for easy categorization."
+  "Manage your bookmarks with container assignments and advanced search."
 
 export function BookmarksPage() {
   const view = useBookmarkView()
@@ -41,7 +41,7 @@ export function BookmarksPage() {
   const containers = useContainers()
   const filteredBookmarks = useFilteredBookmarks()
 
-  const { setView, clearError, loadBookmarks, loadTags } = useBookmarkActions()
+  const { setView, clearError, loadBookmarks } = useBookmarkActions()
 
   // Use persistent UI state
   const pageState = useBookmarksPageState()
@@ -59,10 +59,10 @@ export function BookmarksPage() {
   // Initialize data on mount
   useEffect(() => {
     const initialize = async () => {
-      await Promise.all([loadBookmarks(), loadTags()])
+      await loadBookmarks()
     }
     initialize()
-  }, [loadBookmarks, loadTags])
+  }, [loadBookmarks])
 
   // Sync persistent view mode with bookmark store
   useEffect(() => {
@@ -74,7 +74,6 @@ export function BookmarksPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       searchState.query ||
-      (searchState.filters.tags && searchState.filters.tags.length > 0) ||
       (searchState.filters.containers &&
         searchState.filters.containers.length > 0)
     )
@@ -82,7 +81,7 @@ export function BookmarksPage() {
 
   const totalSelectedCount = selectedBookmarks.size + selectedFolders.size
 
-  const isLoading = loading.bookmarks || loading.tags
+  const isLoading = loading.bookmarks
   const isEmpty = !isLoading && !error && filteredBookmarks.length === 0
 
   // Modal handlers

@@ -348,7 +348,6 @@ export function ContainerPresetWizard({
           metadata: {
             description: rule.description,
             source: "user",
-            tags: ["preset", `preset:${activePreset.id}`],
           },
         })
 

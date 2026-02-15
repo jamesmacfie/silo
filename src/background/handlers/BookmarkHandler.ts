@@ -7,7 +7,6 @@ import bookmarkIntegration from "../services/BookmarkIntegration"
 import bookmarkService from "../services/BookmarkService"
 import rulesEngine from "../services/RulesEngine"
 import storageService from "../services/StorageService"
-import tagService from "../services/TagService"
 
 /**
  * Handles all bookmark-related operations
@@ -31,16 +30,7 @@ export class BookmarkHandler implements MessageHandler {
     MESSAGE_TYPES.BULK_UPDATE_BOOKMARKS,
     MESSAGE_TYPES.CHECK_BOOKMARK_RULE_MATCH,
 
-    // Bookmark tags
-    MESSAGE_TYPES.GET_BOOKMARK_TAGS,
-    MESSAGE_TYPES.GET_TAG_CAPABILITIES,
-    MESSAGE_TYPES.CREATE_BOOKMARK_TAG,
-    MESSAGE_TYPES.UPDATE_BOOKMARK_TAG,
-    MESSAGE_TYPES.DELETE_BOOKMARK_TAG,
-
-    // Bulk tag operations
-    MESSAGE_TYPES.BULK_ASSIGN_TAG,
-    MESSAGE_TYPES.BULK_REMOVE_TAG,
+    // Bulk operations
     MESSAGE_TYPES.BULK_ASSIGN_CONTAINER,
     MESSAGE_TYPES.BULK_REMOVE_CONTAINER,
     MESSAGE_TYPES.BULK_OPEN_IN_CONTAINER,
@@ -91,23 +81,7 @@ export class BookmarkHandler implements MessageHandler {
       case MESSAGE_TYPES.CHECK_BOOKMARK_RULE_MATCH:
         return this.checkBookmarkRuleMatch(message)
 
-      // Bookmark tags
-      case MESSAGE_TYPES.GET_BOOKMARK_TAGS:
-        return this.getBookmarkTags()
-      case MESSAGE_TYPES.GET_TAG_CAPABILITIES:
-        return this.getTagCapabilities()
-      case MESSAGE_TYPES.CREATE_BOOKMARK_TAG:
-        return this.createBookmarkTag(message)
-      case MESSAGE_TYPES.UPDATE_BOOKMARK_TAG:
-        return this.updateBookmarkTag(message)
-      case MESSAGE_TYPES.DELETE_BOOKMARK_TAG:
-        return this.deleteBookmarkTag(message)
-
       // Bulk operations
-      case MESSAGE_TYPES.BULK_ASSIGN_TAG:
-        return this.bulkAssignTag(message)
-      case MESSAGE_TYPES.BULK_REMOVE_TAG:
-        return this.bulkRemoveTag(message)
       case MESSAGE_TYPES.BULK_ASSIGN_CONTAINER:
         return this.bulkAssignContainer(message)
       case MESSAGE_TYPES.BULK_REMOVE_CONTAINER:
@@ -421,177 +395,7 @@ export class BookmarkHandler implements MessageHandler {
     }
   }
 
-  // Bookmark tags
-  private async getBookmarkTags(): Promise<MessageResponse> {
-    try {
-      const tags = await tagService.getAllTags()
-      this.log.debug("Retrieved bookmark tags", { count: tags.length })
-      return { success: true, data: tags }
-    } catch (error) {
-      this.log.error("Failed to get bookmark tags", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to get bookmark tags",
-      }
-    }
-  }
-
-  private async getTagCapabilities(): Promise<MessageResponse> {
-    try {
-      const capabilities = await tagService.getTagCapabilities()
-      return { success: true, data: capabilities }
-    } catch (error) {
-      this.log.error("Failed to get tag capabilities", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to get tag capabilities",
-      }
-    }
-  }
-
-  private async createBookmarkTag(message: Message): Promise<MessageResponse> {
-    try {
-      const tagData = message.payload
-
-      if (!tagData || typeof tagData !== "object" || !(tagData as any).name) {
-        return { success: false, error: "Tag name is required" }
-      }
-
-      const tag = await tagService.createTag(tagData)
-      this.log.info("Bookmark tag created", { name: tag.name, id: tag.id })
-      return { success: true, data: tag }
-    } catch (error) {
-      this.log.error("Failed to create bookmark tag", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create bookmark tag",
-      }
-    }
-  }
-
-  private async updateBookmarkTag(message: Message): Promise<MessageResponse> {
-    try {
-      const { id, updates } = message.payload as { id: string; updates: any }
-
-      if (!id) {
-        return { success: false, error: "Tag ID is required" }
-      }
-
-      if (!updates || typeof updates !== "object") {
-        return { success: false, error: "Updates are required" }
-      }
-
-      const tag = await tagService.updateTag(id, updates)
-      this.log.info("Bookmark tag updated", {
-        id,
-        updates: Object.keys(updates),
-      })
-      return { success: true, data: tag }
-    } catch (error) {
-      this.log.error("Failed to update bookmark tag", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update bookmark tag",
-      }
-    }
-  }
-
-  private async deleteBookmarkTag(message: Message): Promise<MessageResponse> {
-    try {
-      const { id } = message.payload as { id: string }
-
-      if (!id) {
-        return { success: false, error: "Tag ID is required" }
-      }
-
-      await tagService.deleteTag(id)
-      this.log.info("Bookmark tag deleted", { id })
-      return { success: true, data: null }
-    } catch (error) {
-      this.log.error("Failed to delete bookmark tag", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to delete bookmark tag",
-      }
-    }
-  }
-
   // Bulk operations
-  private async bulkAssignTag(message: Message): Promise<MessageResponse> {
-    try {
-      const { bookmarkIds, tagId } = message.payload as {
-        bookmarkIds: string[]
-        tagId: string
-      }
-
-      if (!bookmarkIds || !Array.isArray(bookmarkIds) || !tagId) {
-        return {
-          success: false,
-          error: "Bookmark IDs array and tag ID are required",
-        }
-      }
-
-      await tagService.bulkAddTag(bookmarkIds, tagId)
-      this.log.info("Bulk tag assignment completed", {
-        bookmarkCount: bookmarkIds.length,
-        tagId,
-      })
-      return { success: true, data: null }
-    } catch (error) {
-      this.log.error("Failed to bulk assign tag", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to bulk assign tag",
-      }
-    }
-  }
-
-  private async bulkRemoveTag(message: Message): Promise<MessageResponse> {
-    try {
-      const { bookmarkIds, tagId } = message.payload as {
-        bookmarkIds: string[]
-        tagId: string
-      }
-
-      if (!bookmarkIds || !Array.isArray(bookmarkIds) || !tagId) {
-        return {
-          success: false,
-          error: "Bookmark IDs array and tag ID are required",
-        }
-      }
-
-      await tagService.bulkRemoveTag(bookmarkIds, tagId)
-      this.log.info("Bulk tag removal completed", {
-        bookmarkCount: bookmarkIds.length,
-        tagId,
-      })
-      return { success: true, data: null }
-    } catch (error) {
-      this.log.error("Failed to bulk remove tag", error)
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to bulk remove tag",
-      }
-    }
-  }
-
   private async bulkAssignContainer(
     message: Message,
   ): Promise<MessageResponse> {
@@ -809,12 +613,11 @@ export class BookmarkHandler implements MessageHandler {
   // Bookmark creation
   private async createBookmark(message: Message): Promise<MessageResponse> {
     try {
-      const { title, url, parentId, containerId, tags } = message.payload as {
+      const { title, url, parentId, containerId } = message.payload as {
         title: string
         url: string
         parentId?: string
         containerId?: string
-        tags?: string[]
       }
 
       if (!title || !url) {
@@ -826,7 +629,6 @@ export class BookmarkHandler implements MessageHandler {
         url: url.trim(),
         parentId,
         containerId,
-        tags: tags || [],
       })
 
       this.log.info("Bookmark created", {
@@ -834,7 +636,6 @@ export class BookmarkHandler implements MessageHandler {
         title: bookmark.title,
         parentId,
         containerId,
-        tagCount: tags?.length || 0,
       })
 
       return { success: true, data: bookmark }

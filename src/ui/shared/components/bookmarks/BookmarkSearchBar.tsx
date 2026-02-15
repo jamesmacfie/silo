@@ -16,7 +16,6 @@ const SORT_OPTIONS = [
   { field: "created" as const, label: "Date Added" },
   { field: "modified" as const, label: "Last Modified" },
   { field: "container" as const, label: "Container" },
-  { field: "tags" as const, label: "Tag Count" },
 ]
 
 export function BookmarkSearchBar({

@@ -63,7 +63,7 @@ export function ColorSelector({
   const sizes = sizeClasses[size]
 
   if (layout === "grid") {
-    // Grid layout - just colored circles (like TagModal)
+    // Grid layout - just colored circles
     return (
       <div
         className={`grid gap-3 ${className}`}

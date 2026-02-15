@@ -42,7 +42,6 @@ describe("StorageService", () => {
     metadata: {
       description: "Test rule",
       source: "user",
-      tags: ["test"],
     },
   }
 

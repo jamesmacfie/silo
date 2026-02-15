@@ -1,4 +1,4 @@
-import { Filter, Search, Shield, Tag, X } from "lucide-react"
+import { Filter, Globe, Search, Shield, X } from "lucide-react"
 import React from "react"
 import { MatchType, type Rule, RuleType } from "@/shared/types"
 import { validatePattern } from "@/shared/utils/patternValidator"
@@ -48,7 +48,7 @@ const MATCH_TYPE_OPTIONS: Array<{
     value: MatchType.DOMAIN,
     label: "Domain",
     description: "Match host/domain",
-    icon: Tag,
+    icon: Globe,
   },
   {
     value: MatchType.GLOB,

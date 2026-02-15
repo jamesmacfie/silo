@@ -7,7 +7,6 @@ import {
   Button,
   DataView,
   EmptyState,
-  type FilterConfig,
   PageHeader,
   PageLayout,
   StatusBar,
@@ -82,50 +81,6 @@ export function RulesPage({}: RulesPageProps) {
       .length
   }, [rules])
 
-  const _filterConfigs: FilterConfig[] = useMemo(
-    () => [
-      {
-        key: "container",
-        label: "Container",
-        type: "select",
-        options: [
-          { value: "", label: "All Containers" },
-          ...containers.map((c) => ({ value: c.cookieStoreId, label: c.name })),
-        ],
-      },
-      {
-        key: "ruleType",
-        label: "Rule Type",
-        type: "select",
-        options: [
-          { value: "", label: "All Types" },
-          { value: "INCLUDE", label: "Include" },
-          { value: "EXCLUDE", label: "Exclude" },
-          { value: "RESTRICT", label: "Restrict" },
-        ],
-      },
-      {
-        key: "enabled",
-        label: "Status",
-        type: "select",
-        options: [
-          { value: "", label: "All" },
-          { value: "true", label: "Enabled" },
-          { value: "false", label: "Disabled" },
-        ],
-      },
-      {
-        key: "tags",
-        label: "Tags",
-        type: "multiselect",
-        options: Array.from(
-          new Set(rules.flatMap((r) => r.metadata.tags || [])),
-        ).map((tag) => ({ value: tag, label: tag })),
-      },
-    ],
-    [containers, rules],
-  )
-
   const filteredRules = useMemo(() => {
     let filtered = [...rules]
 
@@ -153,12 +108,6 @@ export function RulesPage({}: RulesPageProps) {
     if (filters.enabled !== null && filters.enabled !== "") {
       const enabledValue = filters.enabled === "true"
       filtered = filtered.filter((r) => r.enabled === enabledValue)
-    }
-
-    if (filters.tags && filters.tags.length > 0) {
-      filtered = filtered.filter((r) =>
-        filters.tags.some((tag: string) => r.metadata.tags?.includes(tag)),
-      )
     }
 
     filtered.sort((a, b) => {
@@ -436,15 +385,11 @@ export function RulesPage({}: RulesPageProps) {
             filters as {
               container: string
               ruleType: string
-              enabled: string
-              tags: string[]
+              enabled: string | null
             }
           }
           onChange={handleFilterChange}
           onClear={handleClearFilters}
-          availableTags={Array.from(
-            new Set(rules.flatMap((r) => r.metadata.tags || [])),
-          )}
         />
       )}
 

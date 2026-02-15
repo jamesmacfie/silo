@@ -42,7 +42,6 @@ export type {
   BookmarkMetadata,
   BookmarkSearchFilters,
   BookmarkSortOptions,
-  BookmarkTag,
   FolderMetadata,
 } from "./bookmark"
 

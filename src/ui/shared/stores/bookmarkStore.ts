@@ -9,8 +9,6 @@ import type {
   BookmarkMetadata,
   BookmarkSearchFilters,
   BookmarkSortOptions,
-  BookmarkTag,
-  BookmarkTagCapabilities,
 } from "@/shared/types"
 import {
   flattenBookmarkTree,
@@ -23,8 +21,6 @@ interface BookmarkState {
   // Data
   bookmarks: Bookmark[]
   flatBookmarks: Bookmark[] // Flattened for table view
-  tags: BookmarkTag[]
-  tagCapabilities?: BookmarkTagCapabilities
 
   // UI State
   view: "table" | "tree"
@@ -39,7 +35,6 @@ interface BookmarkState {
   // Loading states
   loading: {
     bookmarks: boolean
-    tags: boolean
     bulkOperation: boolean
     dragOperation: boolean
   }
@@ -51,14 +46,7 @@ interface BookmarkState {
   actions: {
     // Data loading
     loadBookmarks: () => Promise<void>
-    loadTags: () => Promise<void>
-    loadTagCapabilities: () => Promise<void>
     refreshAll: () => Promise<void>
-
-    // Tag operations
-    createTag: (tag: Partial<BookmarkTag>) => Promise<void>
-    updateTag: (id: string, updates: Partial<BookmarkTag>) => Promise<void>
-    deleteTag: (id: string) => Promise<void>
 
     // Bookmark operations
     createBookmark: (options: {
@@ -66,7 +54,6 @@ interface BookmarkState {
       url: string
       parentId?: string
       containerId?: string
-      tags?: string[]
     }) => Promise<void>
     createFolder: (options: {
       title: string
@@ -85,10 +72,6 @@ interface BookmarkState {
     ) => Promise<void>
     assignContainer: (bookmarkId: string, containerId: string) => Promise<void>
     removeContainer: (bookmarkId: string) => Promise<void>
-
-    // Tag-bookmark operations
-    addTagToBookmark: (bookmarkId: string, tagId: string) => Promise<void>
-    removeTagFromBookmark: (bookmarkId: string, tagId: string) => Promise<void>
 
     // Bulk operations
     selectBookmark: (id: string, multi?: boolean) => void
@@ -171,10 +154,6 @@ const sortBookmarks = (
         aValue = a.containerId || ""
         bValue = b.containerId || ""
         break
-      case "tags":
-        aValue = a.tags.length
-        bValue = b.tags.length
-        break
       default:
         return 0
     }
@@ -194,8 +173,6 @@ export const useBookmarkStore = create<BookmarkState>()(
     // Initial state
     bookmarks: [],
     flatBookmarks: [],
-    tags: [],
-    tagCapabilities: undefined,
     view: "table",
     selectedBookmarks: new Set(),
     selectedFolders: new Set(),
@@ -206,7 +183,6 @@ export const useBookmarkStore = create<BookmarkState>()(
     newlyCreatedItems: new Set(),
     loading: {
       bookmarks: false,
-      tags: false,
       bulkOperation: false,
       dragOperation: false,
     },
@@ -247,129 +223,8 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
       },
 
-      loadTags: async () => {
-        set((state) => ({
-          loading: { ...state.loading, tags: true },
-          error: undefined,
-        }))
-
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.GET_BOOKMARK_TAGS,
-          })
-
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to fetch tags")
-          }
-
-          set((state) => ({
-            tags: response.data || [],
-            loading: { ...state.loading, tags: false },
-          }))
-        } catch (error) {
-          set((state) => ({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...state.loading, tags: false },
-          }))
-        }
-      },
-
-      loadTagCapabilities: async () => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.GET_TAG_CAPABILITIES,
-          })
-
-          if (!response?.success) {
-            throw new Error(
-              response?.error || "Failed to fetch tag capabilities",
-            )
-          }
-
-          set({
-            tagCapabilities: response.data,
-          })
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-        }
-      },
-
       refreshAll: async () => {
-        const { loadBookmarks, loadTags, loadTagCapabilities } = get().actions
-        await Promise.all([loadBookmarks(), loadTags(), loadTagCapabilities()])
-      },
-
-      createTag: async (tag) => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.CREATE_BOOKMARK_TAG,
-            payload: tag,
-          })
-
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to create tag")
-          }
-
-          set((state) => ({
-            tags: [...state.tags, response.data],
-          }))
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-          throw error
-        }
-      },
-
-      updateTag: async (id, updates) => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.UPDATE_BOOKMARK_TAG,
-            payload: { id, updates },
-          })
-
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to update tag")
-          }
-
-          set((state) => ({
-            tags: state.tags.map((tag) =>
-              tag.id === id ? response.data : tag,
-            ),
-          }))
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-          throw error
-        }
-      },
-
-      deleteTag: async (id) => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.DELETE_BOOKMARK_TAG,
-            payload: { id },
-          })
-
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to delete tag")
-          }
-
-          set((state) => ({
-            tags: state.tags.filter((tag) => tag.id !== id),
-          }))
-
-          // Refresh bookmarks to update tag associations
-          await get().actions.loadBookmarks()
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-          throw error
-        }
+        await get().actions.loadBookmarks()
       },
 
       createBookmark: async (options) => {
@@ -540,47 +395,6 @@ export const useBookmarkStore = create<BookmarkState>()(
         }
 
         await get().actions.loadBookmarks()
-      },
-
-      addTagToBookmark: async (bookmarkId, tagId) => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.BULK_ASSIGN_TAG,
-            payload: { bookmarkIds: [bookmarkId], tagId },
-          })
-
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to add tag")
-          }
-
-          // Refresh bookmarks to show updated tags
-          await get().actions.loadBookmarks()
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-          throw error
-        }
-      },
-
-      removeTagFromBookmark: async (bookmarkId, tagId) => {
-        try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.BULK_REMOVE_TAG,
-            payload: { bookmarkIds: [bookmarkId], tagId },
-          })
-
-          if (!response?.success) {
-            throw new Error(response?.error || "Failed to remove tag")
-          }
-
-          await get().actions.loadBookmarks()
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-          throw error
-        }
       },
 
       selectBookmark: (id, multi = false) => {
@@ -872,12 +686,6 @@ export const useFilteredBookmarks = () => {
     }
 
     // Apply filters
-    if (filters.tags && filters.tags.length > 0) {
-      filtered = filtered.filter((bookmark) =>
-        filters.tags?.some((tagId) => bookmark.tags.includes(tagId)),
-      )
-    }
-
     if (filters.containers && filters.containers.length > 0) {
       filtered = filtered.filter(
         (bookmark) =>
@@ -891,9 +699,6 @@ export const useFilteredBookmarks = () => {
   })
 }
 
-export const useBookmarkTags = () => useBookmarkStore((state) => state.tags)
-export const useTagCapabilities = () =>
-  useBookmarkStore((state) => state.tagCapabilities)
 export const useBookmarkView = () => useBookmarkStore((state) => state.view)
 export const useSelectedBookmarks = () =>
   useBookmarkStore((state) => state.selectedBookmarks)

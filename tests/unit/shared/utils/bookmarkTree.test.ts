@@ -11,7 +11,6 @@ const createBookmark = (overrides: Partial<Bookmark>): Bookmark => ({
   title: "Bookmark",
   index: 0,
   type: "bookmark",
-  tags: [],
   autoOpen: false,
   ...overrides,
 })
@@ -23,7 +22,6 @@ const createFolder = (
   title: overrides.title || "Folder",
   index: 0,
   type: "folder",
-  tags: [],
   autoOpen: false,
   children: overrides.children || [],
   ...overrides,

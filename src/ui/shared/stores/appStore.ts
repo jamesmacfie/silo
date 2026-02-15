@@ -36,8 +36,6 @@ export const useAppStore = create<AppState>((set, _get) => ({
         await Promise.all([
           useContainerStore.getState().actions.load(),
           useRuleStore.getState().actions.load(),
-          useBookmarkStore.getState().actions.loadTagCapabilities(),
-          useBookmarkStore.getState().actions.loadTags(),
           useBookmarkStore.getState().actions.loadBookmarks(),
         ])
 
@@ -183,14 +181,13 @@ export const useGlobalLoading = () => {
     rules: ruleLoading,
     theme: themeLoading,
     preferences: preferencesLoading,
-    bookmarks: bookmarkLoading.bookmarks || bookmarkLoading.tags,
+    bookmarks: bookmarkLoading.bookmarks,
     isInitializing: !isInitialized,
     isLoading:
       containerLoading ||
       ruleLoading ||
       themeLoading ||
       preferencesLoading ||
-      bookmarkLoading.bookmarks ||
-      bookmarkLoading.tags,
+      bookmarkLoading.bookmarks,
   }
 }

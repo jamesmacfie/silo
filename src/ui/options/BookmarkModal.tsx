@@ -13,10 +13,7 @@ import {
   ModalLabel,
   ModalSelect,
 } from "@/ui/shared/components/Modal"
-import {
-  useBookmarkActions,
-  useBookmarkTags,
-} from "@/ui/shared/stores/bookmarkStore"
+import { useBookmarkActions } from "@/ui/shared/stores/bookmarkStore"
 
 interface Container {
   id: string
@@ -53,12 +50,10 @@ export function BookmarkModal({
     updateBookmarkMetadata,
     checkRuleMatch,
   } = useBookmarkActions()
-  const tags = useBookmarkTags()
 
   const [title, setTitle] = React.useState("")
   const [url, setUrl] = React.useState("")
   const [containerId, setContainerId] = React.useState("")
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([])
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [suggestedContainer, setSuggestedContainer] =
@@ -81,13 +76,11 @@ export function BookmarkModal({
         setTitle(bookmark.title || "")
         setUrl(bookmark.url || "")
         setContainerId(bookmark.containerId || "")
-        setSelectedTags(bookmark.tags || [])
       } else if (mode === "create-bookmark" || mode === "create-folder") {
         // Creating new bookmark/folder
         setTitle("")
         setUrl("")
         setContainerId("")
-        setSelectedTags([])
         setSuggestedContainer(null)
 
         // For new bookmarks, try to get URL from clipboard
@@ -130,7 +123,6 @@ export function BookmarkModal({
           url: url.trim(),
           parentId,
           containerId: containerId || undefined,
-          tags: selectedTags,
         })
       } else if (mode === "create-folder") {
         // Create new folder
@@ -148,7 +140,6 @@ export function BookmarkModal({
         // Update our metadata layer
         await updateBookmarkMetadata(bookmark.id, {
           containerId: containerId || undefined,
-          tags: selectedTags,
         })
       }
 
@@ -164,7 +155,6 @@ export function BookmarkModal({
     title,
     url,
     containerId,
-    selectedTags,
     mode,
     bookmark,
     parentId,
@@ -193,14 +183,6 @@ export function BookmarkModal({
       setSaving(false)
     }
   }, [bookmark, deleteBookmark, onSuccess, onClose])
-
-  const handleTagToggle = (tagId: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId],
-    )
-  }
 
   const handleContainerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
@@ -468,42 +450,6 @@ export function BookmarkModal({
                 When you open this bookmark, it will automatically open in the
                 selected container
               </ModalInfo>
-            </ModalFormRow>
-
-            <ModalFormRow>
-              <ModalLabel>Tags</ModalLabel>
-              <div className="space-y-2">
-                {tags.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No tags available. Create tags to organize your bookmarks.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <label
-                        key={tag.id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedTags.includes(tag.id)}
-                          onChange={() => handleTagToggle(tag.id)}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {tag.name}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
             </ModalFormRow>
           </>
         )}

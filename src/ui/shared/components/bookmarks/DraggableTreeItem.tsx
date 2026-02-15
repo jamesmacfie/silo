@@ -13,9 +13,8 @@ import {
   Trash2,
 } from "lucide-react"
 import type React from "react"
-import type { Bookmark, BookmarkTag, Container } from "@/shared/types"
+import type { Bookmark, Container } from "@/shared/types"
 import { ContainerBadge } from "../ContainerBadge"
-import { TagBadge } from "../TagBadge"
 
 interface DraggableTreeItemProps {
   bookmark: Bookmark
@@ -27,7 +26,6 @@ interface DraggableTreeItemProps {
   isHighlighted?: boolean
   container?: Container | null
   suggestedContainer?: Container | null
-  tags?: BookmarkTag[]
   onToggleFolder?: (id: string) => void
   onSelectBookmark?: (id: string) => void
   onToggleFolderSelection?: (id: string) => void
@@ -49,7 +47,6 @@ export function DraggableTreeItem({
   isHighlighted = false,
   container,
   suggestedContainer,
-  tags = [],
   onToggleFolder,
   onSelectBookmark,
   onToggleFolderSelection,
@@ -253,7 +250,7 @@ export function DraggableTreeItem({
             {bookmark.url}
           </div>
 
-          {/* Container and Tags Row */}
+          {/* Container row */}
           <div className="flex items-center gap-2 mt-1">
             {/* Container */}
             {container ? (
@@ -269,22 +266,6 @@ export function DraggableTreeItem({
                 </span>
               </div>
             ) : null}
-
-            {/* Tags */}
-            {bookmark.tags.length > 0 && (
-              <div className="flex items-center gap-1 ml-2">
-                {bookmark.tags.slice(0, 2).map((tagId) => {
-                  const tag = tags.find((t) => t.id === tagId)
-                  if (!tag) return null
-                  return <TagBadge key={tagId} tag={tag} size="xs" />
-                })}
-                {bookmark.tags.length > 2 && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    +{bookmark.tags.length - 2}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </div>
 

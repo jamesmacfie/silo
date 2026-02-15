@@ -28,15 +28,10 @@ interface BookmarksPageState {
   viewMode: "table" | "tree"
   showFilters: boolean
   filters: {
-    tags: string[]
     containers: string[]
     folders: string[]
   }
   selectedBookmarks: string[]
-}
-
-interface TagsPageState extends BasePageState {
-  // Tags specific state if needed
 }
 
 // Combined UI state for all pages
@@ -45,7 +40,6 @@ interface UIState {
     rules: RulesPageState
     containers: ContainersPageState
     bookmarks: BookmarksPageState
-    tags: TagsPageState
   }
 }
 
@@ -106,7 +100,6 @@ const defaultPageStates: UIState["pages"] = {
       container: "",
       ruleType: "",
       enabled: null,
-      tags: [],
     },
   },
   containers: {
@@ -129,22 +122,10 @@ const defaultPageStates: UIState["pages"] = {
     viewMode: "tree",
     showFilters: false,
     filters: {
-      tags: [],
       containers: [],
       folders: [],
     },
     selectedBookmarks: [],
-  },
-  tags: {
-    searchQuery: "",
-    sortBy: "name",
-    sortOrder: "asc",
-    viewMode: "table",
-    showFilters: false,
-    filters: {
-      hasBookmarks: "",
-      color: "",
-    },
   },
 }
 
@@ -310,25 +291,6 @@ export const useBookmarksPageState = () => {
     updateViewMode: (viewMode: string) =>
       state.updatePageViewMode("bookmarks", viewMode),
     reset: () => state.resetPageState("bookmarks"),
-  }))
-
-  return { ...state, ...actions }
-}
-
-export const useTagsPageState = () => {
-  const state = useUIStateStore((state) => state.pages.tags)
-  const actions = useUIStateStore((state) => ({
-    updateState: (updates: Partial<TagsPageState>) =>
-      state.updatePageState("tags", updates),
-    updateFilter: (key: string, value: any) =>
-      state.updatePageFilter("tags", key, value),
-    clearFilters: () => state.clearPageFilters("tags"),
-    toggleFilters: () => state.toggleFiltersPanel("tags"),
-    updateSort: (sortBy: string, sortOrder?: "asc" | "desc") =>
-      state.updatePageSort("tags", sortBy, sortOrder),
-    updateViewMode: (viewMode: string) =>
-      state.updatePageViewMode("tags", viewMode),
-    reset: () => state.resetPageState("tags"),
   }))
 
   return { ...state, ...actions }

@@ -322,7 +322,7 @@ export class RequestInterceptor {
 
       await browser.notifications.create({
         type: "basic",
-        iconUrl: browser.runtime.getURL("images/icon_48.png"),
+        iconUrl: this.getNotificationIconUrl(),
         title: "Domain Restricted",
         message: `${new URL(url).hostname} can only be opened in "${containerName}" container.`,
       })
@@ -335,13 +335,20 @@ export class RequestInterceptor {
     try {
       await browser.notifications.create({
         type: "basic",
-        iconUrl: browser.runtime.getURL("images/icon_48.png"),
+        iconUrl: this.getNotificationIconUrl(),
         title: "Opened Outside Containers",
         message: `${new URL(url).hostname} was opened outside of containers due to an EXCLUDE rule.`,
       })
     } catch (error) {
       this.log.error("Failed to create exclude notification", error)
     }
+  }
+
+  private getNotificationIconUrl(): string {
+    const icons = browser.runtime.getManifest().icons ?? {}
+    const iconPath = icons["32"] || icons["16"] || icons["128"] || icons["48"]
+
+    return browser.runtime.getURL(iconPath || "icons/icon_32.png")
   }
 
   private async handleTabUpdate(

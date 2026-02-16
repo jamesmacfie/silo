@@ -73,6 +73,14 @@ function PageShell(props: { children: React.ReactNode }): JSX.Element {
   return <div className="app">{props.children}</div>
 }
 
+function getBrandIconUrl(): string {
+  const icons = browser.runtime.getManifest().icons ?? {}
+  const iconPath =
+    icons["128"] || icons["64"] || icons["48"] || icons["32"] || icons["16"]
+
+  return browser.runtime.getURL(iconPath || "icons/icon_128.png")
+}
+
 function Sidebar(props: {
   current: PageKey
   onNavigate(page: PageKey): void
@@ -80,7 +88,9 @@ function Sidebar(props: {
   return (
     <aside className="sidebar" aria-label="Primary navigation">
       <div className="brand">
-        <div className="logo" />
+        <div className="logo">
+          <img src={getBrandIconUrl()} alt="Silo logo" />
+        </div>
         <h1>Silo</h1>
       </div>
 

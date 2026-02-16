@@ -133,7 +133,7 @@ body {
 }
 
 .action-tabs {
-  @apply grid grid-cols-1 gap-1.5 mb-3;
+  @apply grid grid-cols-1 gap-1.5 mb-1.5;
 }
 
 .action-tab {
@@ -161,11 +161,11 @@ body {
 }
 
 .primary-cta {
-  @apply w-full h-10 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2;
+  @apply w-full min-h-[40px] px-3 py-2 rounded-lg border border-transparent bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-200 text-sm font-medium text-left inline-flex items-center justify-between gap-2 hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
 }
 
 .primary-cta kbd {
-  @apply font-mono text-[10px] leading-none px-1.5 py-1 rounded border border-blue-200/70 bg-blue-500 min-w-[18px] text-center;
+  @apply font-mono text-[10px] leading-none px-1.5 py-1 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 min-w-[18px] text-center;
 }
 
 .popup-footer {

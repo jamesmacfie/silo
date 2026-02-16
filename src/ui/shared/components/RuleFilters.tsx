@@ -11,7 +11,7 @@ interface RuleFiltersProps {
   filters: {
     container: string
     ruleType: string
-    enabled: string | null
+    enabled: string | boolean | null
   }
   onChange: (key: string, value: any) => void
   onClear: () => void
@@ -19,18 +19,18 @@ interface RuleFiltersProps {
 
 const RULE_TYPES = [
   {
-    value: "INCLUDE",
+    value: "include",
     label: "Include",
     color: "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300",
   },
   {
-    value: "EXCLUDE",
+    value: "exclude",
     label: "Exclude",
     color:
       "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300",
   },
   {
-    value: "RESTRICT",
+    value: "restrict",
     label: "Restrict",
     color: "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300",
   },
@@ -57,20 +57,51 @@ export function RuleFilters({
   onChange,
   onClear,
 }: RuleFiltersProps): JSX.Element {
+  const normalizedContainer =
+    typeof filters.container === "string" ? filters.container : ""
+  const normalizedContainerCookieStoreId = (() => {
+    if (!normalizedContainer) {
+      return ""
+    }
+
+    const byCookieStoreId = containers.find(
+      (c) => c.cookieStoreId === normalizedContainer,
+    )
+    if (byCookieStoreId) {
+      return byCookieStoreId.cookieStoreId
+    }
+
+    const byInternalId = containers.find((c) => c.id === normalizedContainer)
+    return byInternalId?.cookieStoreId || normalizedContainer
+  })()
+  const normalizedRuleType =
+    typeof filters.ruleType === "string" ? filters.ruleType.toLowerCase() : ""
+  const normalizedEnabled =
+    filters.enabled === true || filters.enabled === "true"
+      ? "true"
+      : filters.enabled === false || filters.enabled === "false"
+        ? "false"
+        : null
+
   const handleContainerToggle = (containerId: string) => {
-    onChange("container", filters.container === containerId ? "" : containerId)
+    onChange(
+      "container",
+      normalizedContainerCookieStoreId === containerId ? "" : containerId,
+    )
   }
 
   const handleRuleTypeToggle = (ruleType: string) => {
-    onChange("ruleType", filters.ruleType === ruleType ? "" : ruleType)
+    onChange("ruleType", normalizedRuleType === ruleType ? "" : ruleType)
   }
 
   const handleEnabledToggle = (enabled: string) => {
-    onChange("enabled", filters.enabled === enabled ? null : enabled)
+    onChange("enabled", normalizedEnabled === enabled ? null : enabled)
   }
 
   const hasActiveFilters =
-    filters.container || filters.ruleType || filters.enabled !== null
+    normalizedContainerCookieStoreId ||
+    filters.ruleType ||
+    normalizedEnabled !== null
 
   return (
     <Card className={`rule-filters ${className}`}>
@@ -100,7 +131,7 @@ export function RuleFilters({
       <div className="space-y-6">
         <FilterButton
           options={RULE_TYPES}
-          selectedValues={filters.ruleType ? [filters.ruleType] : []}
+          selectedValues={normalizedRuleType ? [normalizedRuleType] : []}
           onToggle={handleRuleTypeToggle}
           multiSelect={false}
           icon={<Shield className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
@@ -109,7 +140,7 @@ export function RuleFilters({
 
         <FilterButton
           options={ENABLED_OPTIONS}
-          selectedValues={filters.enabled !== null ? [filters.enabled] : []}
+          selectedValues={normalizedEnabled !== null ? [normalizedEnabled] : []}
           onToggle={handleEnabledToggle}
           multiSelect={false}
           icon={<Circle className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
@@ -118,7 +149,11 @@ export function RuleFilters({
 
         <ContainerSelector
           containers={containers}
-          selectedContainers={filters.container ? [filters.container] : []}
+          selectedContainers={
+            normalizedContainerCookieStoreId
+              ? [normalizedContainerCookieStoreId]
+              : []
+          }
           onToggle={handleContainerToggle}
           multiSelect={false}
         />
@@ -136,28 +171,28 @@ export function RuleFilters({
                   </p>
                   <span className="inline-block px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
                     {
-                      RULE_TYPES.find((t) => t.value === filters.ruleType)
+                      RULE_TYPES.find((t) => t.value === normalizedRuleType)
                         ?.label
                     }
                   </span>
                 </div>
               )}
 
-              {filters.enabled !== null && (
+              {normalizedEnabled !== null && (
                 <div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                     Status:
                   </p>
                   <span className="inline-block px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
                     {
-                      ENABLED_OPTIONS.find((o) => o.value === filters.enabled)
+                      ENABLED_OPTIONS.find((o) => o.value === normalizedEnabled)
                         ?.label
                     }
                   </span>
                 </div>
               )}
 
-              {filters.container && (
+              {normalizedContainerCookieStoreId && (
                 <div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                     Container:
@@ -165,7 +200,8 @@ export function RuleFilters({
                   <span className="inline-block px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
                     {
                       containers.find(
-                        (c) => c.cookieStoreId === filters.container,
+                        (c) =>
+                          c.cookieStoreId === normalizedContainerCookieStoreId,
                       )?.name
                     }
                   </span>

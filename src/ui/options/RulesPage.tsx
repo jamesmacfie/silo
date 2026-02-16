@@ -64,6 +64,8 @@ export function RulesPage({}: RulesPageProps) {
     updateSort,
     updateViewMode,
   } = pageState
+  const normalizedViewMode: ViewMode =
+    viewMode === "table" || viewMode === "cards" ? viewMode : "table"
 
   const [ruleModalState, setRuleModalState] = React.useState<{
     isOpen: boolean
@@ -83,6 +85,29 @@ export function RulesPage({}: RulesPageProps) {
 
   const filteredRules = useMemo(() => {
     let filtered = [...rules]
+    const normalizedContainerFilter = (() => {
+      if (typeof filters.container !== "string" || !filters.container) {
+        return ""
+      }
+
+      const byCookieStoreId = containers.find(
+        (c) => c.cookieStoreId === filters.container,
+      )
+      if (byCookieStoreId) {
+        return byCookieStoreId.cookieStoreId
+      }
+
+      const byInternalId = containers.find((c) => c.id === filters.container)
+      return byInternalId?.cookieStoreId || filters.container
+    })()
+    const normalizedRuleTypeFilter =
+      typeof filters.ruleType === "string" ? filters.ruleType.toLowerCase() : ""
+    const normalizedEnabledFilter =
+      filters.enabled === true || filters.enabled === "true"
+        ? true
+        : filters.enabled === false || filters.enabled === "false"
+          ? false
+          : null
 
     if (searchQuery) {
       const lower = searchQuery.toLowerCase()
@@ -97,17 +122,18 @@ export function RulesPage({}: RulesPageProps) {
       )
     }
 
-    if (filters.container) {
-      filtered = filtered.filter((r) => r.containerId === filters.container)
+    if (normalizedContainerFilter) {
+      filtered = filtered.filter(
+        (r) => r.containerId === normalizedContainerFilter,
+      )
     }
 
-    if (filters.ruleType) {
-      filtered = filtered.filter((r) => r.ruleType === filters.ruleType)
+    if (normalizedRuleTypeFilter) {
+      filtered = filtered.filter((r) => r.ruleType === normalizedRuleTypeFilter)
     }
 
-    if (filters.enabled !== null && filters.enabled !== "") {
-      const enabledValue = filters.enabled === "true"
-      filtered = filtered.filter((r) => r.enabled === enabledValue)
+    if (normalizedEnabledFilter !== null) {
+      filtered = filtered.filter((r) => r.enabled === normalizedEnabledFilter)
     }
 
     filtered.sort((a, b) => {
@@ -353,7 +379,7 @@ export function RulesPage({}: RulesPageProps) {
         sortOrder={sortOrder}
         onSortChange={(sort) => updateSort(sort)}
         onSortOrderToggle={handleSortOrderToggle}
-        viewMode={viewMode as ViewMode}
+        viewMode={normalizedViewMode}
         availableViews={["cards", "table"]}
         onViewChange={(mode) => updateViewMode(mode)}
         showFilters={showFilters}
@@ -385,7 +411,7 @@ export function RulesPage({}: RulesPageProps) {
             filters as {
               container: string
               ruleType: string
-              enabled: string | null
+              enabled: string | boolean | null
             }
           }
           onChange={handleFilterChange}
@@ -405,7 +431,7 @@ export function RulesPage({}: RulesPageProps) {
 
       <DataView
         items={filteredRules}
-        viewMode={viewMode as ViewMode}
+        viewMode={normalizedViewMode}
         columns={tableColumns}
         renderCard={renderRuleCard}
         emptyState={

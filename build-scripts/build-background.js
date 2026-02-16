@@ -11,35 +11,30 @@ async function build() {
   try {
     // Ensure temp directory exists
     mkdirSync(join(__dirname, "../temp"), { recursive: true })
-    // Build options JavaScript
+    // Build background JavaScript
     await esbuild.build({
-      entryPoints: [join(__dirname, "../src/ui/options/index.tsx")],
+      entryPoints: [join(__dirname, "../src/background/index.ts")],
       bundle: true,
-      outfile: join(__dirname, "../temp/options.iife.js"),
+      outfile: join(__dirname, "../temp/background.js"),
       format: "iife",
       platform: "browser",
       target: "es2020",
       loader: {
-        ".tsx": "tsx",
         ".ts": "ts",
-        ".jsx": "jsx",
         ".js": "js",
-        ".css": "css",
       },
       define: {
         "process.env.NODE_ENV": '"production"',
       },
       minify: true,
       sourcemap: false,
-      jsx: "automatic",
-      jsxImportSource: "react",
       external: [],
       alias: {
         "@": join(__dirname, "../src"),
       },
     })
 
-    console.log("✅ Options JavaScript built successfully")
+    console.log("✅ Background JavaScript built successfully")
   } catch (error) {
     console.error("❌ Build failed:", error)
     process.exit(1)

@@ -3,7 +3,12 @@
     "allow": [
       "Skill(superpowers:using-superpowers)",
       "Bash(cat:*)",
-      "Skill(superpowers:brainstorming)"
+      "Skill(superpowers:brainstorming)",
+      "Bash(npx extension build:*)",
+      "Bash(npm run build:firefox:*)",
+      "WebFetch(domain:mzl.la)",
+      "WebFetch(domain:extensionworkshop.com)",
+      "Bash(npm run build:firefox:zip:*)"
     ],
     "deny": [],
     "ask": [],

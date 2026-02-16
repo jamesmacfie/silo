@@ -73,6 +73,14 @@ function canMoveCurrentUrl(url?: string | null): url is string {
   }
 }
 
+function getBrandIconUrl(): string {
+  const icons = browser.runtime.getManifest().icons ?? {}
+  const iconPath =
+    icons["128"] || icons["64"] || icons["48"] || icons["32"] || icons["16"]
+
+  return browser.runtime.getURL(iconPath || "icons/icon_128.png")
+}
+
 export function PopupApp(): JSX.Element {
   const containersData = useContainers()
   const { create: createContainer, load: loadContainers } =
@@ -534,11 +542,7 @@ export function PopupApp(): JSX.Element {
   return (
     <div className="popup-shell">
       <header className="popup-header">
-        <img
-          src={browser.runtime.getURL("images/icon_128.png")}
-          alt="Silo"
-          className="brand-icon"
-        />
+        <img src={getBrandIconUrl()} alt="Silo" className="brand-icon" />
         <div className="header-controls">
           <ThemeSwitcher compact />
         </div>

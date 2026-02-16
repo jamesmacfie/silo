@@ -85,15 +85,25 @@ export const useStoreEffects = () => {
         if (!prevContainers) return
 
         // Find deleted containers
-        const deletedIds = prevContainers
-          .filter((prev) => !containers.find((curr) => curr.id === prev.id))
-          .map((c) => c.id)
+        const deletedContainers = prevContainers.filter(
+          (prev) => !containers.find((curr) => curr.id === prev.id),
+        )
+        const deletedIds = new Set(deletedContainers.map((c) => c.id))
+        const deletedCookieStoreIds = new Set(
+          deletedContainers.map((c) => c.cookieStoreId),
+        )
 
-        if (deletedIds.length > 0) {
+        if (deletedContainers.length > 0) {
           // Clean up rules for deleted containers
           const rules = useRuleStore.getState().rules
           const rulesToDelete = rules
-            .filter((r) => deletedIds.includes(r.containerId || ""))
+            .filter((r) => {
+              const containerId = r.containerId || ""
+              return (
+                deletedCookieStoreIds.has(containerId) ||
+                deletedIds.has(containerId)
+              )
+            })
             .map((r) => r.id)
 
           // Delete related rules
@@ -108,8 +118,12 @@ export const useStoreEffects = () => {
 
           // Clean up bookmark container assignments for deleted containers
           const bookmarks = useBookmarkStore.getState().bookmarks
-          const bookmarksToUpdate = bookmarks.filter(
-            (b) => b.containerId && deletedIds.includes(b.containerId),
+          const bookmarksToUpdate = bookmarks.filter((b) =>
+            Boolean(
+              b.containerId &&
+                (deletedCookieStoreIds.has(b.containerId) ||
+                  deletedIds.has(b.containerId)),
+            ),
           )
 
           bookmarksToUpdate.forEach((bookmark) => {

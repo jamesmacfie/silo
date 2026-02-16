@@ -402,7 +402,9 @@ function ImportExportSectionComponent({
                     key={i}
                     className="text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded"
                   >
-                    Line {error.line}: {error.message}
+                    {typeof error.line === "number"
+                      ? `Line ${error.line}: ${error.message}`
+                      : error.message}
                   </div>
                 ))}
               </div>
@@ -420,7 +422,9 @@ function ImportExportSectionComponent({
                     key={i}
                     className="text-sm text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded"
                   >
-                    Line {warning.line}: {warning.message}
+                    {typeof warning.line === "number"
+                      ? `Line ${warning.line}: ${warning.message}`
+                      : warning.message}
                   </div>
                 ))}
               </div>

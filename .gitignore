@@ -35,3 +35,4 @@ extension-env.d.ts
 /temp/
 *.iife.js
 *.iife.css
+*.zip

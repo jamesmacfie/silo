@@ -72,7 +72,17 @@ export class BackupHandler implements MessageHandler {
    */
   private async restoreData(message: Message): Promise<MessageResponse> {
     try {
-      const backupData = message.payload as BackupData
+      const payload = (message.payload || {}) as
+        | BackupData
+        | {
+            data?: BackupData
+            preview?: boolean
+          }
+
+      const preview = Boolean((payload as { preview?: boolean }).preview)
+      const backupData = (
+        "data" in payload ? payload.data : payload
+      ) as BackupData
 
       if (!backupData) {
         return { success: false, error: "Backup data is required" }
@@ -84,6 +94,31 @@ export class BackupHandler implements MessageHandler {
         !backupData.containers
       ) {
         return { success: false, error: "Invalid backup data format" }
+      }
+
+      const summary = {
+        containers: backupData.containers || [],
+        rules: backupData.rules || [],
+        bookmarks: backupData.bookmarks || [],
+        categories: backupData.categories || [],
+        errors: [] as Array<{ message: string; data?: string }>,
+        warnings: [] as Array<{ message: string; data?: string }>,
+      }
+
+      if (preview) {
+        this.log.info("Backup restore preview generated", {
+          version: backupData.version,
+          timestamp: backupData.timestamp,
+          containers: summary.containers.length,
+          rules: summary.rules.length,
+          bookmarks: summary.bookmarks.length,
+          categories: summary.categories.length,
+        })
+
+        return {
+          success: true,
+          data: summary,
+        }
       }
 
       await storageService.restore(backupData)
@@ -99,7 +134,10 @@ export class BackupHandler implements MessageHandler {
         hasStats: !!backupData.stats,
       })
 
-      return { success: true }
+      return {
+        success: true,
+        data: summary,
+      }
     } catch (error) {
       this.log.error("Failed to restore from backup", error)
       return {

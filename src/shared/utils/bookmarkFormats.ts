@@ -165,35 +165,80 @@ export function exportToChromeFormat(
  * Parse standard HTML bookmark format (Netscape)
  */
 export function parseNetscapeFormat(html: string): StandardBookmarkFolder[] {
-  const bookmarks: StandardBookmarkFolder[] = []
-
-  // Basic regex parsing - in a real implementation you'd want a proper HTML parser
-  const folderRegex = /<H3[^>]*>([^<]+)<\/H3>/gi
-  const bookmarkRegex = /<A[^>]+HREF="([^"]+)"[^>]*>([^<]+)<\/A>/gi
-
-  let match: RegExpExecArray | null = null
-
-  match = folderRegex.exec(html)
-  while (match !== null) {
-    bookmarks.push({
-      title: match[1],
-      type: "folder",
-      children: [],
-    })
-    match = folderRegex.exec(html)
+  if (!html || typeof html !== "string") {
+    return []
   }
 
-  match = bookmarkRegex.exec(html)
-  while (match !== null) {
-    bookmarks.push({
-      title: match[2],
-      url: match[1],
-      type: "bookmark",
-    })
-    match = bookmarkRegex.exec(html)
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, "text/html")
+  const rootList = doc.querySelector("dl")
+
+  if (!rootList) {
+    return []
   }
 
-  return bookmarks
+  const parseDateAdded = (value: string | null): number | undefined => {
+    if (!value) return undefined
+    const parsed = Number.parseInt(value, 10)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  const parseDl = (dl: Element): StandardBookmarkFolder[] => {
+    const parsed: StandardBookmarkFolder[] = []
+    const entries = Array.from(dl.children).filter(
+      (element) => element.tagName.toLowerCase() === "dt",
+    )
+
+    for (const entry of entries) {
+      const children = Array.from(entry.children)
+      const folderTitle = children.find(
+        (child) => child.tagName.toLowerCase() === "h3",
+      )
+      const bookmarkLink = children.find(
+        (child) => child.tagName.toLowerCase() === "a",
+      )
+
+      if (folderTitle) {
+        const folder: StandardBookmarkFolder = {
+          title: folderTitle.textContent?.trim() || "Untitled",
+          type: "folder",
+          children: [],
+          dateAdded: parseDateAdded(folderTitle.getAttribute("add_date")),
+        }
+
+        const nestedList =
+          children.find((child) => child.tagName.toLowerCase() === "dl") ||
+          (entry.nextElementSibling?.tagName.toLowerCase() === "dl"
+            ? entry.nextElementSibling
+            : null)
+
+        if (nestedList) {
+          folder.children = parseDl(nestedList)
+        }
+
+        parsed.push(folder)
+        continue
+      }
+
+      if (bookmarkLink) {
+        const href = bookmarkLink.getAttribute("href")
+        if (!href) {
+          continue
+        }
+
+        parsed.push({
+          title: bookmarkLink.textContent?.trim() || "Untitled",
+          url: href,
+          type: "bookmark",
+          dateAdded: parseDateAdded(bookmarkLink.getAttribute("add_date")),
+        })
+      }
+    }
+
+    return parsed
+  }
+
+  return parseDl(rootList)
 }
 
 /**

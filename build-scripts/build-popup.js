@@ -27,10 +27,10 @@ async function build() {
         ".css": "css",
       },
       define: {
-        "process.env.NODE_ENV": '"development"',
+        "process.env.NODE_ENV": '"production"',
       },
-      minify: false, // Disabled minification
-      sourcemap: true, // Enable sourcemaps for debugging
+      minify: true,
+      sourcemap: false,
       jsx: "automatic",
       jsxImportSource: "react",
       external: [],

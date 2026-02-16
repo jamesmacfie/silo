@@ -1,10 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  AlertCircle,
   CheckSquare,
   Edit3,
-  ExternalLink,
   Folder,
   FolderOpen,
   GripVertical,
@@ -78,27 +76,14 @@ export function DraggableTreeItem({
     opacity: isDragging ? 0.5 : 1,
   }
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault()
+  const baseRowClasses =
+    "flex items-center gap-2 rounded px-2 py-1.5 text-sm group transition-colors"
 
-    if (bookmark.type === "folder") {
-      // For folders, show context menu with add options
-      const menu = [
-        {
-          label: "Add Bookmark Here",
-          action: () => onCreateBookmark?.(bookmark.id),
-        },
-        {
-          label: "Add Folder Here",
-          action: () => onCreateFolder?.(bookmark.id),
-        },
-      ]
-
-      // Simple context menu - in a real app you'd use a proper context menu library
-      // For now, we'll just show the options as a temporary overlay
-      console.log("Context menu for folder:", menu)
-    }
-  }
+  const activeStateClasses = `${isDragging ? "shadow-sm z-50" : ""} ${
+    isHighlighted
+      ? "bg-yellow-50 dark:bg-yellow-900/20 ring-1 ring-yellow-300 dark:ring-yellow-700"
+      : ""
+  }`
 
   if (bookmark.type === "folder") {
     return (
@@ -109,24 +94,18 @@ export function DraggableTreeItem({
             setItemRef?.(element)
           }}
           style={style}
-          className={`flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group ${
+          className={`${baseRowClasses} hover:bg-gray-50 dark:hover:bg-gray-700 ${
             isFolderSelected ? "bg-blue-50 dark:bg-blue-900" : ""
-          } ${isDragging ? "shadow-lg z-50" : ""} ${
-            isDropTarget && bookmark.type === "folder"
-              ? "bg-green-50 dark:bg-green-900 border-2 border-green-300 dark:border-green-600"
-              : ""
           } ${
-            isHighlighted
-              ? "bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-600 animate-pulse"
+            isDropTarget && bookmark.type === "folder"
+              ? "ring-1 ring-green-400 dark:ring-green-600 bg-green-50 dark:bg-green-900/20"
               : ""
-          }`}
-          onContextMenu={handleContextMenu}
+          } ${activeStateClasses}`}
         >
-          {/* Drag handle */}
           <button
             {...attributes}
             {...listeners}
-            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
             title="Drag to reorder"
           >
             <GripVertical className="w-3 h-3" />
@@ -155,11 +134,10 @@ export function DraggableTreeItem({
             )}
           </button>
 
-          <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+          <span className="flex-1 min-w-0 truncate text-sm font-medium text-gray-900 dark:text-gray-100">
             {bookmark.title}
           </span>
 
-          {/* Inline add buttons that appear on hover */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
@@ -185,16 +163,11 @@ export function DraggableTreeItem({
 
           {bookmark.children && (
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {
-                bookmark.children.filter((child) => child.type === "bookmark")
-                  .length
-              }{" "}
-              items
+              {bookmark.children.length}
             </span>
           )}
         </div>
 
-        {/* Children rendered outside */}
         {children}
       </div>
     )
@@ -207,23 +180,18 @@ export function DraggableTreeItem({
           setNodeRef(element)
           setItemRef?.(element)
         }}
-        className={`flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded group ${
+        className={`${baseRowClasses} hover:bg-gray-50 dark:hover:bg-gray-700 ${
           isSelected ? "bg-blue-50 dark:bg-blue-900" : ""
-        } ${isDragging ? "shadow-lg z-50" : ""} ${
-          isHighlighted
-            ? "bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-600 animate-pulse"
-            : ""
-        }`}
+        } ${activeStateClasses}`}
         style={{
           marginLeft: `${depth * 20}px`,
           ...style,
         }}
       >
-        {/* Drag handle */}
         <button
           {...attributes}
           {...listeners}
-          className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
           title="Drag to reorder"
         >
           <GripVertical className="w-3 h-3" />
@@ -241,35 +209,29 @@ export function DraggableTreeItem({
         </button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+          <div className="flex items-center gap-2">
+            <a
+              href={bookmark.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate hover:underline"
+              title={bookmark.url}
+              onClick={(e) => e.stopPropagation()}
+            >
               {bookmark.title}
-            </span>
+            </a>
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 truncate font-mono">
-            {bookmark.url}
-          </div>
-
-          {/* Container row */}
-          <div className="flex items-center gap-2 mt-1">
-            {/* Container */}
-            {container ? (
+          {container ? (
+            <div className="mt-1">
               <ContainerBadge container={container} size="xs" />
-            ) : suggestedContainer ? (
-              <div className="flex items-center gap-1">
-                <AlertCircle className="w-4 h-4 text-amber-500" />
-                <span
-                  className="text-xs text-amber-600 dark:text-amber-400 truncate max-w-[100px]"
-                  title={`Suggested: ${suggestedContainer.name}`}
-                >
-                  {suggestedContainer.name}
-                </span>
-              </div>
-            ) : null}
-          </div>
+            </div>
+          ) : suggestedContainer ? (
+            <div className="mt-1 text-xs text-amber-600 dark:text-amber-400 truncate">
+              Suggested: {suggestedContainer.name}
+            </div>
+          ) : null}
         </div>
 
-        {/* Action buttons - right aligned */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onEditBookmark?.(bookmark)}
@@ -285,15 +247,6 @@ export function DraggableTreeItem({
           >
             <Trash2 className="w-3 h-3" />
           </button>
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 rounded"
-            title="Open bookmark"
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
         </div>
       </div>
     )

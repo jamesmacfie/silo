@@ -37,13 +37,21 @@ describe("bookmarkFormats", () => {
     const parsed = parseNetscapeFormat(`
       <DL><p>
         <DT><H3>Folder</H3>
-        <DT><A HREF="https://example.com">Example</A>
+        <DL><p>
+          <DT><A HREF="https://example.com">Example</A>
+        </DL><p>
       </DL><p>
     `)
 
-    expect(parsed).toEqual(
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0]).toEqual(
+      expect.objectContaining({
+        title: "Folder",
+        type: "folder",
+      }),
+    )
+    expect(parsed[0].children).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ title: "Folder", type: "folder" }),
         expect.objectContaining({
           title: "Example",
           type: "bookmark",

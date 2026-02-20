@@ -98,7 +98,16 @@ export function RulesPage({}: RulesPageProps) {
       }
 
       const byInternalId = containers.find((c) => c.id === filters.container)
-      return byInternalId?.cookieStoreId || filters.container
+      if (byInternalId) {
+        return byInternalId.cookieStoreId
+      }
+
+      // If the persisted filter no longer maps to any known container/rule
+      // (e.g. removed container), ignore it so rules are still visible.
+      const hasMatchingRules = rules.some(
+        (r) => r.containerId === filters.container,
+      )
+      return hasMatchingRules ? filters.container : ""
     })()
     const normalizedRuleTypeFilter =
       typeof filters.ruleType === "string" ? filters.ruleType.toLowerCase() : ""

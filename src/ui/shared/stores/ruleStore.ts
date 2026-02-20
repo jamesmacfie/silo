@@ -3,6 +3,7 @@ import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
 import { MESSAGE_TYPES } from "@/shared/constants"
 import type { Rule } from "@/shared/types"
+import { sendRuntimeMessageWithRetry } from "./runtimeMessaging"
 
 interface RuleState {
   rules: Rule[]
@@ -34,9 +35,22 @@ export const useRuleStore = create<RuleState>()(
         set({ loading: true, error: undefined })
 
         try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.GET_RULES,
-          })
+          const response = await sendRuntimeMessageWithRetry<{
+            success?: boolean
+            data?: Rule[]
+            error?: string
+          }>(
+            {
+              type: MESSAGE_TYPES.GET_RULES,
+            },
+            {
+              attempts: 3,
+              retryDelayMs: 120,
+              retryOnAnyError: true,
+              retryOnUnsuccessfulResponse: true,
+              attemptTimeoutMs: 1200,
+            },
+          )
 
           if (!response?.success) {
             throw new Error(response?.error || "Failed to fetch rules")

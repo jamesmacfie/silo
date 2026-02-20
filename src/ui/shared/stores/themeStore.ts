@@ -3,6 +3,7 @@ import browser from "webextension-polyfill"
 import { create } from "zustand"
 import { subscribeWithSelector } from "zustand/middleware"
 import { MESSAGE_TYPES } from "@/shared/constants"
+import { sendRuntimeMessageWithRetry } from "./runtimeMessaging"
 
 type Theme = "light" | "dark" | "auto"
 
@@ -34,9 +35,22 @@ export const useThemeStore = create<ThemeState>()(
         set({ loading: true, error: undefined })
 
         try {
-          const response = await browser.runtime.sendMessage({
-            type: MESSAGE_TYPES.GET_PREFERENCES,
-          })
+          const response = await sendRuntimeMessageWithRetry<{
+            success?: boolean
+            data?: { theme?: Theme }
+            error?: string
+          }>(
+            {
+              type: MESSAGE_TYPES.GET_PREFERENCES,
+            },
+            {
+              attempts: 3,
+              retryDelayMs: 120,
+              retryOnAnyError: true,
+              retryOnUnsuccessfulResponse: true,
+              attemptTimeoutMs: 1200,
+            },
+          )
 
           if (!response?.success) {
             throw new Error(response?.error || "Failed to fetch preferences")

@@ -26,41 +26,19 @@ export interface MessageResponse<T = unknown> {
 
 export class MessagingService {
   private requestCounter = 0
-  private pendingRequests = new Map<
-    string,
-    {
-      resolve: (value: unknown) => void
-      reject: (error: unknown) => void
-    }
-  >()
-
-  constructor() {
-    this.setupMessageHandler()
-  }
-
-  private setupMessageHandler(): void {
-    browser.runtime.onMessage.addListener((message: Message, _sender) => {
-      logger.debug(
-        "Received message",
-        { type: message.type, payload: message.payload },
-        "messaging",
-      )
-
-      // Handle responses to our requests
-      if (message.requestId && this.pendingRequests.has(message.requestId)) {
-        const { resolve } = this.pendingRequests.get(message.requestId)!
-        this.pendingRequests.delete(message.requestId)
-        resolve(message)
-        return
-      }
-
-      // This will be handled by the background script message handlers
-      return Promise.resolve(false)
-    })
-  }
 
   private generateRequestId(): string {
     return `req_${++this.requestCounter}_${Date.now()}`
+  }
+
+  private isMessageResponse<T = unknown>(
+    response: unknown,
+  ): response is MessageResponse<T> {
+    return (
+      typeof response === "object" &&
+      response !== null &&
+      typeof (response as MessageResponse<T>).success === "boolean"
+    )
   }
 
   async sendMessage<T = unknown>(
@@ -77,8 +55,14 @@ export class MessagingService {
     logger.debug("Sending message", { type, payload }, "messaging")
 
     try {
-      const response = await browser.runtime.sendMessage(message)
-      logger.debug("Received response", response, "messaging")
+      const rawResponse = await browser.runtime.sendMessage(message)
+      logger.debug("Received response", rawResponse, "messaging")
+
+      if (!this.isMessageResponse<T>(rawResponse)) {
+        throw new Error("Invalid response from background script")
+      }
+
+      const response = rawResponse
 
       if (!response.success) {
         throw new Error(response.error || "Unknown error")

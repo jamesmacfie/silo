@@ -230,6 +230,8 @@ export function ContainerPresetWizard({
     [activePresetRules, selectedRuleIds],
   )
 
+  const selectedRuleCount = selectedRuleIds.size
+
   React.useEffect(() => {
     if (isOpen) {
       return
@@ -409,8 +411,7 @@ export function ContainerPresetWizard({
   )
 
   const canApply =
-    !isSubmitting &&
-    (Boolean(!activePresetContainer) || selectedNewRuleCount > 0)
+    !isSubmitting && (Boolean(!activePresetContainer) || selectedRuleCount > 0)
 
   const reviewFooter = (
     <>
@@ -504,8 +505,7 @@ export function ContainerPresetWizard({
               Choose another preset
             </button>
             <div className="text-xs text-gray-600 dark:text-gray-300">
-              {selectedNewRuleCount} rule{selectedNewRuleCount === 1 ? "" : "s"}{" "}
-              selected to add
+              {selectedRuleCount} selected • {selectedNewRuleCount} new
             </div>
           </div>
 
@@ -527,7 +527,7 @@ export function ContainerPresetWizard({
                     type="checkbox"
                     className="mt-1 rounded border-gray-300 dark:border-gray-600"
                     checked={checked}
-                    disabled={rule.exists || isSubmitting}
+                    disabled={isSubmitting}
                     onChange={() => handleToggleRule(rule.id)}
                   />
                   <div className="min-w-0 flex-1">

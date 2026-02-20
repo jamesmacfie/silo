@@ -8,7 +8,34 @@ import type {
   TrendData,
 } from "@/shared/types/storage"
 import { logger } from "@/shared/utils/logger"
-import messagingService from "@/shared/utils/messaging"
+import { sendRuntimeMessageWithRetry } from "./runtimeMessaging"
+
+interface StatsMessageResponse<T = unknown> {
+  success?: boolean
+  data?: T
+  error?: string
+}
+
+const STATS_MESSAGE_RETRY_OPTIONS = {
+  attempts: 3,
+  retryDelayMs: 120,
+  retryOnAnyError: true,
+  retryOnUnsuccessfulResponse: true,
+  attemptTimeoutMs: 1200,
+}
+
+function sendStatsMessage<T = unknown>(
+  type: string,
+  payload?: unknown,
+): Promise<StatsMessageResponse<T>> {
+  return sendRuntimeMessageWithRetry<StatsMessageResponse<T>>(
+    {
+      type,
+      payload,
+    },
+    STATS_MESSAGE_RETRY_OPTIONS,
+  )
+}
 
 interface StatsState {
   // Data
@@ -58,7 +85,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
     set({ loading: true, error: null })
 
     try {
-      const response = await messagingService.sendMessage(
+      const response = await sendStatsMessage<Record<string, ContainerStats>>(
         MESSAGE_TYPES.GET_STATS,
       )
 
@@ -82,7 +109,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
 
   loadGlobalStats: async () => {
     try {
-      const response = await messagingService.sendMessage(
+      const response = await sendStatsMessage<GlobalStats>(
         MESSAGE_TYPES.GET_GLOBAL_STATS,
       )
 
@@ -104,7 +131,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
 
   loadActiveTabs: async () => {
     try {
-      const response = await messagingService.sendMessage(
+      const response = await sendStatsMessage<Record<string, number>>(
         MESSAGE_TYPES.GET_ACTIVE_TABS,
       )
 
@@ -124,7 +151,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
 
   loadRecentActivity: async () => {
     try {
-      const response = await messagingService.sendMessage(
+      const response = await sendStatsMessage<ActivityEvent[]>(
         MESSAGE_TYPES.GET_RECENT_ACTIVITY,
       )
 
@@ -146,7 +173,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
 
   loadDailyStats: async (days = 7) => {
     try {
-      const response = await messagingService.sendMessage(
+      const response = await sendStatsMessage<DailyStats[]>(
         MESSAGE_TYPES.GET_DAILY_STATS,
         { days },
       )
@@ -167,7 +194,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
 
   loadTrends: async (days = 30) => {
     try {
-      const response = await messagingService.sendMessage(
+      const response = await sendStatsMessage<TrendData>(
         MESSAGE_TYPES.GET_CONTAINER_TRENDS,
         { days },
       )
@@ -199,9 +226,7 @@ const useStatsStore = create<StatsState>((set, get) => ({
 
   reset: async () => {
     try {
-      const response = await messagingService.sendMessage(
-        MESSAGE_TYPES.RESET_STATS,
-      )
+      const response = await sendStatsMessage(MESSAGE_TYPES.RESET_STATS)
 
       if (response.success) {
         set({

@@ -4,7 +4,17 @@ import { useBookmarkStore } from "./bookmarkStore"
 import { useContainerStore } from "./containerStore"
 import { usePreferencesStore } from "./preferencesStore"
 import { useRuleStore } from "./ruleStore"
+import { waitForBackgroundReady } from "./runtimeMessaging"
 import { useThemeEffects, useThemeStore } from "./themeStore"
+
+const CORE_DATA_LOAD_ATTEMPTS = 2
+const CORE_DATA_RETRY_DELAY_MS = 250
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
 
 interface AppState {
   isInitialized: boolean
@@ -23,23 +33,60 @@ export const useAppStore = create<AppState>((set, _get) => ({
   actions: {
     initialize: async () => {
       try {
-        set({ initializationError: undefined })
+        set({ isInitialized: false, initializationError: undefined })
 
-        // Initialize all stores in parallel
-        // Theme and preferences first since other stores might depend on them
-        await Promise.all([
-          useThemeStore.getState().actions.load(),
-          usePreferencesStore.getState().actions.load(),
-        ])
+        // Wait for the background script to accept messages before loading stores.
+        await waitForBackgroundReady({
+          attempts: 4,
+          retryDelayMs: 120,
+          attemptTimeoutMs: 1000,
+        })
 
-        // Then load the main data
-        await Promise.all([
-          useContainerStore.getState().actions.load(),
-          useRuleStore.getState().actions.load(),
-          useBookmarkStore.getState().actions.loadBookmarks(),
-        ])
+        // Start non-critical settings loads in the background.
+        void useThemeStore.getState().actions.load()
+        void usePreferencesStore.getState().actions.load()
 
-        set({ isInitialized: true })
+        let coreDataErrorMessage: string | null = null
+
+        for (
+          let attempt = 1;
+          attempt <= CORE_DATA_LOAD_ATTEMPTS;
+          attempt += 1
+        ) {
+          await Promise.all([
+            useContainerStore.getState().actions.load(),
+            useRuleStore.getState().actions.load(),
+          ])
+
+          const coreDataErrors = [
+            useContainerStore.getState().error
+              ? `Containers: ${useContainerStore.getState().error}`
+              : null,
+            useRuleStore.getState().error
+              ? `Rules: ${useRuleStore.getState().error}`
+              : null,
+          ].filter((error): error is string => Boolean(error))
+
+          if (coreDataErrors.length === 0) {
+            coreDataErrorMessage = null
+            break
+          }
+
+          coreDataErrorMessage = coreDataErrors.join("; ")
+
+          if (attempt < CORE_DATA_LOAD_ATTEMPTS) {
+            await wait(CORE_DATA_RETRY_DELAY_MS * attempt)
+          }
+        }
+
+        if (coreDataErrorMessage) {
+          throw new Error(coreDataErrorMessage)
+        }
+
+        set({ isInitialized: true, initializationError: undefined })
+
+        // Bookmarks are non-critical for shell startup; load opportunistically.
+        void useBookmarkStore.getState().actions.loadBookmarks()
       } catch (error) {
         set({
           initializationError:
@@ -94,28 +141,6 @@ export const useStoreEffects = () => {
         )
 
         if (deletedContainers.length > 0) {
-          // Clean up rules for deleted containers
-          const rules = useRuleStore.getState().rules
-          const rulesToDelete = rules
-            .filter((r) => {
-              const containerId = r.containerId || ""
-              return (
-                deletedCookieStoreIds.has(containerId) ||
-                deletedIds.has(containerId)
-              )
-            })
-            .map((r) => r.id)
-
-          // Delete related rules
-          rulesToDelete.forEach((ruleId) => {
-            useRuleStore
-              .getState()
-              .actions.delete(ruleId)
-              .catch(() => {
-                // Silently fail - the rule might already be deleted
-              })
-          })
-
           // Clean up bookmark container assignments for deleted containers
           const bookmarks = useBookmarkStore.getState().bookmarks
           const bookmarksToUpdate = bookmarks.filter((b) =>

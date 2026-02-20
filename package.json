@@ -27,7 +27,8 @@
     "test:e2e": "playwright test",
     "type-check": "tsc --noEmit",
     "fmt": "biome check --write",
-    "fmt:check": "biome check"
+    "fmt:check": "biome check",
+    "source:zip": "zip -r silo-source.zip . -x '*.zip' 'node_modules/*'"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

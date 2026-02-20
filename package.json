@@ -2,7 +2,7 @@
   "private": true,
   "name": "silo",
   "description": "Silo - Modern Firefox container management extension",
-  "version": "0.0.2",
+  "version": "2.0.1",
   "author": {
     "name": "James Macfie",
     "url": "https://github.com/jamesmacfie/silo"

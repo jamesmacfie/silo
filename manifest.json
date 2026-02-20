@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "name": "Silo",
   "description": "Automatically open websites in Firefox containers based on configurable rules",
   "icons": {
@@ -11,7 +11,9 @@
   },
   "author": "Silo Team",
   "background": {
-    "scripts": ["src/background/index.ts"],
+    "scripts": [
+      "src/background/index.ts"
+    ],
     "persistent": true
   },
   "browser_action": {
@@ -54,8 +56,12 @@
       "id": "silo@extensions.firefox.org",
       "strict_min_version": "91.0",
       "data_collection_permissions": {
-        "required": ["none"],
-        "optional": ["technicalAndInteraction"]
+        "required": [
+          "none"
+        ],
+        "optional": [
+          "technicalAndInteraction"
+        ]
       }
     }
   },
